@@ -2,7 +2,7 @@
 export interface Client {
   id: string;
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
   address?: string;
   nationalId?: string;
@@ -54,7 +54,7 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  dueDate: Date;
+  dueDate?: Date;
   priority: 'low' | 'medium' | 'high';
   isCompleted: boolean;
   completedAt?: Date;
@@ -67,6 +67,7 @@ export interface Appointment {
   title: string;
   description?: string;
   appointmentDate: Date;
+  time?: string;
   duration: number; // in minutes
   clientName?: string;
   location?: string;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, ChevronDown, ChevronLeft, Plus, Search, User, FileText, Folder, Calendar as CalendarLucide } from 'lucide-react';
+import { CalendarIcon, ChevronDown, ChevronLeft, Plus, Search, User, Folder, FileText, Calendar as CalendarLucide } from 'lucide-react';
 import { Client, Case, CaseStage, Session } from '@/types';
 import { dataStore } from '@/store/dataStore';
 import { formatSyrianDate } from '@/utils/dateUtils';
@@ -52,6 +51,7 @@ const Clients: React.FC = () => {
     title: '',
     description: '',
     opponent: '',
+    caseType: '',
     status: 'active' as const,
   });
 
@@ -106,7 +106,7 @@ const Clients: React.FC = () => {
   );
 
   const handleAddClient = () => {
-    if (!newClient.name || !newClient.phone) return;
+    if (!newClient.name) return;
 
     dataStore.addClient({
       name: newClient.name,
@@ -141,6 +141,7 @@ const Clients: React.FC = () => {
       title: '',
       description: '',
       opponent: '',
+      caseType: '',
       status: 'active',
     });
     setIsAddCaseDialogOpen(false);
@@ -250,7 +251,7 @@ const Clients: React.FC = () => {
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="clientName">اسم الموكل</Label>
+                        <Label htmlFor="clientName">اسم الموكل *</Label>
                         <Input
                           id="clientName"
                           value={newClient.name}
@@ -264,7 +265,7 @@ const Clients: React.FC = () => {
                           id="clientPhone"
                           value={newClient.phone}
                           onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                          placeholder="أدخل رقم الهاتف"
+                          placeholder="أدخل رقم الهاتف (اختياري)"
                         />
                       </div>
                       <div>
@@ -341,10 +342,13 @@ const Clients: React.FC = () => {
                           <div className="mr-2">
                             <span className="font-medium text-lg">{client.name}</span>
                             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                              <span>هاتف: {client.phone}</span>
-                              {client.email && <span>| {client.email}</span>}
-                              {client.nationalId && <span>| رقم وطني: {client.nationalId}</span>}
-                              {client.address && <span>| {client.address}</span>}
+                              {client.phone && <span>هاتف: {client.phone}</span>}
+                              {client.email && client.phone && <span>|</span>}
+                              {client.email && <span>{client.email}</span>}
+                              {client.nationalId && (client.phone || client.email) && <span>|</span>}
+                              {client.nationalId && <span>رقم وطني: {client.nationalId}</span>}
+                              {client.address && (client.phone || client.email || client.nationalId) && <span>|</span>}
+                              {client.address && <span>{client.address}</span>}
                             </div>
                           </div>
                         </div>
@@ -393,7 +397,7 @@ const Clients: React.FC = () => {
                                           ) : (
                                             <ChevronLeft className="h-5 w-5 ml-2 text-muted-foreground" />
                                           )}
-                                          <FileText className="h-5 w-5 ml-2 text-green-600" />
+                                          <Folder className="h-5 w-5 ml-2 text-green-600" />
                                           <div className="mr-2">
                                             <span className="font-medium">{case_.title}</span>
                                             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
@@ -441,7 +445,7 @@ const Clients: React.FC = () => {
                                                           ) : (
                                                             <ChevronLeft className="h-5 w-5 ml-2 text-muted-foreground" />
                                                           )}
-                                                          <Folder className="h-5 w-5 ml-2 text-orange-600" />
+                                                          <FileText className="h-5 w-5 ml-2 text-orange-600" />
                                                           <div className="mr-2">
                                                             <span className="font-medium">{stage.courtName} - {stage.caseNumber}</span>
                                                             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">

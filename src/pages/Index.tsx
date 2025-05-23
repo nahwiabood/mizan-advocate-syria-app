@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Printer } from 'lucide-react';
+import { Printer, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { ArabicCalendar } from '@/components/ArabicCalendar';
 import { SessionsTable } from '@/components/SessionsTable';
 import { TasksTable } from '@/components/TasksTable';
@@ -11,7 +11,7 @@ import { PastSessionsDialog } from '@/components/PastSessionsDialog';
 import { dataStore } from '@/store/dataStore';
 import { Session, Task, Appointment } from '@/types';
 import { isDateToday, formatFullSyrianDate } from '@/utils/dateUtils';
-import { isSameDay } from 'date-fns';
+import { isSameDay, isAfter } from 'date-fns';
 import { Layout } from '@/components/Layout';
 
 const Index = () => {
@@ -21,6 +21,10 @@ const Index = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedDateSessions, setSelectedDateSessions] = useState<Session[]>([]);
   const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
+  const [unTransferredSessions, setUnTransferredSessions] = useState<Session[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
+  const [showUnTransferred, setShowUnTransferred] = useState(false);
+  const [showUpcoming, setShowUpcoming] = useState(false);
   const printContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,12 +43,28 @@ const Index = () => {
       isSameDay(appointment.appointmentDate, selectedDate)
     );
     setSelectedDateAppointments(filteredAppointments);
+
+    // Filter untransferred sessions
+    const untransferred = sessions.filter(session => !session.isTransferred);
+    setUnTransferredSessions(untransferred);
+
+    // Filter upcoming sessions (after selected date)
+    const upcoming = sessions.filter(session => 
+      isAfter(session.sessionDate, selectedDate)
+    );
+    setUpcomingSessions(upcoming);
   }, [selectedDate, sessions, appointments]);
 
   const loadData = () => {
     setSessions(dataStore.getSessions());
     setTasks(dataStore.getTasks());
     setAppointments(dataStore.getAppointments());
+  };
+
+  const getDisplaySessions = () => {
+    if (showUnTransferred) return unTransferredSessions;
+    if (showUpcoming) return upcomingSessions;
+    return selectedDateSessions;
   };
 
   const handlePrintSchedule = () => {
@@ -132,7 +152,7 @@ const Index = () => {
             ` : '<p class="no-data">لا توجد جلسات في هذا التاريخ</p>'}
             
             <div class="section-title">المهام الإدارية</div>
-            ${tasks.filter(task => !task.completed).length > 0 ? `
+            ${tasks.filter(task => !task.isCompleted).length > 0 ? `
               <table>
                 <thead>
                   <tr>
@@ -143,7 +163,7 @@ const Index = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  ${tasks.filter(task => !task.completed).map(task => `
+                  ${tasks.filter(task => !task.isCompleted).map(task => `
                     <tr>
                       <td>${task.title}</td>
                       <td>${task.description || '-'}</td>
@@ -202,9 +222,9 @@ const Index = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Right column - Calendar */}
-            <div className="order-1 lg:order-1 space-y-4 calendar-section">
+            <div className="lg:col-span-4 space-y-4">
               <ArabicCalendar
                 sessions={sessions}
                 appointments={appointments}
@@ -219,34 +239,80 @@ const Index = () => {
                 />
               </div>
 
-              {/* Sessions Table under Calendar */}
+              {/* Tasks under Calendar */}
               <div className="mt-6">
-                <SessionsTable
-                  sessions={selectedDateSessions}
+                <TasksTable
+                  tasks={tasks}
+                  onTaskUpdate={loadData}
+                />
+              </div>
+
+              {/* Appointments under Tasks */}
+              <div className="mt-6">
+                <AppointmentsTable
+                  appointments={selectedDateAppointments}
                   selectedDate={selectedDate}
-                  onSessionUpdate={loadData}
-                  showAddButton={false}
+                  onAppointmentUpdate={loadData}
                 />
               </div>
             </div>
 
-            {/* Left column - Tasks and Appointments */}
-            <div className="order-2 lg:order-2 space-y-6">
-              <TasksTable
-                tasks={tasks}
-                onTaskUpdate={loadData}
-              />
+            {/* Left column - Sessions */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Session Filter Buttons */}
+              <div className="flex gap-2 justify-start">
+                <Button
+                  variant={!showUnTransferred && !showUpcoming ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnTransferred(false);
+                    setShowUpcoming(false);
+                  }}
+                  className="gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  جلسات اليوم ({selectedDateSessions.length})
+                </Button>
+                <Button
+                  variant={showUnTransferred ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnTransferred(true);
+                    setShowUpcoming(false);
+                  }}
+                  className="gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                </Button>
+                <Button
+                  variant={showUpcoming ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnTransferred(false);
+                    setShowUpcoming(true);
+                  }}
+                  className="gap-2"
+                >
+                  <Clock className="h-4 w-4" />
+                  الجلسات القادمة ({upcomingSessions.length})
+                </Button>
+              </div>
 
-              <AppointmentsTable
-                appointments={selectedDateAppointments}
+              {/* Sessions Table */}
+              <SessionsTable
+                sessions={getDisplaySessions()}
                 selectedDate={selectedDate}
-                onAppointmentUpdate={loadData}
+                onSessionUpdate={loadData}
+                showAddButton={false}
+                title={
+                  showUnTransferred 
+                    ? "الجلسات غير المرحلة" 
+                    : showUpcoming 
+                      ? "الجلسات القادمة" 
+                      : "جلسات اليوم المحدد"
+                }
               />
-            </div>
-
-            {/* Middle column - Additional content can go here */}
-            <div className="order-3 lg:order-3">
-              {/* This column can be used for additional content in the future */}
             </div>
           </div>
         </Card>
