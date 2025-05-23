@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatSyrianDate, getSyrianMonthName, isDateToday } from '@/utils/dateUtils';
+import { formatSyrianDate, getSyrianMonthName, isDateToday, getSyrianDayName } from '@/utils/dateUtils';
 import { Session, Appointment } from '@/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
@@ -54,7 +54,8 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     setCurrentMonth(newMonth);
   };
 
-  const dayNames = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س']; // الأحد إلى السبت
+  // Full day names
+  const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
   return (
     <Card className="w-full">
@@ -87,7 +88,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
       <CardContent>
         <div className="grid grid-cols-7 gap-1 mb-2">
           {dayNames.map((day, index) => (
-            <div key={index} className="p-2 text-center font-semibold text-muted-foreground">
+            <div key={index} className="p-1 text-center font-semibold text-muted-foreground text-xs">
               {day}
             </div>
           ))}
@@ -148,6 +149,9 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             <div className="w-4 h-4 bg-legal-primary rounded border"></div>
             <span>اليوم</span>
           </div>
+        </div>
+        <div className="mt-2 text-center">
+          <p className="text-lg font-bold">{getSyrianDayName(selectedDate.getDay())} {selectedDate.getDate()} {getSyrianMonthName(selectedDate.getMonth())} {selectedDate.getFullYear()}</p>
         </div>
       </CardContent>
     </Card>

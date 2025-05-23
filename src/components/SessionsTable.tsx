@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus } from 'lucide-react';
+import { CalendarIcon, Plus, Edit, Trash2 } from 'lucide-react';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
 import { Session } from '@/types';
 import { dataStore } from '@/store/dataStore';
@@ -19,15 +19,19 @@ interface SessionsTableProps {
   sessions: Session[];
   selectedDate: Date;
   onSessionUpdate: () => void;
+  showAddButton?: boolean;
 }
 
 export const SessionsTable: React.FC<SessionsTableProps> = ({
   sessions,
   selectedDate,
   onSessionUpdate,
+  showAddButton = true
 }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [newSession, setNewSession] = useState({
     courtName: '',
@@ -68,6 +72,38 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     onSessionUpdate();
   };
 
+  const handleEditSession = () => {
+    if (!selectedSession) return;
+    
+    dataStore.updateSession(selectedSession.id, {
+      courtName: newSession.courtName || selectedSession.courtName,
+      caseNumber: newSession.caseNumber || selectedSession.caseNumber,
+      clientName: newSession.clientName || selectedSession.clientName,
+      opponent: newSession.opponent || selectedSession.opponent,
+      postponementReason: newSession.postponementReason || selectedSession.postponementReason,
+    });
+    
+    setIsEditDialogOpen(false);
+    setSelectedSession(null);
+    setNewSession({
+      courtName: '',
+      caseNumber: '',
+      clientName: '',
+      opponent: '',
+      postponementReason: '',
+    });
+    onSessionUpdate();
+  };
+
+  const handleDeleteSession = () => {
+    if (!selectedSession) return;
+    
+    dataStore.deleteSession(selectedSession.id);
+    setIsDeleteDialogOpen(false);
+    setSelectedSession(null);
+    onSessionUpdate();
+  };
+
   const handleTransferSession = () => {
     if (!selectedSession || !transferData.nextDate || !transferData.reason) {
       return;
@@ -86,74 +122,93 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     setIsTransferDialogOpen(true);
   };
 
+  const openEditDialog = (session: Session) => {
+    setSelectedSession(session);
+    setNewSession({
+      courtName: session.courtName,
+      caseNumber: session.caseNumber,
+      clientName: session.clientName,
+      opponent: session.opponent,
+      postponementReason: session.postponementReason || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (session: Session) => {
+    setSelectedSession(session);
+    setIsDeleteDialogOpen(true);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle>جلسات {formatFullSyrianDate(selectedDate)}</CardTitle>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                إضافة جلسة
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>إضافة جلسة جديدة</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="courtName">المحكمة</Label>
-                  <Input
-                    id="courtName"
-                    value={newSession.courtName}
-                    onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
-                    placeholder="اسم المحكمة"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="caseNumber">رقم الأساس</Label>
-                  <Input
-                    id="caseNumber"
-                    value={newSession.caseNumber}
-                    onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
-                    placeholder="رقم الأساس"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="clientName">الموكل</Label>
-                  <Input
-                    id="clientName"
-                    value={newSession.clientName}
-                    onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
-                    placeholder="اسم الموكل"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="opponent">الخصم</Label>
-                  <Input
-                    id="opponent"
-                    value={newSession.opponent}
-                    onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
-                    placeholder="اسم الخصم"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="postponementReason">سبب التأجيل</Label>
-                  <Textarea
-                    id="postponementReason"
-                    value={newSession.postponementReason}
-                    onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
-                    placeholder="سبب التأجيل (اختياري)"
-                  />
-                </div>
-                <Button onClick={handleAddSession} className="w-full">
-                  إضافة الجلسة
+          {showAddButton && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  إضافة جلسة
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>إضافة جلسة جديدة</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="courtName">المحكمة</Label>
+                    <Input
+                      id="courtName"
+                      value={newSession.courtName}
+                      onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
+                      placeholder="اسم المحكمة"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="caseNumber">رقم الأساس</Label>
+                    <Input
+                      id="caseNumber"
+                      value={newSession.caseNumber}
+                      onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
+                      placeholder="رقم الأساس"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="clientName">الموكل</Label>
+                    <Input
+                      id="clientName"
+                      value={newSession.clientName}
+                      onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
+                      placeholder="اسم الموكل"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="opponent">الخصم</Label>
+                    <Input
+                      id="opponent"
+                      value={newSession.opponent}
+                      onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
+                      placeholder="اسم الخصم"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="postponementReason">سبب التأجيل</Label>
+                    <Textarea
+                      id="postponementReason"
+                      value={newSession.postponementReason}
+                      onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
+                      placeholder="سبب التأجيل (اختياري)"
+                    />
+                  </div>
+                  <Button onClick={handleAddSession} className="w-full">
+                    إضافة الجلسة
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </CardHeader>
       
@@ -165,60 +220,173 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
         ) : (
           <div className="space-y-4">
             {sessions.map((session) => (
-              <div key={session.id} className="border rounded-lg p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm text-muted-foreground">المحكمة:</span>
-                    <p className="font-medium">{session.courtName}</p>
+              <div key={session.id} className="border rounded-lg p-4">
+                <div className="grid grid-cols-6 gap-4 items-center">
+                  <div className="col-span-5 grid grid-cols-5 gap-2 text-sm">
+                    <div>
+                      <span className="font-bold block">تاريخ الجلسة</span>
+                      <span>{formatSyrianDate(session.sessionDate)}</span>
+                    </div>
+                    
+                    <div>
+                      <span className="font-bold block">المحكمة / الأساس</span>
+                      <span>{session.courtName} / {session.caseNumber}</span>
+                    </div>
+                    
+                    <div>
+                      <span className="font-bold block">الموكل</span>
+                      <span>{session.clientName}</span>
+                    </div>
+                    
+                    <div>
+                      <span className="font-bold block">الخصم</span>
+                      <span>{session.opponent}</span>
+                    </div>
+                    
+                    <div>
+                      <span className="font-bold block">سبب التأجيل</span>
+                      <span>{session.postponementReason || '-'}</span>
+                    </div>
+                    
+                    {session.nextSessionDate && (
+                      <>
+                        <div>
+                          <span className="font-bold block">الجلسة القادمة</span>
+                          <span>{formatSyrianDate(session.nextSessionDate)}</span>
+                        </div>
+                        
+                        <div className="col-span-2">
+                          <span className="font-bold block">سبب التأجيل القادم</span>
+                          <span>{session.nextPostponementReason}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">رقم الأساس:</span>
-                    <p className="font-medium">{session.caseNumber}</p>
+                  
+                  <div className="col-span-1 flex flex-col gap-2 justify-center">
+                    {!session.nextSessionDate && (
+                      <Button
+                        variant="outline"
+                        onClick={() => openTransferDialog(session)}
+                        size="sm"
+                        className="w-full"
+                      >
+                        الجلسة القادمة
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditDialog(session)}
+                      className="w-full"
+                    >
+                      <Edit className="h-4 w-4 ml-1" />
+                      تعديل
+                    </Button>
+                    
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => openDeleteDialog(session)}
+                      className="w-full"
+                    >
+                      <Trash2 className="h-4 w-4 ml-1" />
+                      حذف
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm text-muted-foreground">الموكل:</span>
-                    <p className="font-medium">{session.clientName}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-muted-foreground">الخصم:</span>
-                    <p className="font-medium">{session.opponent}</p>
-                  </div>
-                </div>
-                
-                {session.postponementReason && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">سبب التأجيل:</span>
-                    <p className="font-medium">{session.postponementReason}</p>
-                  </div>
-                )}
-                
-                {session.nextSessionDate ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-muted-foreground">الجلسة القادمة:</span>
-                      <p className="font-medium">{formatSyrianDate(session.nextSessionDate)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-muted-foreground">سبب التأجيل القادم:</span>
-                      <p className="font-medium">{session.nextPostponementReason}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => openTransferDialog(session)}
-                    className="w-full"
-                  >
-                    الجلسة القادمة
-                  </Button>
-                )}
               </div>
             ))}
           </div>
         )}
+        
+        {/* Edit Session Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>تعديل الجلسة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-courtName">المحكمة</Label>
+                <Input
+                  id="edit-courtName"
+                  value={newSession.courtName}
+                  onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
+                  placeholder="اسم المحكمة"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-caseNumber">رقم الأساس</Label>
+                <Input
+                  id="edit-caseNumber"
+                  value={newSession.caseNumber}
+                  onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
+                  placeholder="رقم الأساس"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-clientName">الموكل</Label>
+                <Input
+                  id="edit-clientName"
+                  value={newSession.clientName}
+                  onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
+                  placeholder="اسم الموكل"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-opponent">الخصم</Label>
+                <Input
+                  id="edit-opponent"
+                  value={newSession.opponent}
+                  onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
+                  placeholder="اسم الخصم"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-postponementReason">سبب التأجيل</Label>
+                <Textarea
+                  id="edit-postponementReason"
+                  value={newSession.postponementReason}
+                  onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
+                  placeholder="سبب التأجيل (اختياري)"
+                />
+              </div>
+              <Button onClick={handleEditSession} className="w-full">
+                حفظ التعديلات
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Delete Session Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>حذف الجلسة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>هل أنت متأكد من رغبتك بحذف هذه الجلسة؟</p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteSession}
+                  className="flex-1"
+                >
+                  حذف
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  className="flex-1"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
         
         {/* Transfer Session Dialog */}
         <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>

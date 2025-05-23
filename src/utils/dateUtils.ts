@@ -27,6 +27,10 @@ export const getSyrianDayName = (day: number): string => {
   return days[day];
 };
 
+export const getFullSyrianDayName = (day: number): string => {
+  return getSyrianDayName(day); // Already returns full names in Arabic
+};
+
 export const isDateToday = (date: Date): boolean => {
   return isToday(date);
 };

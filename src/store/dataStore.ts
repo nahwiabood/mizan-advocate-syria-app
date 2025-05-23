@@ -104,6 +104,16 @@ class DataStore {
     return data.sessions[sessionIndex];
   }
 
+  deleteSession(id: string): boolean {
+    const data = this.getData();
+    const sessionIndex = data.sessions.findIndex(s => s.id === id);
+    if (sessionIndex === -1) return false;
+
+    data.sessions.splice(sessionIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
   transferSession(sessionId: string, nextDate: Date, reason: string): Session | null {
     const data = this.getData();
     const session = data.sessions.find(s => s.id === sessionId);
@@ -166,6 +176,16 @@ class DataStore {
     return data.tasks[taskIndex];
   }
 
+  deleteTask(id: string): boolean {
+    const data = this.getData();
+    const taskIndex = data.tasks.findIndex(t => t.id === id);
+    if (taskIndex === -1) return false;
+
+    data.tasks.splice(taskIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
   // Appointment methods
   getAppointments(): Appointment[] {
     return this.getData().appointments;
@@ -182,6 +202,30 @@ class DataStore {
     data.appointments.push(newAppointment);
     this.saveData(data);
     return newAppointment;
+  }
+
+  updateAppointment(id: string, updates: Partial<Appointment>): Appointment | null {
+    const data = this.getData();
+    const appointmentIndex = data.appointments.findIndex(a => a.id === id);
+    if (appointmentIndex === -1) return null;
+
+    data.appointments[appointmentIndex] = {
+      ...data.appointments[appointmentIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.appointments[appointmentIndex];
+  }
+
+  deleteAppointment(id: string): boolean {
+    const data = this.getData();
+    const appointmentIndex = data.appointments.findIndex(a => a.id === id);
+    if (appointmentIndex === -1) return false;
+
+    data.appointments.splice(appointmentIndex, 1);
+    this.saveData(data);
+    return true;
   }
 
   // Client methods

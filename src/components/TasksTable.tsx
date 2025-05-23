@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Edit, Trash2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Task } from '@/types';
@@ -25,6 +25,9 @@ interface TasksTableProps {
 
 export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -54,14 +57,14 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
   };
 
   const handleAddTask = () => {
-    if (!newTask.title || !newTask.dueDate) {
+    if (!newTask.title) {
       return;
     }
 
     dataStore.addTask({
       title: newTask.title,
       description: newTask.description,
-      dueDate: newTask.dueDate,
+      dueDate: newTask.dueDate || new Date(),
       priority: newTask.priority,
       isCompleted: false,
     });
@@ -75,6 +78,38 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
     setIsAddDialogOpen(false);
     onTaskUpdate();
   };
+  
+  const handleEditTask = () => {
+    if (!selectedTask || !newTask.title) {
+      return;
+    }
+    
+    dataStore.updateTask(selectedTask.id, {
+      title: newTask.title,
+      description: newTask.description,
+      dueDate: newTask.dueDate || selectedTask.dueDate,
+      priority: newTask.priority,
+    });
+    
+    setNewTask({
+      title: '',
+      description: '',
+      dueDate: undefined,
+      priority: 'medium',
+    });
+    setIsEditDialogOpen(false);
+    setSelectedTask(null);
+    onTaskUpdate();
+  };
+  
+  const handleDeleteTask = () => {
+    if (!selectedTask) return;
+    
+    dataStore.deleteTask(selectedTask.id);
+    setIsDeleteDialogOpen(false);
+    setSelectedTask(null);
+    onTaskUpdate();
+  };
 
   const handleTaskToggle = (taskId: string, isCompleted: boolean) => {
     const updates: Partial<Task> = {
@@ -84,6 +119,22 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
     
     dataStore.updateTask(taskId, updates);
     onTaskUpdate();
+  };
+  
+  const openEditDialog = (task: Task) => {
+    setSelectedTask(task);
+    setNewTask({
+      title: task.title,
+      description: task.description || '',
+      dueDate: task.dueDate,
+      priority: task.priority,
+    });
+    setIsEditDialogOpen(true);
+  };
+  
+  const openDeleteDialog = (task: Task) => {
+    setSelectedTask(task);
+    setIsDeleteDialogOpen(true);
   };
 
   const TaskList: React.FC<{ taskList: Task[]; showCompleted?: boolean }> = ({ 
@@ -105,13 +156,32 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
                 className="mt-1"
               />
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h4 className={`font-medium ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
-                    {task.title}
-                  </h4>
-                  <Badge className={`${getPriorityColor(task.priority)} text-white`}>
-                    {getPriorityText(task.priority)}
-                  </Badge>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h4 className={`font-medium ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                      {task.title}
+                    </h4>
+                    <Badge className={`${getPriorityColor(task.priority)} text-white`}>
+                      {getPriorityText(task.priority)}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditDialog(task)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openDeleteDialog(task)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 {task.description && (
                   <p className={`text-sm mb-2 ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
@@ -168,7 +238,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
                   />
                 </div>
                 <div>
-                  <Label>موعد الاستحقاق</Label>
+                  <Label>موعد الاستحقاق (اختياري)</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -237,6 +307,114 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
             <TaskList taskList={completedTasks} showCompleted />
           </TabsContent>
         </Tabs>
+
+        {/* Edit Task Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>تعديل المهمة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-taskTitle">عنوان المهمة</Label>
+                <Input
+                  id="edit-taskTitle"
+                  value={newTask.title}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  placeholder="أدخل عنوان المهمة"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-taskDescription">الوصف</Label>
+                <Textarea
+                  id="edit-taskDescription"
+                  value={newTask.description}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  placeholder="أدخل وصف المهمة (اختياري)"
+                />
+              </div>
+              <div>
+                <Label>موعد الاستحقاق (اختياري)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newTask.dueDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newTask.dueDate ? (
+                        formatSyrianDate(newTask.dueDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newTask.dueDate}
+                      onSelect={(date) => setNewTask({ ...newTask, dueDate: date })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label htmlFor="edit-taskPriority">درجة الأهمية</Label>
+                <Select
+                  value={newTask.priority}
+                  onValueChange={(value: 'low' | 'medium' | 'high') => 
+                    setNewTask({ ...newTask, priority: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">منخفضة</SelectItem>
+                    <SelectItem value="medium">متوسطة</SelectItem>
+                    <SelectItem value="high">عالية</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleEditTask} className="w-full">
+                حفظ التعديلات
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Task Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>حذف المهمة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>هل أنت متأكد من رغبتك بحذف هذه المهمة؟</p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteTask}
+                  className="flex-1"
+                >
+                  حذف
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  className="flex-1"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
