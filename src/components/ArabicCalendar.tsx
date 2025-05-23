@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatSyrianDate, getSyrianMonthName, isDateToday, getSyrianDayName } from '@/utils/dateUtils';
+import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName } from '@/utils/dateUtils';
 import { Session, Appointment } from '@/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
@@ -151,7 +151,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           </div>
         </div>
         <div className="mt-2 text-center">
-          <p className="text-lg font-bold">{getSyrianDayName(selectedDate.getDay())} {selectedDate.getDate()} {getSyrianMonthName(selectedDate.getMonth())} {selectedDate.getFullYear()}</p>
+          <p className="text-lg font-bold">{getFullSyrianDayName(selectedDate.getDay())} {selectedDate.getDate()} {getSyrianMonthName(selectedDate.getMonth())} {selectedDate.getFullYear()}</p>
         </div>
       </CardContent>
     </Card>

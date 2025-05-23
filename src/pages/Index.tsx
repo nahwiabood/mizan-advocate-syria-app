@@ -20,6 +20,7 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedDateSessions, setSelectedDateSessions] = useState<Session[]>([]);
+  const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
   const printContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,11 +29,17 @@ const Index = () => {
 
   useEffect(() => {
     // Filter sessions for selected date
-    const filtered = sessions.filter(session => 
+    const filteredSessions = sessions.filter(session => 
       isSameDay(session.sessionDate, selectedDate)
     );
-    setSelectedDateSessions(filtered);
-  }, [selectedDate, sessions]);
+    setSelectedDateSessions(filteredSessions);
+
+    // Filter appointments for selected date
+    const filteredAppointments = appointments.filter(appointment => 
+      isSameDay(appointment.appointmentDate, selectedDate)
+    );
+    setSelectedDateAppointments(filteredAppointments);
+  }, [selectedDate, sessions, appointments]);
 
   const loadData = () => {
     setSessions(dataStore.getSessions());
@@ -43,45 +50,136 @@ const Index = () => {
   const handlePrintSchedule = () => {
     const printWindow = window.open('', '_blank');
     
-    if (printWindow && printContentRef.current) {
-      const content = printContentRef.current.cloneNode(true) as HTMLElement;
-      const calendarElement = content.querySelector('.calendar-section');
-      
-      // Remove calendar from print content if exists
-      if (calendarElement) {
-        calendarElement.remove();
-      }
-      
+    if (printWindow) {
       printWindow.document.write(`
         <html dir="rtl">
           <head>
             <title>أجندة - جدول الأعمال ${formatFullSyrianDate(selectedDate)}</title>
             <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1, h2, h3 { text-align: center; }
-              .page-break { page-break-after: always; }
-              .sessions-table, .tasks-table, .appointments-table {
-                width: 100%;
-                border-collapse: collapse;
+              body { 
+                font-family: Arial, sans-serif; 
+                padding: 20px; 
+                direction: rtl;
+                text-align: right;
+              }
+              h1, h2, h3 { 
+                text-align: center; 
                 margin-bottom: 20px;
               }
-              .sessions-table th, .sessions-table td, 
-              .tasks-table th, .tasks-table td,
-              .appointments-table th, .appointments-table td {
+              .page-break { 
+                page-break-after: always; 
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 30px;
+                direction: rtl;
+              }
+              th, td {
                 border: 1px solid #ddd;
                 padding: 8px;
                 text-align: right;
               }
-              .sessions-table th, .tasks-table th, .appointments-table th {
+              th {
                 background-color: #f2f2f2;
+                font-weight: bold;
               }
-              button, .calendar-section { display: none; }
+              .section-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin: 20px 0 10px 0;
+                color: #333;
+              }
+              .no-data {
+                text-align: center;
+                color: #666;
+                font-style: italic;
+              }
             </style>
           </head>
           <body>
             <h1>أجندة - جدول الأعمال</h1>
             <h2>${formatFullSyrianDate(selectedDate)}</h2>
-            ${content.innerHTML}
+            
+            <div class="section-title">سجل الجلسات</div>
+            ${selectedDateSessions.length > 0 ? `
+              <table>
+                <thead>
+                  <tr>
+                    <th>تاريخ الجلسة</th>
+                    <th>المحكمة ورقم الأساس</th>
+                    <th>الموكل</th>
+                    <th>الخصم</th>
+                    <th>سبب التأجيل</th>
+                    <th>الجلسة القادمة</th>
+                    <th>سبب التأجيل القادم</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${selectedDateSessions.map(session => `
+                    <tr>
+                      <td>${formatFullSyrianDate(session.sessionDate)}</td>
+                      <td>${session.courtName} - ${session.caseNumber}</td>
+                      <td>${session.clientName}</td>
+                      <td>${session.opponent}</td>
+                      <td>${session.postponementReason || '-'}</td>
+                      <td>${session.nextSessionDate ? formatFullSyrianDate(session.nextSessionDate) : '-'}</td>
+                      <td>${session.nextPostponementReason || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            ` : '<p class="no-data">لا توجد جلسات في هذا التاريخ</p>'}
+            
+            <div class="section-title">المهام الإدارية</div>
+            ${tasks.filter(task => !task.completed).length > 0 ? `
+              <table>
+                <thead>
+                  <tr>
+                    <th>المهمة</th>
+                    <th>الوصف</th>
+                    <th>تاريخ الاستحقاق</th>
+                    <th>درجة الأهمية</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tasks.filter(task => !task.completed).map(task => `
+                    <tr>
+                      <td>${task.title}</td>
+                      <td>${task.description || '-'}</td>
+                      <td>${task.dueDate ? formatFullSyrianDate(task.dueDate) : '-'}</td>
+                      <td>${task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            ` : '<p class="no-data">لا توجد مهام غير مكتملة</p>'}
+            
+            <div class="section-title">المواعيد</div>
+            ${selectedDateAppointments.length > 0 ? `
+              <table>
+                <thead>
+                  <tr>
+                    <th>العنوان</th>
+                    <th>الوصف</th>
+                    <th>تاريخ الموعد</th>
+                    <th>الوقت</th>
+                    <th>المكان</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${selectedDateAppointments.map(appointment => `
+                    <tr>
+                      <td>${appointment.title}</td>
+                      <td>${appointment.description || '-'}</td>
+                      <td>${formatFullSyrianDate(appointment.appointmentDate)}</td>
+                      <td>${appointment.time || '-'}</td>
+                      <td>${appointment.location || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            ` : '<p class="no-data">لا توجد مواعيد في هذا التاريخ</p>'}
           </body>
         </html>
       `);
@@ -89,7 +187,6 @@ const Index = () => {
       printWindow.document.close();
       printWindow.focus();
       printWindow.print();
-      // printWindow.close();
     }
   };
 
@@ -105,9 +202,9 @@ const Index = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Right column - Calendar */}
-            <div className="order-1 md:order-1 space-y-4 calendar-section">
+            <div className="order-1 lg:order-1 space-y-4 calendar-section">
               <ArabicCalendar
                 sessions={sessions}
                 appointments={appointments}
@@ -121,27 +218,35 @@ const Index = () => {
                   onSelectSession={setSelectedDate}
                 />
               </div>
+
+              {/* Sessions Table under Calendar */}
+              <div className="mt-6">
+                <SessionsTable
+                  sessions={selectedDateSessions}
+                  selectedDate={selectedDate}
+                  onSessionUpdate={loadData}
+                  showAddButton={false}
+                />
+              </div>
             </div>
 
-            {/* Middle and left columns - Content */}
-            <div ref={printContentRef} className="md:col-span-2 order-2 md:order-2 space-y-6">
-              <SessionsTable
-                sessions={selectedDateSessions}
-                selectedDate={selectedDate}
-                onSessionUpdate={loadData}
-                showAddButton={false}
-              />
-
+            {/* Left column - Tasks and Appointments */}
+            <div className="order-2 lg:order-2 space-y-6">
               <TasksTable
                 tasks={tasks}
                 onTaskUpdate={loadData}
               />
 
               <AppointmentsTable
-                appointments={appointments}
+                appointments={selectedDateAppointments}
                 selectedDate={selectedDate}
                 onAppointmentUpdate={loadData}
               />
+            </div>
+
+            {/* Middle column - Additional content can go here */}
+            <div className="order-3 lg:order-3">
+              {/* This column can be used for additional content in the future */}
             </div>
           </div>
         </Card>

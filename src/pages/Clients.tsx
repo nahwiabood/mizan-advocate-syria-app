@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, ChevronDown, ChevronLeft, Plus, Search } from 'lucide-react';
+import { CalendarIcon, ChevronDown, ChevronLeft, Plus, Search, User, FileText, Folder, Calendar as CalendarLucide } from 'lucide-react';
 import { Client, Case, CaseStage, Session } from '@/types';
 import { dataStore } from '@/store/dataStore';
 import { formatSyrianDate } from '@/utils/dateUtils';
@@ -52,7 +52,6 @@ const Clients: React.FC = () => {
     title: '',
     description: '',
     opponent: '',
-    caseType: '',
     status: 'active' as const,
   });
 
@@ -116,8 +115,6 @@ const Clients: React.FC = () => {
       address: newClient.address,
       nationalId: newClient.nationalId,
       notes: newClient.notes,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
     setNewClient({
@@ -137,8 +134,6 @@ const Clients: React.FC = () => {
 
     dataStore.addCase({
       ...newCase,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
     setNewCase({
@@ -146,7 +141,6 @@ const Clients: React.FC = () => {
       title: '',
       description: '',
       opponent: '',
-      caseType: '',
       status: 'active',
     });
     setIsAddCaseDialogOpen(false);
@@ -158,8 +152,6 @@ const Clients: React.FC = () => {
 
     dataStore.addStage({
       ...newStage,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
 
     setNewStage({
@@ -345,7 +337,16 @@ const Clients: React.FC = () => {
                           ) : (
                             <ChevronLeft className="h-5 w-5 ml-2 text-muted-foreground" />
                           )}
-                          <span className="font-medium">{client.name}</span>
+                          <User className="h-5 w-5 ml-2 text-blue-600" />
+                          <div className="mr-2">
+                            <span className="font-medium text-lg">{client.name}</span>
+                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                              <span>هاتف: {client.phone}</span>
+                              {client.email && <span>| {client.email}</span>}
+                              {client.nationalId && <span>| رقم وطني: {client.nationalId}</span>}
+                              {client.address && <span>| {client.address}</span>}
+                            </div>
+                          </div>
                         </div>
                         <Button 
                           size="sm" 
@@ -362,31 +363,6 @@ const Clients: React.FC = () => {
 
                       {isClientExpanded && (
                         <div className="p-4 border-t">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <span className="text-sm text-muted-foreground">رقم الهاتف:</span>
-                              <p>{client.phone}</p>
-                            </div>
-                            {client.email && (
-                              <div>
-                                <span className="text-sm text-muted-foreground">البريد الإلكتروني:</span>
-                                <p>{client.email}</p>
-                              </div>
-                            )}
-                            {client.address && (
-                              <div>
-                                <span className="text-sm text-muted-foreground">العنوان:</span>
-                                <p>{client.address}</p>
-                              </div>
-                            )}
-                            {client.nationalId && (
-                              <div>
-                                <span className="text-sm text-muted-foreground">الرقم الوطني:</span>
-                                <p>{client.nationalId}</p>
-                              </div>
-                            )}
-                          </div>
-
                           {client.notes && (
                             <div className="mb-4">
                               <span className="text-sm text-muted-foreground">ملاحظات:</span>
@@ -417,7 +393,15 @@ const Clients: React.FC = () => {
                                           ) : (
                                             <ChevronLeft className="h-5 w-5 ml-2 text-muted-foreground" />
                                           )}
-                                          <span>{case_.title}</span>
+                                          <FileText className="h-5 w-5 ml-2 text-green-600" />
+                                          <div className="mr-2">
+                                            <span className="font-medium">{case_.title}</span>
+                                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                                              <span>الخصم: {case_.opponent}</span>
+                                              <span>| الحالة: {case_.status === 'active' ? 'نشط' : case_.status === 'closed' ? 'مغلق' : 'معلق'}</span>
+                                              {case_.description && <span>| {case_.description}</span>}
+                                            </div>
+                                          </div>
                                         </div>
                                         <Button 
                                           size="sm" 
@@ -434,22 +418,6 @@ const Clients: React.FC = () => {
 
                                       {isCaseExpanded && (
                                         <div className="p-3 border-t">
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                            <div>
-                                              <span className="text-sm text-muted-foreground">الخصم:</span>
-                                              <p>{case_.opponent}</p>
-                                            </div>
-                                            <div>
-                                              <span className="text-sm text-muted-foreground">الحالة:</span>
-                                              <p>{case_.status === 'active' ? 'نشط' : case_.status === 'closed' ? 'مغلق' : 'معلق'}</p>
-                                            </div>
-                                          </div>
-
-                                          <div className="mb-4">
-                                            <span className="text-sm text-muted-foreground">الوصف:</span>
-                                            <p>{case_.description || '-'}</p>
-                                          </div>
-
                                           <div className="mt-4">
                                             <h4 className="font-medium mb-2">المراحل:</h4>
                                             
@@ -473,7 +441,14 @@ const Clients: React.FC = () => {
                                                           ) : (
                                                             <ChevronLeft className="h-5 w-5 ml-2 text-muted-foreground" />
                                                           )}
-                                                          <span>{stage.courtName} - {stage.caseNumber}</span>
+                                                          <Folder className="h-5 w-5 ml-2 text-orange-600" />
+                                                          <div className="mr-2">
+                                                            <span className="font-medium">{stage.courtName} - {stage.caseNumber}</span>
+                                                            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                                                              <span>الجلسة الأولى: {formatSyrianDate(stage.firstSessionDate)}</span>
+                                                              <span>| الحالة: {stage.status === 'active' ? 'نشط' : 'مكتمل'}</span>
+                                                            </div>
+                                                          </div>
                                                         </div>
                                                         <Button 
                                                           size="sm" 
@@ -490,25 +465,6 @@ const Clients: React.FC = () => {
 
                                                       {isStageExpanded && (
                                                         <div className="p-3 border-t">
-                                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                                            <div>
-                                                              <span className="text-sm text-muted-foreground">المحكمة:</span>
-                                                              <p>{stage.courtName}</p>
-                                                            </div>
-                                                            <div>
-                                                              <span className="text-sm text-muted-foreground">رقم الأساس:</span>
-                                                              <p>{stage.caseNumber}</p>
-                                                            </div>
-                                                            <div>
-                                                              <span className="text-sm text-muted-foreground">تاريخ الجلسة الأولى:</span>
-                                                              <p>{formatSyrianDate(stage.firstSessionDate)}</p>
-                                                            </div>
-                                                            <div>
-                                                              <span className="text-sm text-muted-foreground">الحالة:</span>
-                                                              <p>{stage.status === 'active' ? 'نشط' : 'مكتمل'}</p>
-                                                            </div>
-                                                          </div>
-
                                                           <div className="mt-4">
                                                             <h5 className="font-medium mb-2">الجلسات:</h5>
                                                             
@@ -518,11 +474,11 @@ const Clients: React.FC = () => {
                                                               <div className="space-y-2">
                                                                 {stageSessions.map((session) => (
                                                                   <div key={session.id} className="border rounded-lg p-3">
+                                                                    <div className="flex items-center mb-2">
+                                                                      <CalendarLucide className="h-4 w-4 ml-1 text-purple-600" />
+                                                                      <span className="text-sm font-medium">جلسة {formatSyrianDate(session.sessionDate)}</span>
+                                                                    </div>
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                      <div>
-                                                                        <span className="text-sm text-muted-foreground">تاريخ الجلسة:</span>
-                                                                        <p>{formatSyrianDate(session.sessionDate)}</p>
-                                                                      </div>
                                                                       {session.postponementReason && (
                                                                         <div>
                                                                           <span className="text-sm text-muted-foreground">سبب التأجيل:</span>
@@ -606,15 +562,6 @@ const Clients: React.FC = () => {
                     value={newCase.opponent}
                     onChange={(e) => setNewCase({ ...newCase, opponent: e.target.value })}
                     placeholder="أدخل اسم الخصم"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="caseType">نوع القضية</Label>
-                  <Input
-                    id="caseType"
-                    value={newCase.caseType}
-                    onChange={(e) => setNewCase({ ...newCase, caseType: e.target.value })}
-                    placeholder="أدخل نوع القضية"
                   />
                 </div>
                 <Button onClick={handleAddCase} className="w-full">
