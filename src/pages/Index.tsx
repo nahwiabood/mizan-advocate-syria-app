@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { PastSessionsDialog } from '@/components/PastSessionsDialog';
 import { dataStore } from '@/store/dataStore';
 import { Session, Task, Appointment } from '@/types';
 import { isDateToday, formatFullSyrianDate } from '@/utils/dateUtils';
-import { isSameDay, isAfter } from 'date-fns';
+import { isSameDay, isAfter, isBefore } from 'date-fns';
 import { Layout } from '@/components/Layout';
 
 const Index = () => {
@@ -44,8 +43,11 @@ const Index = () => {
     );
     setSelectedDateAppointments(filteredAppointments);
 
-    // Filter untransferred sessions
-    const untransferred = sessions.filter(session => !session.isTransferred);
+    // Filter untransferred sessions - sessions before today with no next session date
+    const today = new Date();
+    const untransferred = sessions.filter(session => 
+      isBefore(session.sessionDate, today) && !session.nextSessionDate
+    );
     setUnTransferredSessions(untransferred);
 
     // Filter upcoming sessions (after selected date)
@@ -262,18 +264,6 @@ const Index = () => {
               {/* Session Filter Buttons */}
               <div className="flex gap-2 justify-start">
                 <Button
-                  variant={!showUnTransferred && !showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(false);
-                    setShowUpcoming(false);
-                  }}
-                  className="gap-2"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  جلسات اليوم ({selectedDateSessions.length})
-                </Button>
-                <Button
                   variant={showUnTransferred ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
@@ -299,19 +289,27 @@ const Index = () => {
                 </Button>
               </div>
 
+              <div className="flex gap-2 justify-start mb-4">
+                <Button
+                  variant={!showUnTransferred && !showUpcoming ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnTransferred(false);
+                    setShowUpcoming(false);
+                  }}
+                  className="gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  جلسات اليوم ({selectedDateSessions.length})
+                </Button>
+              </div>
+
               {/* Sessions Table */}
               <SessionsTable
                 sessions={getDisplaySessions()}
                 selectedDate={selectedDate}
                 onSessionUpdate={loadData}
                 showAddButton={false}
-                title={
-                  showUnTransferred 
-                    ? "الجلسات غير المرحلة" 
-                    : showUpcoming 
-                      ? "الجلسات القادمة" 
-                      : "جلسات اليوم المحدد"
-                }
               />
             </div>
           </div>

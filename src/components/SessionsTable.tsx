@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +30,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [newSession, setNewSession] = useState({
     courtName: '',
@@ -99,7 +97,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     if (!selectedSession) return;
     
     dataStore.deleteSession(selectedSession.id);
-    setIsDeleteDialogOpen(false);
+    setIsEditDialogOpen(false);
     setSelectedSession(null);
     onSessionUpdate();
   };
@@ -222,14 +220,14 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
             {sessions.map((session) => (
               <div key={session.id} className="border rounded-lg p-4">
                 <div className="grid grid-cols-6 gap-4 items-center">
-                  <div className="col-span-5 grid grid-cols-5 gap-2 text-sm">
+                  <div className="col-span-5 grid grid-cols-6 gap-2 text-sm">
                     <div>
                       <span className="font-bold block">تاريخ الجلسة</span>
                       <span>{formatSyrianDate(session.sessionDate)}</span>
                     </div>
                     
                     <div>
-                      <span className="font-bold block">المحكمة / الأساس</span>
+                      <span className="font-bold block">المحكمة</span>
                       <span>{session.courtName} / {session.caseNumber}</span>
                     </div>
                     
@@ -249,17 +247,16 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                     </div>
                     
                     {session.nextSessionDate && (
-                      <>
-                        <div>
-                          <span className="font-bold block">الجلسة القادمة</span>
-                          <span>{formatSyrianDate(session.nextSessionDate)}</span>
-                        </div>
-                        
-                        <div className="col-span-2">
-                          <span className="font-bold block">سبب التأجيل القادم</span>
-                          <span>{session.nextPostponementReason}</span>
-                        </div>
-                      </>
+                      <div>
+                        <span className="font-bold block">القادمة</span>
+                        <span>{formatSyrianDate(session.nextSessionDate)}</span>
+                        {session.nextPostponementReason && (
+                          <div className="mt-1">
+                            <span className="font-bold text-xs block">السبب القادم</span>
+                            <span className="text-xs">{session.nextPostponementReason}</span>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   
@@ -283,16 +280,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                     >
                       <Edit className="h-4 w-4 ml-1" />
                       تعديل
-                    </Button>
-                    
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => openDeleteDialog(session)}
-                      className="w-full"
-                    >
-                      <Trash2 className="h-4 w-4 ml-1" />
-                      حذف
                     </Button>
                   </div>
                 </div>
@@ -353,35 +340,17 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                   placeholder="سبب التأجيل (اختياري)"
                 />
               </div>
-              <Button onClick={handleEditSession} className="w-full">
-                حفظ التعديلات
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-        
-        {/* Delete Session Dialog */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>حذف الجلسة</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p>هل أنت متأكد من رغبتك بحذف هذه الجلسة؟</p>
               <div className="flex gap-2">
+                <Button onClick={handleEditSession} className="flex-1">
+                  حفظ التعديلات
+                </Button>
                 <Button 
                   variant="destructive" 
                   onClick={handleDeleteSession}
                   className="flex-1"
                 >
+                  <Trash2 className="h-4 w-4 ml-1" />
                   حذف
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsDeleteDialogOpen(false)}
-                  className="flex-1"
-                >
-                  إلغاء
                 </Button>
               </div>
             </div>
