@@ -244,18 +244,6 @@ const Index = () => {
               {/* Session Filter Buttons - under calendar for mobile */}
               <div className="lg:hidden flex gap-2 justify-start flex-wrap">
                 <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(true);
-                    setShowUpcoming(false);
-                  }}
-                  className="gap-2"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  الجلسات غير المرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
@@ -284,18 +272,6 @@ const Index = () => {
               {/* Session Filter Buttons - for desktop only */}
               <div className="hidden lg:flex gap-2 justify-start flex-wrap">
                 <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(true);
-                    setShowUpcoming(false);
-                  }}
-                  className="gap-2"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  الجلسات غير المرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
@@ -314,7 +290,7 @@ const Index = () => {
                 sessions={getDisplaySessions()}
                 selectedDate={selectedDate}
                 onSessionUpdate={loadData}
-                showAddButton={!showUnTransferred && !showUpcoming}
+                showAddButton={false}
               />
 
               {/* Tasks under Sessions for desktop */}

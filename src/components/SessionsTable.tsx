@@ -156,6 +156,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
               <DialogContent className="max-w-md" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
+                  <p className="text-sm text-muted-foreground text-right">
+                    التاريخ المحدد: {format(selectedDate, 'EEEE, MMMM d, yyyy')} - {formatFullSyrianDate(selectedDate)}
+                  </p>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="text-right">
@@ -229,19 +232,19 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
             لا توجد جلسات في هذا التاريخ
           </div>
         ) : (
-          <ScrollArea className="w-full">
-            <div className="min-w-[800px]">
+          <div className="w-full overflow-x-auto">
+            <div className="min-w-[1000px]">
               <Table dir="rtl">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">تاريخ الجلسة</TableHead>
-                    <TableHead className="text-right">المحكمة</TableHead>
-                    <TableHead className="text-right">رقم الأساس</TableHead>
-                    <TableHead className="text-right">الموكل</TableHead>
-                    <TableHead className="text-right">الخصم</TableHead>
-                    <TableHead className="text-right">القادمة</TableHead>
-                    <TableHead className="text-right">السبب القادم</TableHead>
-                    <TableHead className="text-right">الإجراءات</TableHead>
+                    <TableHead className="text-right min-w-[120px]">تاريخ الجلسة</TableHead>
+                    <TableHead className="text-right min-w-[150px]">المحكمة</TableHead>
+                    <TableHead className="text-right min-w-[120px]">رقم الأساس</TableHead>
+                    <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
+                    <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
+                    <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
+                    <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
+                    <TableHead className="text-right min-w-[200px]">الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -295,7 +298,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 </TableBody>
               </Table>
             </div>
-          </ScrollArea>
+          </div>
         )}
         
         {/* Edit Session Dialog */}
