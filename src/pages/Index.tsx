@@ -269,15 +269,7 @@ const Index = () => {
                 </Button>
               </div>
 
-              {/* Tasks under Calendar for desktop */}
-              <div className="hidden lg:block">
-                <TasksTable
-                  tasks={tasks}
-                  onTaskUpdate={loadData}
-                />
-              </div>
-
-              {/* Appointments under Tasks for desktop */}
+              {/* Appointments under Calendar for desktop */}
               <div className="hidden lg:block">
                 <AppointmentsTable
                   appointments={selectedDateAppointments}
@@ -324,6 +316,14 @@ const Index = () => {
                 onSessionUpdate={loadData}
                 showAddButton={!showUnTransferred && !showUpcoming}
               />
+
+              {/* Tasks under Sessions for desktop */}
+              <div className="hidden lg:block">
+                <TasksTable
+                  tasks={tasks}
+                  onTaskUpdate={loadData}
+                />
+              </div>
 
               {/* Tasks for mobile - under sessions */}
               <div className="lg:hidden">

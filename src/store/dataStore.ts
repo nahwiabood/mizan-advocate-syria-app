@@ -1,4 +1,3 @@
-
 import { Client, Case, CaseStage, Session, Task, Appointment } from '@/types';
 
 class DataStore {
@@ -246,6 +245,30 @@ class DataStore {
     return newClient;
   }
 
+  updateClient(id: string, updates: Partial<Client>): Client | null {
+    const data = this.getData();
+    const clientIndex = data.clients.findIndex(c => c.id === id);
+    if (clientIndex === -1) return null;
+
+    data.clients[clientIndex] = {
+      ...data.clients[clientIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.clients[clientIndex];
+  }
+
+  deleteClient(id: string): boolean {
+    const data = this.getData();
+    const clientIndex = data.clients.findIndex(c => c.id === id);
+    if (clientIndex === -1) return false;
+
+    data.clients.splice(clientIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
   // Case methods
   getCases(): Case[] {
     return this.getData().cases;
@@ -264,6 +287,30 @@ class DataStore {
     return newCase;
   }
 
+  updateCase(id: string, updates: Partial<Case>): Case | null {
+    const data = this.getData();
+    const caseIndex = data.cases.findIndex(c => c.id === id);
+    if (caseIndex === -1) return null;
+
+    data.cases[caseIndex] = {
+      ...data.cases[caseIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.cases[caseIndex];
+  }
+
+  deleteCase(id: string): boolean {
+    const data = this.getData();
+    const caseIndex = data.cases.findIndex(c => c.id === id);
+    if (caseIndex === -1) return false;
+
+    data.cases.splice(caseIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
   // Stage methods
   getStages(): CaseStage[] {
     return this.getData().stages;
@@ -280,6 +327,30 @@ class DataStore {
     data.stages.push(newStage);
     this.saveData(data);
     return newStage;
+  }
+
+  updateStage(id: string, updates: Partial<CaseStage>): CaseStage | null {
+    const data = this.getData();
+    const stageIndex = data.stages.findIndex(s => s.id === id);
+    if (stageIndex === -1) return null;
+
+    data.stages[stageIndex] = {
+      ...data.stages[stageIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.stages[stageIndex];
+  }
+
+  deleteStage(id: string): boolean {
+    const data = this.getData();
+    const stageIndex = data.stages.findIndex(s => s.id === id);
+    if (stageIndex === -1) return false;
+
+    data.stages.splice(stageIndex, 1);
+    this.saveData(data);
+    return true;
   }
 }
 

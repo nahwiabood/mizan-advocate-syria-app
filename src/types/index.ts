@@ -30,6 +30,7 @@ export interface CaseStage {
   caseNumber: string;
   firstSessionDate: Date;
   status: 'active' | 'completed';
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,3 +82,6 @@ export interface DayData {
   appointments: Appointment[];
   tasks: Task[];
 }
+
+// Add the Stage type alias for backward compatibility
+export type Stage = CaseStage;
