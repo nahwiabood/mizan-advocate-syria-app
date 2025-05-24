@@ -34,6 +34,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
     description: '',
     appointmentDate: selectedDate,
     time: '',
+    duration: 60, // Default duration in minutes
     location: '',
   });
 
@@ -47,6 +48,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       description: newAppointment.description,
       appointmentDate: newAppointment.appointmentDate,
       time: newAppointment.time,
+      duration: newAppointment.duration,
       location: newAppointment.location,
     });
 
@@ -55,6 +57,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       description: '',
       appointmentDate: selectedDate,
       time: '',
+      duration: 60,
       location: '',
     });
     setIsAddDialogOpen(false);
@@ -69,6 +72,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       description: newAppointment.description || selectedAppointment.description,
       appointmentDate: newAppointment.appointmentDate || selectedAppointment.appointmentDate,
       time: newAppointment.time || selectedAppointment.time,
+      duration: newAppointment.duration || selectedAppointment.duration,
       location: newAppointment.location || selectedAppointment.location,
     });
     
@@ -79,6 +83,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       description: '',
       appointmentDate: selectedDate,
       time: '',
+      duration: 60,
       location: '',
     });
     onAppointmentUpdate();
@@ -100,6 +105,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       description: appointment.description || '',
       appointmentDate: appointment.appointmentDate,
       time: appointment.time || '',
+      duration: appointment.duration,
       location: appointment.location || '',
     });
     setIsEditDialogOpen(true);
@@ -191,6 +197,18 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                   />
                 </div>
                 <div className="text-right">
+                  <Label htmlFor="duration" className="text-right">المدة (بالدقائق)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={newAppointment.duration}
+                    onChange={(e) => setNewAppointment({ ...newAppointment, duration: parseInt(e.target.value) || 60 })}
+                    placeholder="60"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="text-right">
                   <Label htmlFor="location" className="text-right">المكان (اختياري)</Label>
                   <Input
                     id="location"
@@ -245,7 +263,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                       
                       {appointment.time && (
                         <div className="flex items-center justify-end gap-2">
-                          <span>{appointment.time}</span>
+                          <span>{appointment.time} ({appointment.duration} دقيقة)</span>
                           <Clock className="h-4 w-4" />
                         </div>
                       )}
@@ -323,6 +341,17 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                   type="time"
                   value={newAppointment.time}
                   onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-duration" className="text-right">المدة (بالدقائق)</Label>
+                <Input
+                  id="edit-duration"
+                  type="number"
+                  value={newAppointment.duration}
+                  onChange={(e) => setNewAppointment({ ...newAppointment, duration: parseInt(e.target.value) || 60 })}
                   className="text-right"
                   dir="rtl"
                 />

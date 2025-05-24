@@ -1,3 +1,4 @@
+
 import { Client, Case, CaseStage, Session, Task, Appointment } from '@/types';
 
 class DataStore {
@@ -24,46 +25,89 @@ class DataStore {
   }
 
   private convertDates(data: any) {
+    // Helper function to safely convert dates
+    const safeConvertDate = (dateValue: any): Date | null => {
+      if (!dateValue) return null;
+      const date = new Date(dateValue);
+      return isNaN(date.getTime()) ? null : date;
+    };
+
     // Convert session dates
     data.sessions?.forEach((session: any) => {
-      session.sessionDate = new Date(session.sessionDate);
-      if (session.nextSessionDate) session.nextSessionDate = new Date(session.nextSessionDate);
-      session.createdAt = new Date(session.createdAt);
-      session.updatedAt = new Date(session.updatedAt);
+      const sessionDate = safeConvertDate(session.sessionDate);
+      if (sessionDate) session.sessionDate = sessionDate;
+      
+      if (session.nextSessionDate) {
+        const nextDate = safeConvertDate(session.nextSessionDate);
+        if (nextDate) session.nextSessionDate = nextDate;
+      }
+      
+      const createdAt = safeConvertDate(session.createdAt);
+      if (createdAt) session.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(session.updatedAt);
+      if (updatedAt) session.updatedAt = updatedAt;
     });
 
     // Convert task dates
     data.tasks?.forEach((task: any) => {
-      task.dueDate = new Date(task.dueDate);
-      task.createdAt = new Date(task.createdAt);
-      task.updatedAt = new Date(task.updatedAt);
-      if (task.completedAt) task.completedAt = new Date(task.completedAt);
+      if (task.dueDate) {
+        const dueDate = safeConvertDate(task.dueDate);
+        if (dueDate) task.dueDate = dueDate;
+      }
+      
+      const createdAt = safeConvertDate(task.createdAt);
+      if (createdAt) task.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(task.updatedAt);
+      if (updatedAt) task.updatedAt = updatedAt;
+      
+      if (task.completedAt) {
+        const completedAt = safeConvertDate(task.completedAt);
+        if (completedAt) task.completedAt = completedAt;
+      }
     });
 
     // Convert appointment dates
     data.appointments?.forEach((appointment: any) => {
-      appointment.appointmentDate = new Date(appointment.appointmentDate);
-      appointment.createdAt = new Date(appointment.createdAt);
-      appointment.updatedAt = new Date(appointment.updatedAt);
+      const appointmentDate = safeConvertDate(appointment.appointmentDate);
+      if (appointmentDate) appointment.appointmentDate = appointmentDate;
+      
+      const createdAt = safeConvertDate(appointment.createdAt);
+      if (createdAt) appointment.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(appointment.updatedAt);
+      if (updatedAt) appointment.updatedAt = updatedAt;
     });
 
     // Convert client dates
     data.clients?.forEach((client: any) => {
-      client.createdAt = new Date(client.createdAt);
-      client.updatedAt = new Date(client.updatedAt);
+      const createdAt = safeConvertDate(client.createdAt);
+      if (createdAt) client.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(client.updatedAt);
+      if (updatedAt) client.updatedAt = updatedAt;
     });
 
     // Convert case dates
     data.cases?.forEach((case_: any) => {
-      case_.createdAt = new Date(case_.createdAt);
-      case_.updatedAt = new Date(case_.updatedAt);
+      const createdAt = safeConvertDate(case_.createdAt);
+      if (createdAt) case_.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(case_.updatedAt);
+      if (updatedAt) case_.updatedAt = updatedAt;
     });
 
     // Convert stage dates
     data.stages?.forEach((stage: any) => {
-      stage.firstSessionDate = new Date(stage.firstSessionDate);
-      stage.createdAt = new Date(stage.createdAt);
-      stage.updatedAt = new Date(stage.updatedAt);
+      const firstSessionDate = safeConvertDate(stage.firstSessionDate);
+      if (firstSessionDate) stage.firstSessionDate = firstSessionDate;
+      
+      const createdAt = safeConvertDate(stage.createdAt);
+      if (createdAt) stage.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(stage.updatedAt);
+      if (updatedAt) stage.updatedAt = updatedAt;
     });
   }
 
