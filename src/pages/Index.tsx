@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Printer, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Printer, Calendar as CalendarIcon, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { ArabicCalendar } from '@/components/ArabicCalendar';
 import { SessionsTable } from '@/components/SessionsTable';
 import { TasksTable } from '@/components/TasksTable';
@@ -25,6 +25,7 @@ const Index = () => {
   const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
   const [showUnTransferred, setShowUnTransferred] = useState(false);
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const printContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,6 +69,23 @@ const Index = () => {
     if (showUnTransferred) return unTransferredSessions;
     if (showUpcoming) return upcomingSessions;
     return selectedDateSessions;
+  };
+
+  const getDisplayTasks = () => {
+    return showCompletedTasks 
+      ? tasks.filter(task => task.isCompleted)
+      : tasks.filter(task => !task.isCompleted);
+  };
+
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 5 || day === 6; // Friday (5) and Saturday (6)
+  };
+
+  const checkWeekendWarning = (date: Date) => {
+    if (isWeekend(date)) {
+      alert('تحذير: التاريخ المحدد يوافق يوم عطلة رسمية (جمعة أو سبت)');
+    }
   };
 
   const handlePrintSchedule = () => {
@@ -217,7 +235,7 @@ const Index = () => {
     <Layout>
       <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
         <Card className="p-4">
-          <div className="flex justify-end items-center mb-6">
+          <div className="flex justify-end items-center mb-6 gap-2">
             <Button className="gap-2" onClick={handlePrintSchedule}>
               <Printer className="h-4 w-4" />
               طباعة جدول الأعمال
@@ -244,11 +262,23 @@ const Index = () => {
               {/* Session Filter Buttons - under calendar for mobile */}
               <div className="lg:hidden flex gap-2 justify-start flex-wrap">
                 <Button
+                  variant={showUnTransferred ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUpcoming(false);
+                    setShowUnTransferred(!showUnTransferred);
+                  }}
+                  className="gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                </Button>
+                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
                     setShowUnTransferred(false);
-                    setShowUpcoming(true);
+                    setShowUpcoming(!showUpcoming);
                   }}
                   className="gap-2"
                 >
@@ -272,11 +302,23 @@ const Index = () => {
               {/* Session Filter Buttons - for desktop only */}
               <div className="hidden lg:flex gap-2 justify-start flex-wrap">
                 <Button
+                  variant={showUnTransferred ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUpcoming(false);
+                    setShowUnTransferred(!showUnTransferred);
+                  }}
+                  className="gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                </Button>
+                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
                     setShowUnTransferred(false);
-                    setShowUpcoming(true);
+                    setShowUpcoming(!showUpcoming);
                   }}
                   className="gap-2"
                 >
@@ -291,22 +333,59 @@ const Index = () => {
                 selectedDate={selectedDate}
                 onSessionUpdate={loadData}
                 showAddButton={false}
+                onWeekendWarning={checkWeekendWarning}
               />
 
               {/* Tasks under Sessions for desktop */}
               <div className="hidden lg:block">
-                <TasksTable
-                  tasks={tasks}
-                  onTaskUpdate={loadData}
-                />
+                <Card className="w-full">
+                  <div className="p-4 border-b flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-right">
+                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
+                    </h3>
+                    <Button
+                      variant={showCompletedTasks ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                      className="gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
+                    </Button>
+                  </div>
+                  <div className="p-4">
+                    <TasksTable
+                      tasks={getDisplayTasks()}
+                      onTaskUpdate={loadData}
+                    />
+                  </div>
+                </Card>
               </div>
 
               {/* Tasks for mobile - under sessions */}
               <div className="lg:hidden">
-                <TasksTable
-                  tasks={tasks}
-                  onTaskUpdate={loadData}
-                />
+                <Card className="w-full">
+                  <div className="p-4 border-b flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-right">
+                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
+                    </h3>
+                    <Button
+                      variant={showCompletedTasks ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                      className="gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
+                    </Button>
+                  </div>
+                  <div className="p-4">
+                    <TasksTable
+                      tasks={getDisplayTasks()}
+                      onTaskUpdate={loadData}
+                    />
+                  </div>
+                </Card>
               </div>
 
               {/* Appointments for mobile - under tasks */}

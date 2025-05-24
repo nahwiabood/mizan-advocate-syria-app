@@ -11,6 +11,7 @@ import { CalendarIcon, Plus, Edit, Trash2, Clock, MapPin } from 'lucide-react';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
 import { Appointment } from '@/types';
 import { dataStore } from '@/store/dataStore';
+import { AppointmentTimePicker } from './AppointmentTimePicker';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -34,34 +35,43 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
     description: '',
     appointmentDate: selectedDate,
     time: '',
-    duration: 60, // Default duration in minutes
+    duration: 60,
     location: '',
   });
 
   const handleAddAppointment = () => {
-    if (!newAppointment.title || !newAppointment.appointmentDate) {
+    console.log('Adding appointment:', newAppointment);
+    
+    if (!newAppointment.title.trim() || !newAppointment.appointmentDate) {
+      console.log('Missing required fields');
       return;
     }
 
-    dataStore.addAppointment({
-      title: newAppointment.title,
-      description: newAppointment.description,
-      appointmentDate: newAppointment.appointmentDate,
-      time: newAppointment.time,
-      duration: newAppointment.duration,
-      location: newAppointment.location,
-    });
+    try {
+      const result = dataStore.addAppointment({
+        title: newAppointment.title.trim(),
+        description: newAppointment.description.trim(),
+        appointmentDate: newAppointment.appointmentDate,
+        time: newAppointment.time,
+        duration: newAppointment.duration,
+        location: newAppointment.location.trim(),
+      });
+      
+      console.log('Appointment added:', result);
 
-    setNewAppointment({
-      title: '',
-      description: '',
-      appointmentDate: selectedDate,
-      time: '',
-      duration: 60,
-      location: '',
-    });
-    setIsAddDialogOpen(false);
-    onAppointmentUpdate();
+      setNewAppointment({
+        title: '',
+        description: '',
+        appointmentDate: selectedDate,
+        time: '',
+        duration: 60,
+        location: '',
+      });
+      setIsAddDialogOpen(false);
+      onAppointmentUpdate();
+    } catch (error) {
+      console.error('Error adding appointment:', error);
+    }
   };
 
   const handleEditAppointment = () => {
@@ -181,19 +191,17 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                         selected={newAppointment.appointmentDate}
                         onSelect={(date) => date && setNewAppointment({ ...newAppointment, appointmentDate: date })}
                         initialFocus
+                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
                 <div className="text-right">
                   <Label htmlFor="time" className="text-right">الوقت (اختياري)</Label>
-                  <Input
-                    id="time"
-                    type="time"
+                  <AppointmentTimePicker
                     value={newAppointment.time}
-                    onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
-                    className="text-right"
-                    dir="rtl"
+                    onChange={(time) => setNewAppointment({ ...newAppointment, time })}
+                    placeholder="اختر الوقت"
                   />
                 </div>
                 <div className="text-right">
@@ -330,19 +338,17 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                       selected={newAppointment.appointmentDate}
                       onSelect={(date) => date && setNewAppointment({ ...newAppointment, appointmentDate: date })}
                       initialFocus
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
               <div className="text-right">
                 <Label htmlFor="edit-time" className="text-right">الوقت (اختياري)</Label>
-                <Input
-                  id="edit-time"
-                  type="time"
+                <AppointmentTimePicker
                   value={newAppointment.time}
-                  onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
-                  className="text-right"
-                  dir="rtl"
+                  onChange={(time) => setNewAppointment({ ...newAppointment, time })}
+                  placeholder="اختر الوقت"
                 />
               </div>
               <div className="text-right">

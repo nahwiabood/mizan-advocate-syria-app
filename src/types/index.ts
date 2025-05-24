@@ -17,6 +17,7 @@ export interface Case {
   title: string;
   description: string;
   opponent: string;
+  subject: string; // Added subject property
   caseType: string;
   status: 'active' | 'closed' | 'pending';
   createdAt: Date;
@@ -28,6 +29,7 @@ export interface CaseStage {
   caseId: string;
   courtName: string;
   caseNumber: string;
+  stageName: string; // Added stageName property
   firstSessionDate: Date;
   status: 'active' | 'completed';
   notes?: string;

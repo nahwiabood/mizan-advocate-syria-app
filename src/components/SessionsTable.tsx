@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarIcon, Plus, Edit, Trash2 } from 'lucide-react';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
 import { Session } from '@/types';
@@ -21,13 +20,15 @@ interface SessionsTableProps {
   selectedDate: Date;
   onSessionUpdate: () => void;
   showAddButton?: boolean;
+  onWeekendWarning?: (date: Date) => void;
 }
 
 export const SessionsTable: React.FC<SessionsTableProps> = ({
   sessions,
   selectedDate,
   onSessionUpdate,
-  showAddButton = true
+  showAddButton = true,
+  onWeekendWarning
 }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -108,6 +109,11 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
   const handleTransferSession = () => {
     if (!selectedSession || !transferData.nextDate || !transferData.reason) {
       return;
+    }
+
+    // Check for weekend warning
+    if (onWeekendWarning) {
+      onWeekendWarning(transferData.nextDate);
     }
 
     dataStore.transferSession(selectedSession.id, transferData.nextDate, transferData.reason);
@@ -233,71 +239,69 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
           </div>
         ) : (
           <div className="w-full overflow-x-auto">
-            <div className="min-w-[1000px]">
-              <Table dir="rtl">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right min-w-[120px]">تاريخ الجلسة</TableHead>
-                    <TableHead className="text-right min-w-[150px]">المحكمة</TableHead>
-                    <TableHead className="text-right min-w-[120px]">رقم الأساس</TableHead>
-                    <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
-                    <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
-                    <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
-                    <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
-                    <TableHead className="text-right min-w-[200px]">الإجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell className="text-right">
-                        {formatSyrianDate(session.sessionDate)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {session.courtName}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {session.caseNumber}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {session.clientName}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {session.opponent}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {session.nextPostponementReason || session.postponementReason || '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2">
-                          {!session.nextSessionDate && (
-                            <Button
-                              variant="outline"
-                              onClick={() => openTransferDialog(session)}
-                              size="sm"
-                            >
-                              الجلسة القادمة
-                            </Button>
-                          )}
+            <Table dir="rtl" className="min-w-[1000px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right min-w-[120px]">تاريخ الجلسة</TableHead>
+                  <TableHead className="text-right min-w-[150px]">المحكمة</TableHead>
+                  <TableHead className="text-right min-w-[120px]">رقم الأساس</TableHead>
+                  <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
+                  <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
+                  <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
+                  <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
+                  <TableHead className="text-right min-w-[200px]">الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell className="text-right">
+                      {formatSyrianDate(session.sessionDate)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.courtName}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.caseNumber}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.clientName}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.opponent}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.nextPostponementReason || session.postponementReason || '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2">
+                        {!session.nextSessionDate && (
                           <Button
-                            variant="ghost"
+                            variant="outline"
+                            onClick={() => openTransferDialog(session)}
                             size="sm"
-                            onClick={() => openEditDialog(session)}
-                            className="gap-1"
                           >
-                            <Edit className="h-4 w-4" />
-                            تعديل
+                            الجلسة القادمة
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(session)}
+                          className="gap-1"
+                        >
+                          <Edit className="h-4 w-4" />
+                          تعديل
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
         
