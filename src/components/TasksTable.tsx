@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar as CalendarIcon, Edit, Trash2 } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Edit, Trash2, Check } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Task } from '@/types';
@@ -148,52 +147,55 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
         </div>
       ) : (
         taskList.map((task) => (
-          <div key={task.id} className="border rounded-lg p-4 space-y-3">
+          <div key={task.id} className="border rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <Checkbox
-                checked={task.isCompleted}
-                onCheckedChange={(checked) => handleTaskToggle(task.id, checked as boolean)}
-                className="mt-1"
-              />
-              <div className="flex-1">
+              <div className="flex items-center justify-center">
+                <Checkbox
+                  checked={task.isCompleted}
+                  onCheckedChange={(checked) => handleTaskToggle(task.id, checked as boolean)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <h4 className={`font-medium ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <h4 className={`font-medium text-right break-words ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
                       {task.title}
                     </h4>
-                    <Badge className={`${getPriorityColor(task.priority)} text-white`}>
+                    <Badge className={`${getPriorityColor(task.priority)} text-white text-xs px-2 py-1 flex-shrink-0`}>
                       {getPriorityText(task.priority)}
                     </Badge>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(task)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openDeleteDialog(task)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
                 {task.description && (
-                  <p className={`text-sm mb-2 ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                  <p className={`text-sm mb-2 text-right break-words ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
                     {task.description}
                   </p>
                 )}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>موعد الاستحقاق: {formatSyrianDate(task.dueDate)}</span>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+                  <span className="text-right">موعد الاستحقاق: {formatSyrianDate(task.dueDate)}</span>
                   {task.completedAt && (
-                    <span>اكتملت في: {formatSyrianDate(task.completedAt)}</span>
+                    <span className="text-right">اكتملت في: {formatSyrianDate(task.completedAt)}</span>
                   )}
                 </div>
+              </div>
+              <div className="flex gap-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEditDialog(task)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openDeleteDialog(task)}
+                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
@@ -206,7 +208,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
     <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle>المهام الإدارية</CardTitle>
+          <CardTitle className="text-right">المهام الإدارية</CardTitle>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -214,31 +216,35 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
                 إضافة مهمة
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md" dir="rtl">
               <DialogHeader>
-                <DialogTitle>إضافة مهمة جديدة</DialogTitle>
+                <DialogTitle className="text-right">إضافة مهمة جديدة</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="taskTitle">عنوان المهمة</Label>
+                <div className="text-right">
+                  <Label htmlFor="taskTitle" className="text-right">عنوان المهمة</Label>
                   <Input
                     id="taskTitle"
                     value={newTask.title}
                     onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                     placeholder="أدخل عنوان المهمة"
+                    className="text-right"
+                    dir="rtl"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="taskDescription">الوصف</Label>
+                <div className="text-right">
+                  <Label htmlFor="taskDescription" className="text-right">الوصف</Label>
                   <Textarea
                     id="taskDescription"
                     value={newTask.description}
                     onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                     placeholder="أدخل وصف المهمة (اختياري)"
+                    className="text-right"
+                    dir="rtl"
                   />
                 </div>
-                <div>
-                  <Label>موعد الاستحقاق (اختياري)</Label>
+                <div className="text-right">
+                  <Label className="text-right">موعد الاستحقاق (اختياري)</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -247,6 +253,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
                           "w-full justify-start text-right font-normal",
                           !newTask.dueDate && "text-muted-foreground"
                         )}
+                        dir="rtl"
                       >
                         <CalendarIcon className="ml-2 h-4 w-4" />
                         {newTask.dueDate ? (
@@ -267,15 +274,15 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div>
-                  <Label htmlFor="taskPriority">درجة الأهمية</Label>
+                <div className="text-right">
+                  <Label htmlFor="taskPriority" className="text-right">درجة الأهمية</Label>
                   <Select
                     value={newTask.priority}
                     onValueChange={(value: 'low' | 'medium' | 'high') => 
                       setNewTask({ ...newTask, priority: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-right" dir="rtl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -295,10 +302,10 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
       </CardHeader>
       
       <CardContent>
-        <Tabs defaultValue="pending" className="w-full">
+        <Tabs defaultValue="pending" className="w-full" dir="rtl">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pending">المهام المعلقة ({pendingTasks.length})</TabsTrigger>
-            <TabsTrigger value="completed">المهام المكتملة ({completedTasks.length})</TabsTrigger>
+            <TabsTrigger value="pending" className="text-right">المهام المعلقة ({pendingTasks.length})</TabsTrigger>
+            <TabsTrigger value="completed" className="text-right">المهام المكتملة ({completedTasks.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="pending" className="mt-4">
             <TaskList taskList={pendingTasks} />
@@ -310,31 +317,35 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
 
         {/* Edit Task Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle>تعديل المهمة</DialogTitle>
+              <DialogTitle className="text-right">تعديل المهمة</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-taskTitle">عنوان المهمة</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-taskTitle" className="text-right">عنوان المهمة</Label>
                 <Input
                   id="edit-taskTitle"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                   placeholder="أدخل عنوان المهمة"
+                  className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="edit-taskDescription">الوصف</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-taskDescription" className="text-right">الوصف</Label>
                 <Textarea
                   id="edit-taskDescription"
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                   placeholder="أدخل وصف المهمة (اختياري)"
+                  className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label>موعد الاستحقاق (اختياري)</Label>
+              <div className="text-right">
+                <Label className="text-right">موعد الاستحقاق (اختياري)</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -343,6 +354,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
                         "w-full justify-start text-right font-normal",
                         !newTask.dueDate && "text-muted-foreground"
                       )}
+                      dir="rtl"
                     >
                       <CalendarIcon className="ml-2 h-4 w-4" />
                       {newTask.dueDate ? (
@@ -363,15 +375,15 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
                   </PopoverContent>
                 </Popover>
               </div>
-              <div>
-                <Label htmlFor="edit-taskPriority">درجة الأهمية</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-taskPriority" className="text-right">درجة الأهمية</Label>
                 <Select
                   value={newTask.priority}
                   onValueChange={(value: 'low' | 'medium' | 'high') => 
                     setNewTask({ ...newTask, priority: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-right" dir="rtl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -390,11 +402,11 @@ export const TasksTable: React.FC<TasksTableProps> = ({ tasks, onTaskUpdate }) =
 
         {/* Delete Task Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle>حذف المهمة</DialogTitle>
+              <DialogTitle className="text-right">حذف المهمة</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 text-right">
               <p>هل أنت متأكد من رغبتك بحذف هذه المهمة؟</p>
               <div className="flex gap-2">
                 <Button 

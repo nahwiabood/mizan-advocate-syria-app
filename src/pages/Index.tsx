@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -214,19 +215,18 @@ const Index = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 min-h-screen space-y-6">
+      <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
         <Card className="p-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">أجندة - نظام إدارة مكتب المحاماة</h1>
+          <div className="flex justify-end items-center mb-6">
             <Button className="gap-2" onClick={handlePrintSchedule}>
               <Printer className="h-4 w-4" />
               طباعة جدول الأعمال
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
             {/* Right column - Calendar */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-5 xl:col-span-4 space-y-4">
               <ArabicCalendar
                 sessions={sessions}
                 appointments={appointments}
@@ -241,16 +241,16 @@ const Index = () => {
                 />
               </div>
 
-              {/* Tasks under Calendar */}
-              <div className="mt-6">
+              {/* Tasks under Calendar for desktop, under sessions for mobile */}
+              <div className="hidden lg:block">
                 <TasksTable
                   tasks={tasks}
                   onTaskUpdate={loadData}
                 />
               </div>
 
-              {/* Appointments under Tasks */}
-              <div className="mt-6">
+              {/* Appointments under Tasks for desktop, under tasks for mobile */}
+              <div className="hidden lg:block">
                 <AppointmentsTable
                   appointments={selectedDateAppointments}
                   selectedDate={selectedDate}
@@ -260,9 +260,9 @@ const Index = () => {
             </div>
 
             {/* Left column - Sessions */}
-            <div className="lg:col-span-8 space-y-6">
-              {/* Session Filter Buttons */}
-              <div className="flex gap-2 justify-start">
+            <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+              {/* Session Filter Buttons - under calendar for mobile */}
+              <div className="flex gap-2 justify-start flex-wrap">
                 <Button
                   variant={showUnTransferred ? "default" : "outline"}
                   size="sm"
@@ -289,28 +289,30 @@ const Index = () => {
                 </Button>
               </div>
 
-              <div className="flex gap-2 justify-start mb-4">
-                <Button
-                  variant={!showUnTransferred && !showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(false);
-                    setShowUpcoming(false);
-                  }}
-                  className="gap-2"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  جلسات اليوم ({selectedDateSessions.length})
-                </Button>
-              </div>
-
               {/* Sessions Table */}
               <SessionsTable
                 sessions={getDisplaySessions()}
                 selectedDate={selectedDate}
                 onSessionUpdate={loadData}
-                showAddButton={false}
+                showAddButton={!showUnTransferred && !showUpcoming}
               />
+
+              {/* Tasks for mobile - under sessions */}
+              <div className="lg:hidden">
+                <TasksTable
+                  tasks={tasks}
+                  onTaskUpdate={loadData}
+                />
+              </div>
+
+              {/* Appointments for mobile - under tasks */}
+              <div className="lg:hidden">
+                <AppointmentsTable
+                  appointments={selectedDateAppointments}
+                  selectedDate={selectedDate}
+                  onAppointmentUpdate={loadData}
+                />
+              </div>
             </div>
           </div>
         </Card>

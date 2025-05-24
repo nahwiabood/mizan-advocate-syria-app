@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIconLucide } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName } from '@/utils/dateUtils';
@@ -26,10 +26,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   const monthEnd = endOfMonth(currentMonth);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Get first day of month (0 = Sunday, 6 = Saturday)
   const firstDayOfMonth = getDay(monthStart);
-  
-  // Create empty cells for previous month days
   const emptyCells = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
   const getSessionsForDate = (date: Date) => {
@@ -54,7 +51,12 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     setCurrentMonth(newMonth);
   };
 
-  // Full day names
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentMonth(today);
+    onDateSelect(today);
+  };
+
   const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
   return (
@@ -70,7 +72,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <CardTitle className="text-xl font-bold">
+          <CardTitle className="text-xl font-bold text-center">
             {getSyrianMonthName(currentMonth.getMonth())} {currentMonth.getFullYear()}
           </CardTitle>
           
@@ -81,6 +83,18 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             className="p-2"
           >
             <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="flex justify-center mt-3">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={goToToday}
+            className="gap-2"
+          >
+            <CalendarIconLucide className="h-4 w-4" />
+            اليوم
           </Button>
         </div>
       </CardHeader>
@@ -109,25 +123,25 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
               <div
                 key={format(day, 'yyyy-MM-dd')}
                 className={`
-                  calendar-day relative p-2 h-12 text-center cursor-pointer border rounded-md
+                  calendar-day relative p-2 h-12 text-center cursor-pointer border rounded-md transition-colors
                   ${isToday ? 'bg-legal-primary text-white' : ''}
                   ${isSelected ? 'ring-2 ring-legal-secondary' : ''}
                   ${daySessions.length > 0 ? 'bg-blue-100' : ''}
                   ${dayAppointments.length > 0 ? 'bg-green-100' : ''}
-                  hover:bg-accent transition-colors
+                  hover:bg-accent
                 `}
                 onClick={() => onDateSelect(day)}
               >
                 <span className="text-sm font-medium">{day.getDate()}</span>
                 
                 {daySessions.length > 0 && (
-                  <span className="session-badge">
+                  <span className="session-badge absolute top-0 right-0 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                     {daySessions.length}
                   </span>
                 )}
                 
                 {dayAppointments.length > 0 && (
-                  <span className="appointment-badge">
+                  <span className="appointment-badge absolute bottom-0 right-0 bg-green-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                     {dayAppointments.length}
                   </span>
                 )}
@@ -136,7 +150,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           })}
         </div>
         
-        <div className="mt-4 flex gap-4 text-sm">
+        <div className="mt-4 flex gap-4 text-sm justify-center">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-100 rounded border"></div>
             <span>جلسات</span>
