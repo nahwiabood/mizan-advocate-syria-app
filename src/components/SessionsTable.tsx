@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarIcon, Plus, Edit, Trash2 } from 'lucide-react';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
 import { Session } from '@/types';
@@ -227,79 +229,73 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
             لا توجد جلسات في هذا التاريخ
           </div>
         ) : (
-          <div className="space-y-4">
-            {sessions.map((session) => (
-              <div key={session.id} className="border rounded-lg p-4">
-                <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
-                  <div className="lg:col-span-5 space-y-3 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-4 text-sm">
-                    <div className="text-right">
-                      <span className="font-bold block text-gray-700">تاريخ الجلسة</span>
-                      <span className="text-lg">{formatSyrianDate(session.sessionDate)}</span>
-                    </div>
-                    
-                    <div className="text-right">
-                      <span className="font-bold block text-gray-700">المحكمة</span>
-                      <div className="text-lg break-words">{session.courtName}</div>
-                      <div className="text-sm text-gray-600">{session.caseNumber}</div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <span className="font-bold block text-gray-700">الموكل</span>
-                      <span className="text-lg break-words">{session.clientName}</span>
-                    </div>
-                    
-                    <div className="text-right">
-                      <span className="font-bold block text-gray-700">الخصم</span>
-                      <span className="text-lg break-words">{session.opponent}</span>
-                    </div>
-                    
-                    <div className="text-right">
-                      {session.nextSessionDate ? (
-                        <>
-                          <span className="font-bold block text-gray-700">القادمة</span>
-                          <span className="text-lg">{formatSyrianDate(session.nextSessionDate)}</span>
-                          {session.nextPostponementReason && (
-                            <div className="mt-1">
-                              <span className="font-bold text-xs block text-gray-700">السبب القادم</span>
-                              <span className="text-sm break-words">{session.nextPostponementReason}</span>
-                            </div>
+          <ScrollArea className="w-full">
+            <div className="min-w-[800px]">
+              <Table dir="rtl">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">تاريخ الجلسة</TableHead>
+                    <TableHead className="text-right">المحكمة</TableHead>
+                    <TableHead className="text-right">رقم الأساس</TableHead>
+                    <TableHead className="text-right">الموكل</TableHead>
+                    <TableHead className="text-right">الخصم</TableHead>
+                    <TableHead className="text-right">القادمة</TableHead>
+                    <TableHead className="text-right">السبب القادم</TableHead>
+                    <TableHead className="text-right">الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessions.map((session) => (
+                    <TableRow key={session.id}>
+                      <TableCell className="text-right">
+                        {formatSyrianDate(session.sessionDate)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {session.courtName}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {session.caseNumber}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {session.clientName}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {session.opponent}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {session.nextPostponementReason || session.postponementReason || '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2">
+                          {!session.nextSessionDate && (
+                            <Button
+                              variant="outline"
+                              onClick={() => openTransferDialog(session)}
+                              size="sm"
+                            >
+                              الجلسة القادمة
+                            </Button>
                           )}
-                        </>
-                      ) : (
-                        <>
-                          <span className="font-bold block text-gray-700">سبب التأجيل</span>
-                          <span className="text-sm break-words">{session.postponementReason || '-'}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="lg:col-span-1 flex flex-row lg:flex-col gap-2 justify-center">
-                    {!session.nextSessionDate && (
-                      <Button
-                        variant="outline"
-                        onClick={() => openTransferDialog(session)}
-                        size="sm"
-                        className="flex-1 lg:w-full"
-                      >
-                        الجلسة القادمة
-                      </Button>
-                    )}
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(session)}
-                      className="flex-1 lg:w-full gap-1"
-                    >
-                      <Edit className="h-4 w-4" />
-                      تعديل
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(session)}
+                            className="gap-1"
+                          >
+                            <Edit className="h-4 w-4" />
+                            تعديل
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
         )}
         
         {/* Edit Session Dialog */}

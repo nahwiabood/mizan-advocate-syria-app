@@ -241,7 +241,35 @@ const Index = () => {
                 />
               </div>
 
-              {/* Tasks under Calendar for desktop, under sessions for mobile */}
+              {/* Session Filter Buttons - under calendar for mobile */}
+              <div className="lg:hidden flex gap-2 justify-start flex-wrap">
+                <Button
+                  variant={showUnTransferred ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnTransferred(true);
+                    setShowUpcoming(false);
+                  }}
+                  className="gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                </Button>
+                <Button
+                  variant={showUpcoming ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnTransferred(false);
+                    setShowUpcoming(true);
+                  }}
+                  className="gap-2"
+                >
+                  <Clock className="h-4 w-4" />
+                  الجلسات القادمة ({upcomingSessions.length})
+                </Button>
+              </div>
+
+              {/* Tasks under Calendar for desktop */}
               <div className="hidden lg:block">
                 <TasksTable
                   tasks={tasks}
@@ -249,7 +277,7 @@ const Index = () => {
                 />
               </div>
 
-              {/* Appointments under Tasks for desktop, under tasks for mobile */}
+              {/* Appointments under Tasks for desktop */}
               <div className="hidden lg:block">
                 <AppointmentsTable
                   appointments={selectedDateAppointments}
@@ -261,8 +289,8 @@ const Index = () => {
 
             {/* Left column - Sessions */}
             <div className="lg:col-span-7 xl:col-span-8 space-y-4">
-              {/* Session Filter Buttons - under calendar for mobile */}
-              <div className="flex gap-2 justify-start flex-wrap">
+              {/* Session Filter Buttons - for desktop only */}
+              <div className="hidden lg:flex gap-2 justify-start flex-wrap">
                 <Button
                   variant={showUnTransferred ? "default" : "outline"}
                   size="sm"
