@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -33,37 +33,121 @@ const Settings: React.FC = () => {
     tasksColor: '#10b981',
   });
 
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    const savedLawyerInfo = localStorage.getItem('lawyer-info');
+    const savedPrintSettings = localStorage.getItem('print-settings');
+    const savedDisplaySettings = localStorage.getItem('display-settings');
+
+    if (savedLawyerInfo) {
+      try {
+        setLawyerInfo(JSON.parse(savedLawyerInfo));
+      } catch (error) {
+        console.error('Error parsing lawyer info:', error);
+      }
+    }
+
+    if (savedPrintSettings) {
+      try {
+        setPrintSettings(JSON.parse(savedPrintSettings));
+      } catch (error) {
+        console.error('Error parsing print settings:', error);
+      }
+    }
+
+    if (savedDisplaySettings) {
+      try {
+        setDisplaySettings(JSON.parse(savedDisplaySettings));
+      } catch (error) {
+        console.error('Error parsing display settings:', error);
+      }
+    }
+  }, []);
+
   const handleSaveLawyerInfo = () => {
-    // Save to local storage or API
-    toast.success('تم حفظ معلومات المحامي بنجاح');
+    try {
+      localStorage.setItem('lawyer-info', JSON.stringify(lawyerInfo));
+      toast.success('تم حفظ معلومات المحامي بنجاح');
+    } catch (error) {
+      toast.error('فشل في حفظ معلومات المحامي');
+      console.error('Error saving lawyer info:', error);
+    }
   };
 
   const handleSavePrintSettings = () => {
-    // Save to local storage or API
-    toast.success('تم حفظ إعدادات الطباعة بنجاح');
+    try {
+      localStorage.setItem('print-settings', JSON.stringify(printSettings));
+      toast.success('تم حفظ إعدادات الطباعة بنجاح');
+    } catch (error) {
+      toast.error('فشل في حفظ إعدادات الطباعة');
+      console.error('Error saving print settings:', error);
+    }
   };
 
   const handleSaveDisplaySettings = () => {
-    // Save to local storage or API
-    toast.success('تم حفظ إعدادات العرض بنجاح');
+    try {
+      localStorage.setItem('display-settings', JSON.stringify(displaySettings));
+      toast.success('تم حفظ إعدادات العرض بنجاح');
+    } catch (error) {
+      toast.error('فشل في حفظ إعدادات العرض');
+      console.error('Error saving display settings:', error);
+    }
   };
 
   const handleResetData = () => {
     if (confirm('هل أنت متأكد من رغبتك في حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.')) {
       // Clear all data from local storage
       localStorage.removeItem('lawyer-management-data');
+      localStorage.removeItem('lawyer-info');
+      localStorage.removeItem('print-settings');
+      localStorage.removeItem('display-settings');
+      
+      // Reset state
+      setLawyerInfo({
+        name: '',
+        title: '',
+        phone: '',
+        email: '',
+        address: '',
+      });
+      setPrintSettings({
+        includeLogo: true,
+        includeHeader: true,
+        includeFooter: true,
+        fontSize: 'medium',
+      });
+      setDisplaySettings({
+        showPastSessions: true,
+        defaultCalendarView: 'month',
+        sessionsColor: '#3b82f6',
+        appointmentsColor: '#f59e0b',
+        tasksColor: '#10b981',
+      });
+      
       toast.success('تم إعادة تعيين البيانات بنجاح');
+      
+      // Reload the page to refresh the application
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
   };
 
   const handleExportData = () => {
-    const data = localStorage.getItem('lawyer-management-data');
-    if (!data) {
+    const allData = {
+      lawyerData: localStorage.getItem('lawyer-management-data'),
+      lawyerInfo: localStorage.getItem('lawyer-info'),
+      printSettings: localStorage.getItem('print-settings'),
+      displaySettings: localStorage.getItem('display-settings')
+    };
+
+    if (!allData.lawyerData && !allData.lawyerInfo) {
       toast.error('لا توجد بيانات للتصدير');
       return;
     }
 
-    const blob = new Blob([data], { type: 'application/json' });
+    const dataString = JSON.stringify(allData);
+    const blob = new Blob([dataString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -83,31 +167,56 @@ const Settings: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const data = event.target?.result as string;
-        JSON.parse(data); // Validate JSON
-        localStorage.setItem('lawyer-management-data', data);
+        const data = JSON.parse(event.target?.result as string);
+        
+        // Import all data
+        if (data.lawyerData) {
+          localStorage.setItem('lawyer-management-data', data.lawyerData);
+        }
+        if (data.lawyerInfo) {
+          localStorage.setItem('lawyer-info', data.lawyerInfo);
+          setLawyerInfo(JSON.parse(data.lawyerInfo));
+        }
+        if (data.printSettings) {
+          localStorage.setItem('print-settings', data.printSettings);
+          setPrintSettings(JSON.parse(data.printSettings));
+        }
+        if (data.displaySettings) {
+          localStorage.setItem('display-settings', data.displaySettings);
+          setDisplaySettings(JSON.parse(data.displaySettings));
+        }
+        
         toast.success('تم استيراد البيانات بنجاح');
+        
+        // Reload the page to refresh the application
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } catch (error) {
         toast.error('فشل استيراد البيانات. تأكد من صحة الملف');
+        console.error('Error importing data:', error);
       }
     };
     reader.readAsText(file);
+    
+    // Reset the input
+    e.target.value = '';
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 min-h-screen">
+      <div className="container mx-auto p-4 min-h-screen" dir="rtl">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">الضبط</CardTitle>
+            <CardTitle className="text-2xl text-right">الضبط</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="lawyer-info">
-              <TabsList className="grid grid-cols-4">
-                <TabsTrigger value="lawyer-info">معلومات المحامي</TabsTrigger>
-                <TabsTrigger value="print">إعدادات الطباعة</TabsTrigger>
-                <TabsTrigger value="display">إعدادات العرض</TabsTrigger>
-                <TabsTrigger value="data">إدارة البيانات</TabsTrigger>
+            <Tabs defaultValue="lawyer-info" className="w-full">
+              <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsTrigger value="lawyer-info" className="text-sm">معلومات المحامي</TabsTrigger>
+                <TabsTrigger value="print" className="text-sm">إعدادات الطباعة</TabsTrigger>
+                <TabsTrigger value="display" className="text-sm">إعدادات العرض</TabsTrigger>
+                <TabsTrigger value="data" className="text-sm">إدارة البيانات</TabsTrigger>
               </TabsList>
               
               <TabsContent value="lawyer-info" className="mt-4 space-y-4">
@@ -118,6 +227,7 @@ const Settings: React.FC = () => {
                     value={lawyerInfo.name}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, name: e.target.value })}
                     placeholder="أدخل اسم المحامي"
+                    className="text-right"
                   />
                 </div>
                 <div>
@@ -127,6 +237,7 @@ const Settings: React.FC = () => {
                     value={lawyerInfo.title}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, title: e.target.value })}
                     placeholder="مثال: محامي قانوني"
+                    className="text-right"
                   />
                 </div>
                 <div>
@@ -136,6 +247,7 @@ const Settings: React.FC = () => {
                     value={lawyerInfo.phone}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, phone: e.target.value })}
                     placeholder="أدخل رقم الهاتف"
+                    className="text-right"
                   />
                 </div>
                 <div>
@@ -146,6 +258,7 @@ const Settings: React.FC = () => {
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, email: e.target.value })}
                     placeholder="أدخل البريد الإلكتروني"
                     type="email"
+                    className="text-right"
                   />
                 </div>
                 <div>
@@ -155,6 +268,7 @@ const Settings: React.FC = () => {
                     value={lawyerInfo.address}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, address: e.target.value })}
                     placeholder="أدخل عنوان المكتب"
+                    className="text-right"
                   />
                 </div>
                 <Button onClick={handleSaveLawyerInfo} className="w-full">
@@ -162,7 +276,7 @@ const Settings: React.FC = () => {
                 </Button>
               </TabsContent>
               
-              <TabsContent value="print" className="mt-4 space-y-4">
+              <TabsContent value="print" className="mt-4 space-y-6">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="includeLogo">إظهار الشعار في الطباعة</Label>
                   <Switch
@@ -188,26 +302,26 @@ const Settings: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label>حجم الخط في الطباعة</Label>
-                  <div className="flex mt-2">
+                  <Label className="block mb-3">حجم الخط في الطباعة</Label>
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant={printSettings.fontSize === 'small' ? 'default' : 'outline'}
-                      className="flex-1 rounded-l-md rounded-r-none"
                       onClick={() => setPrintSettings({ ...printSettings, fontSize: 'small' })}
+                      className="text-sm"
                     >
                       صغير
                     </Button>
                     <Button
                       variant={printSettings.fontSize === 'medium' ? 'default' : 'outline'}
-                      className="flex-1 rounded-none"
                       onClick={() => setPrintSettings({ ...printSettings, fontSize: 'medium' })}
+                      className="text-sm"
                     >
                       متوسط
                     </Button>
                     <Button
                       variant={printSettings.fontSize === 'large' ? 'default' : 'outline'}
-                      className="flex-1 rounded-r-md rounded-l-none"
                       onClick={() => setPrintSettings({ ...printSettings, fontSize: 'large' })}
+                      className="text-sm"
                     >
                       كبير
                     </Button>
@@ -218,7 +332,7 @@ const Settings: React.FC = () => {
                 </Button>
               </TabsContent>
               
-              <TabsContent value="display" className="mt-4 space-y-4">
+              <TabsContent value="display" className="mt-4 space-y-6">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="showPastSessions">إظهار الجلسات السابقة</Label>
                   <Switch
@@ -228,79 +342,79 @@ const Settings: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label>عرض التقويم الافتراضي</Label>
-                  <div className="flex mt-2">
+                  <Label className="block mb-3">عرض التقويم الافتراضي</Label>
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant={displaySettings.defaultCalendarView === 'day' ? 'default' : 'outline'}
-                      className="flex-1 rounded-l-md rounded-r-none"
                       onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'day' })}
+                      className="text-sm"
                     >
                       يوم
                     </Button>
                     <Button
                       variant={displaySettings.defaultCalendarView === 'week' ? 'default' : 'outline'}
-                      className="flex-1 rounded-none"
                       onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'week' })}
+                      className="text-sm"
                     >
                       أسبوع
                     </Button>
                     <Button
                       variant={displaySettings.defaultCalendarView === 'month' ? 'default' : 'outline'}
-                      className="flex-1 rounded-r-md rounded-l-none"
                       onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'month' })}
+                      className="text-sm"
                     >
                       شهر
                     </Button>
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="sessionsColor">لون الجلسات</Label>
-                  <div className="flex gap-2 mt-1">
+                  <Label htmlFor="sessionsColor" className="block mb-2">لون الجلسات</Label>
+                  <div className="flex gap-2">
                     <Input
                       id="sessionsColor"
                       type="color"
                       value={displaySettings.sessionsColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, sessionsColor: e.target.value })}
-                      className="w-12 h-10 p-1"
+                      className="w-12 h-10 p-1 cursor-pointer"
                     />
                     <Input
                       value={displaySettings.sessionsColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, sessionsColor: e.target.value })}
-                      className="flex-1"
+                      className="flex-1 text-right"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="appointmentsColor">لون المواعيد</Label>
-                  <div className="flex gap-2 mt-1">
+                  <Label htmlFor="appointmentsColor" className="block mb-2">لون المواعيد</Label>
+                  <div className="flex gap-2">
                     <Input
                       id="appointmentsColor"
                       type="color"
                       value={displaySettings.appointmentsColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, appointmentsColor: e.target.value })}
-                      className="w-12 h-10 p-1"
+                      className="w-12 h-10 p-1 cursor-pointer"
                     />
                     <Input
                       value={displaySettings.appointmentsColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, appointmentsColor: e.target.value })}
-                      className="flex-1"
+                      className="flex-1 text-right"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="tasksColor">لون المهام</Label>
-                  <div className="flex gap-2 mt-1">
+                  <Label htmlFor="tasksColor" className="block mb-2">لون المهام</Label>
+                  <div className="flex gap-2">
                     <Input
                       id="tasksColor"
                       type="color"
                       value={displaySettings.tasksColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, tasksColor: e.target.value })}
-                      className="w-12 h-10 p-1"
+                      className="w-12 h-10 p-1 cursor-pointer"
                     />
                     <Input
                       value={displaySettings.tasksColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, tasksColor: e.target.value })}
-                      className="flex-1"
+                      className="flex-1 text-right"
                     />
                   </div>
                 </div>
@@ -312,11 +426,11 @@ const Settings: React.FC = () => {
               <TabsContent value="data" className="mt-4 space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">تصدير/استيراد البيانات</CardTitle>
+                    <CardTitle className="text-lg text-right">تصدير/استيراد البيانات</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <p className="text-sm text-muted-foreground mb-2 text-right">
                         يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي أو النقل إلى جهاز آخر.
                       </p>
                       <Button onClick={handleExportData} className="w-full">
@@ -324,7 +438,7 @@ const Settings: React.FC = () => {
                       </Button>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <p className="text-sm text-muted-foreground mb-2 text-right">
                         يمكنك استيراد البيانات من ملف JSON سابق. سيؤدي هذا إلى استبدال جميع بياناتك الحالية.
                       </p>
                       <div className="flex items-center gap-2">
@@ -349,10 +463,10 @@ const Settings: React.FC = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">إعادة تعيين البيانات</CardTitle>
+                    <CardTitle className="text-lg text-right">إعادة تعيين البيانات</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p className="text-sm text-muted-foreground mb-4 text-right">
                       سيؤدي هذا الإجراء إلى حذف جميع بياناتك بشكل دائم. لا يمكن التراجع عن هذا الإجراء.
                     </p>
                     <Button variant="destructive" onClick={handleResetData} className="w-full">
