@@ -1,70 +1,63 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, Edit, ChevronDown, ChevronRight, User, FileText, Calendar as CalendarIcon, Users } from 'lucide-react';
-import { dataStore } from '@/store/dataStore';
-import { Client, Case, CaseStage, Session } from '@/types';
-import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
+import { CalendarIcon, Plus, Edit, Trash2, ChevronDown, ChevronRight, User, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { dataStore } from '@/store/dataStore';
+import { Client, Case, CaseStage } from '@/types';
+import { formatSyrianDate } from '@/utils/dateUtils';
 import { Layout } from '@/components/Layout';
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [cases, setCases] = useState<Case[]>([]);
   const [stages, setStages] = useState<CaseStage[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [isAddClientDialogOpen, setIsAddClientDialogOpen] = useState(false);
+  const [isEditClientDialogOpen, setIsEditClientDialogOpen] = useState(false);
+  const [isAddCaseDialogOpen, setIsAddCaseDialogOpen] = useState(false);
+  const [isEditCaseDialogOpen, setIsEditCaseDialogOpen] = useState(false);
+  const [isAddStageDialogOpen, setIsAddStageDialogOpen] = useState(false);
+  const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+  const [selectedStage, setSelectedStage] = useState<CaseStage | null>(null);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedCases, setExpandedCases] = useState<Set<string>>(new Set());
-  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
 
-  // Dialog states
-  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
-  const [isCaseDialogOpen, setIsCaseDialogOpen] = useState(false);
-  const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
-  const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [editingCase, setEditingCase] = useState<Case | null>(null);
-  const [editingStage, setEditingStage] = useState<CaseStage | null>(null);
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
-  const [selectedCaseId, setSelectedCaseId] = useState<string>('');
-  const [selectedStageId, setSelectedStageId] = useState<string>('');
-
-  // Form states
-  const [clientForm, setClientForm] = useState({
+  const [newClient, setNewClient] = useState({
     name: '',
-    email: '',
     phone: '',
+    email: '',
     address: '',
-    notes: ''
+    nationalId: '',
+    notes: '',
   });
 
-  const [caseForm, setCaseForm] = useState({
-    title: '',
+  const [newCase, setNewCase] = useState({
     description: '',
     opponent: '',
     subject: '',
-    caseType: ''
+    status: 'active' as const,
   });
 
-  const [stageForm, setStageForm] = useState({
+  const [newStage, setNewStage] = useState({
     courtName: '',
     caseNumber: '',
-    notes: ''
-  });
-
-  const [sessionForm, setSessionForm] = useState({
+    stageName: '',
     firstSessionDate: undefined as Date | undefined,
-    postponementReason: ''
+    status: 'active' as const,
+    notes: '',
+    resolutionDate: undefined as Date | undefined,
+    decisionNumber: '',
   });
 
   useEffect(() => {
@@ -75,288 +68,246 @@ const Clients = () => {
     setClients(dataStore.getClients());
     setCases(dataStore.getCases());
     setStages(dataStore.getStages());
-    setSessions(dataStore.getSessions());
   };
 
-  const toggleClient = (clientId: string) => {
-    const newExpanded = new Set(expandedClients);
-    if (newExpanded.has(clientId)) {
-      newExpanded.delete(clientId);
-      setExpandedCases(new Set());
-      setExpandedStages(new Set());
-    } else {
-      newExpanded.clear();
-      newExpanded.add(clientId);
-      setExpandedCases(new Set());
-      setExpandedStages(new Set());
-    }
-    setExpandedClients(newExpanded);
-  };
-
-  const toggleCase = (caseId: string) => {
-    const newExpanded = new Set(expandedCases);
-    if (newExpanded.has(caseId)) {
-      newExpanded.delete(caseId);
-    } else {
-      newExpanded.add(caseId);
-    }
-    setExpandedCases(newExpanded);
-    setExpandedStages(new Set());
-  };
-
-  const toggleStage = (stageId: string) => {
-    const newExpanded = new Set(expandedStages);
-    if (newExpanded.has(stageId)) {
-      newExpanded.delete(stageId);
-    } else {
-      newExpanded.add(stageId);
-    }
-    setExpandedStages(newExpanded);
-  };
-
-  // CRUD operations
   const handleAddClient = () => {
-    if (!clientForm.name) return;
+    if (!newClient.name) return;
 
     dataStore.addClient({
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
+      name: newClient.name,
+      phone: newClient.phone,
+      email: newClient.email,
+      address: newClient.address,
+      nationalId: newClient.nationalId,
+      notes: newClient.notes,
     });
 
-    resetClientForm();
-    setIsClientDialogOpen(false);
+    setNewClient({
+      name: '',
+      phone: '',
+      email: '',
+      address: '',
+      nationalId: '',
+      notes: '',
+    });
+    setIsAddClientDialogOpen(false);
     loadData();
   };
 
   const handleEditClient = () => {
-    if (!editingClient || !clientForm.name) return;
+    if (!selectedClient) return;
 
-    dataStore.updateClient(editingClient.id, {
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
+    dataStore.updateClient(selectedClient.id, {
+      name: newClient.name || selectedClient.name,
+      phone: newClient.phone || selectedClient.phone,
+      email: newClient.email || selectedClient.email,
+      address: newClient.address || selectedClient.address,
+      nationalId: newClient.nationalId || selectedClient.nationalId,
+      notes: newClient.notes || selectedClient.notes,
     });
 
-    resetClientForm();
-    setIsClientDialogOpen(false);
-    setEditingClient(null);
+    setIsEditClientDialogOpen(false);
+    setSelectedClient(null);
+    setNewClient({
+      name: '',
+      phone: '',
+      email: '',
+      address: '',
+      nationalId: '',
+      notes: '',
+    });
     loadData();
   };
 
   const handleAddCase = () => {
-    if (!caseForm.opponent || !caseForm.subject || !selectedClientId) return;
+    if (!selectedClient || !newCase.description || !newCase.opponent) return;
 
     dataStore.addCase({
-      clientId: selectedClientId,
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description || '',
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType || 'عام',
-      status: 'active'
+      clientId: selectedClient.id,
+      title: newCase.description, // Use description as title
+      description: newCase.description,
+      opponent: newCase.opponent,
+      subject: newCase.subject,
+      caseType: 'عام', // Default case type
+      status: newCase.status,
     });
 
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
+    setNewCase({
+      description: '',
+      opponent: '',
+      subject: '',
+      status: 'active',
+    });
+    setIsAddCaseDialogOpen(false);
     loadData();
   };
 
   const handleEditCase = () => {
-    if (!editingCase || !caseForm.opponent || !caseForm.subject) return;
+    if (!selectedCase) return;
 
-    dataStore.updateCase(editingCase.id, {
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description,
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType
+    dataStore.updateCase(selectedCase.id, {
+      title: newCase.description || selectedCase.title,
+      description: newCase.description || selectedCase.description,
+      opponent: newCase.opponent || selectedCase.opponent,
+      subject: newCase.subject || selectedCase.subject,
+      status: newCase.status,
     });
 
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
-    setEditingCase(null);
+    setIsEditCaseDialogOpen(false);
+    setSelectedCase(null);
+    setNewCase({
+      description: '',
+      opponent: '',
+      subject: '',
+      status: 'active',
+    });
     loadData();
   };
 
   const handleAddStage = () => {
-    if (!stageForm.courtName || !stageForm.caseNumber || !selectedCaseId) return;
+    if (!selectedCase || !newStage.courtName || !newStage.caseNumber || !newStage.firstSessionDate) return;
 
     dataStore.addStage({
-      caseId: selectedCaseId,
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes,
-      firstSessionDate: null,
-      status: 'active'
+      caseId: selectedCase.id,
+      courtName: newStage.courtName,
+      caseNumber: newStage.caseNumber,
+      stageName: newStage.stageName,
+      firstSessionDate: newStage.firstSessionDate,
+      status: newStage.status,
+      notes: newStage.notes,
+      resolutionDate: newStage.resolutionDate,
+      decisionNumber: newStage.decisionNumber,
     });
 
-    resetStageForm();
-    setIsStageDialogOpen(false);
+    setNewStage({
+      courtName: '',
+      caseNumber: '',
+      stageName: '',
+      firstSessionDate: undefined,
+      status: 'active',
+      notes: '',
+      resolutionDate: undefined,
+      decisionNumber: '',
+    });
+    setIsAddStageDialogOpen(false);
     loadData();
   };
 
   const handleEditStage = () => {
-    if (!editingStage || !stageForm.courtName || !stageForm.caseNumber) return;
+    if (!selectedStage) return;
 
-    dataStore.updateStage(editingStage.id, {
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes
+    dataStore.updateStage(selectedStage.id, {
+      courtName: newStage.courtName || selectedStage.courtName,
+      caseNumber: newStage.caseNumber || selectedStage.caseNumber,
+      stageName: newStage.stageName || selectedStage.stageName,
+      firstSessionDate: newStage.firstSessionDate || selectedStage.firstSessionDate,
+      status: newStage.status,
+      notes: newStage.notes || selectedStage.notes,
+      resolutionDate: newStage.resolutionDate,
+      decisionNumber: newStage.decisionNumber || selectedStage.decisionNumber,
     });
 
-    resetStageForm();
-    setIsStageDialogOpen(false);
-    setEditingStage(null);
-    loadData();
-  };
-
-  const handleAddSession = () => {
-    if (!sessionForm.firstSessionDate || !selectedStageId) return;
-
-    const stage = stages.find(s => s.id === selectedStageId);
-    if (!stage) return;
-
-    const case_ = cases.find(c => c.id === stage.caseId);
-    if (!case_) return;
-
-    const client = clients.find(c => c.id === case_.clientId);
-    if (!client) return;
-
-    dataStore.addSession({
-      stageId: selectedStageId,
-      courtName: stage.courtName,
-      caseNumber: stage.caseNumber,
-      sessionDate: sessionForm.firstSessionDate,
-      clientName: client.name,
-      opponent: case_.opponent,
-      postponementReason: sessionForm.postponementReason,
-      isTransferred: false
-    });
-
-    // Update stage with first session date
-    dataStore.updateStage(selectedStageId, {
-      firstSessionDate: sessionForm.firstSessionDate
-    });
-
-    resetSessionForm();
-    setIsSessionDialogOpen(false);
-    loadData();
-  };
-
-  // Reset form functions
-  const resetClientForm = () => {
-    setClientForm({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      notes: ''
-    });
-  };
-
-  const resetCaseForm = () => {
-    setCaseForm({
-      title: '',
-      description: '',
-      opponent: '',
-      subject: '',
-      caseType: ''
-    });
-  };
-
-  const resetStageForm = () => {
-    setStageForm({
+    setIsEditStageDialogOpen(false);
+    setSelectedStage(null);
+    setNewStage({
       courtName: '',
       caseNumber: '',
-      notes: ''
-    });
-  };
-
-  const resetSessionForm = () => {
-    setSessionForm({
+      stageName: '',
       firstSessionDate: undefined,
-      postponementReason: ''
+      status: 'active',
+      notes: '',
+      resolutionDate: undefined,
+      decisionNumber: '',
     });
+    loadData();
   };
 
-  // Open dialog functions
-  const openAddClientDialog = () => {
-    resetClientForm();
-    setEditingClient(null);
-    setIsClientDialogOpen(true);
+  const toggleClientExpansion = (clientId: string) => {
+    const newExpanded = new Set(expandedClients);
+    if (newExpanded.has(clientId)) {
+      newExpanded.delete(clientId);
+      // Also collapse all cases for this client
+      const clientCases = cases.filter(c => c.clientId === clientId);
+      clientCases.forEach(case_ => {
+        const newExpandedCases = new Set(expandedCases);
+        newExpandedCases.delete(case_.id);
+        setExpandedCases(newExpandedCases);
+      });
+    } else {
+      newExpanded.add(clientId);
+    }
+    setExpandedClients(newExpanded);
+  };
+
+  const toggleCaseExpansion = (caseId: string) => {
+    const newExpanded = new Set(expandedCases);
+    
+    // If opening this case, close all other cases
+    if (!newExpanded.has(caseId)) {
+      newExpanded.clear();
+      newExpanded.add(caseId);
+    } else {
+      newExpanded.delete(caseId);
+    }
+    
+    setExpandedCases(newExpanded);
   };
 
   const openEditClientDialog = (client: Client) => {
-    setClientForm({
+    setSelectedClient(client);
+    setNewClient({
       name: client.name,
-      email: client.email || '',
       phone: client.phone || '',
+      email: client.email || '',
       address: client.address || '',
-      notes: client.notes || ''
+      nationalId: client.nationalId || '',
+      notes: client.notes || '',
     });
-    setEditingClient(client);
-    setIsClientDialogOpen(true);
+    setIsEditClientDialogOpen(true);
   };
 
-  const openAddCaseDialog = (clientId: string) => {
-    resetCaseForm();
-    setSelectedClientId(clientId);
-    setEditingCase(null);
-    setIsCaseDialogOpen(true);
+  const openAddCaseDialog = (client: Client) => {
+    setSelectedClient(client);
+    setIsAddCaseDialogOpen(true);
   };
 
   const openEditCaseDialog = (case_: Case) => {
-    setCaseForm({
-      title: case_.title,
+    setSelectedCase(case_);
+    setNewCase({
       description: case_.description,
       opponent: case_.opponent,
       subject: case_.subject,
-      caseType: case_.caseType
+      status: case_.status,
     });
-    setEditingCase(case_);
-    setIsCaseDialogOpen(true);
+    setIsEditCaseDialogOpen(true);
   };
 
-  const openAddStageDialog = (caseId: string) => {
-    resetStageForm();
-    setSelectedCaseId(caseId);
-    setEditingStage(null);
-    setIsStageDialogOpen(true);
+  const openAddStageDialog = (case_: Case) => {
+    setSelectedCase(case_);
+    setIsAddStageDialogOpen(true);
   };
 
   const openEditStageDialog = (stage: CaseStage) => {
-    setStageForm({
+    setSelectedStage(stage);
+    setNewStage({
       courtName: stage.courtName,
       caseNumber: stage.caseNumber,
-      notes: stage.notes || ''
+      stageName: stage.stageName,
+      firstSessionDate: stage.firstSessionDate,
+      status: stage.status,
+      notes: stage.notes || '',
+      resolutionDate: stage.resolutionDate,
+      decisionNumber: stage.decisionNumber || '',
     });
-    setEditingStage(stage);
-    setIsStageDialogOpen(true);
+    setIsEditStageDialogOpen(true);
   };
 
-  const openAddSessionDialog = (stageId: string) => {
-    resetSessionForm();
-    setSelectedStageId(stageId);
-    setIsSessionDialogOpen(true);
-  };
-
-  const getClientCases = (clientId: string) => {
+  const getCasesForClient = (clientId: string) => {
     return cases.filter(case_ => case_.clientId === clientId);
   };
 
-  const getCaseStages = (caseId: string) => {
+  const getStagesForCase = (caseId: string) => {
     return stages.filter(stage => stage.caseId === caseId);
-  };
-
-  const getStageSessions = (stageId: string) => {
-    return sessions.filter(session => session.stageId === stageId);
   };
 
   return (
@@ -364,145 +315,202 @@ const Clients = () => {
       <div className="container mx-auto p-4 space-y-6" dir="rtl">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <CardTitle className="text-right flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                إدارة الموكلين
+                إدارة الموكلين والقضايا
               </CardTitle>
-              <Button onClick={openAddClientDialog} className="gap-2">
-                <Plus className="h-4 w-4" />
-                إضافة موكل
-              </Button>
+              <Dialog open={isAddClientDialogOpen} onOpenChange={setIsAddClientDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    إضافة موكل جديد
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md" dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle className="text-right">إضافة موكل جديد</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="text-right">
+                      <Label htmlFor="name" className="text-right">الاسم *</Label>
+                      <Input
+                        id="name"
+                        value={newClient.name}
+                        onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                        placeholder="اسم الموكل"
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <Label htmlFor="phone" className="text-right">رقم الهاتف</Label>
+                      <Input
+                        id="phone"
+                        value={newClient.phone}
+                        onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                        placeholder="رقم الهاتف"
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <Label htmlFor="email" className="text-right">البريد الإلكتروني</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={newClient.email}
+                        onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                        placeholder="البريد الإلكتروني"
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <Label htmlFor="nationalId" className="text-right">الرقم الوطني</Label>
+                      <Input
+                        id="nationalId"
+                        value={newClient.nationalId}
+                        onChange={(e) => setNewClient({ ...newClient, nationalId: e.target.value })}
+                        placeholder="الرقم الوطني"
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <Label htmlFor="address" className="text-right">العنوان</Label>
+                      <Textarea
+                        id="address"
+                        value={newClient.address}
+                        onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                        placeholder="العنوان"
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <Label htmlFor="notes" className="text-right">ملاحظات</Label>
+                      <Textarea
+                        id="notes"
+                        value={newClient.notes}
+                        onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
+                        placeholder="ملاحظات إضافية"
+                        className="text-right"
+                        dir="rtl"
+                      />
+                    </div>
+                    <Button onClick={handleAddClient} className="w-full">
+                      إضافة الموكل
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
+          
           <CardContent>
-            <div className="space-y-4">
-              {clients.map((client) => (
-                <div key={client.id} className="border rounded-lg">
-                  <Collapsible 
-                    open={expandedClients.has(client.id)} 
-                    onOpenChange={() => toggleClient(client.id)}
-                  >
-                    <CollapsibleTrigger className="w-full p-4 text-right hover:bg-muted transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditClientDialog(client);
-                            }}
-                            className="gap-1"
-                          >
-                            <Edit className="h-4 w-4" />
-                            تعديل
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openAddCaseDialog(client.id);
-                            }}
-                            className="gap-1"
-                          >
-                            <Plus className="h-4 w-4" />
-                            إضافة قضية
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <span className="font-medium">{client.name}</span>
-                            {(client.phone || client.email) && (
-                              <div className="text-sm text-muted-foreground">
-                                {client.phone && <span>{client.phone}</span>}
-                                {client.phone && client.email && <span> • </span>}
-                                {client.email && <span>{client.email}</span>}
-                              </div>
+            {clients.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                لا يوجد موكلين مسجلين بعد
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {clients.map((client) => (
+                  <Card key={client.id} className="border">
+                    <Collapsible>
+                      <CollapsibleTrigger
+                        className="w-full"
+                        onClick={() => toggleClientExpansion(client.id)}
+                      >
+                        <div className="flex items-center justify-between p-4 hover:bg-accent transition-colors">
+                          <div className="flex items-center gap-3">
+                            {expandedClients.has(client.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
                             )}
+                            <User className="h-4 w-4" />
+                            <div className="text-right">
+                              <h3 className="font-semibold">{client.name}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {client.phone && `هاتف: ${client.phone}`}
+                                {client.email && ` • إيميل: ${client.email}`}
+                              </p>
+                            </div>
                           </div>
-                          <User className="h-4 w-4" />
-                          {expandedClients.has(client.id) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    
-                    <CollapsibleContent className="px-4 pb-4">
-                      <div className="mr-6 space-y-3">
-                        {getClientCases(client.id).map((case_) => (
-                          <div key={case_.id} className="border rounded-md">
-                            <Collapsible
-                              open={expandedCases.has(case_.id)}
-                              onOpenChange={() => toggleCase(case_.id)}
+                          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditClientDialog(client)}
+                              className="gap-1"
                             >
-                              <CollapsibleTrigger className="w-full p-3 text-right hover:bg-muted transition-colors">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openEditCaseDialog(case_);
-                                      }}
-                                      className="gap-1"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                      تعديل
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openAddStageDialog(case_.id);
-                                      }}
-                                      className="gap-1"
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                      إضافة مرحلة
-                                    </Button>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    <div className="text-right">
-                                      <span className="font-medium">{case_.subject}</span>
-                                      <div className="text-sm text-muted-foreground">
-                                        ضد: {case_.opponent}
-                                      </div>
-                                    </div>
-                                    <FileText className="h-4 w-4" />
-                                    {expandedCases.has(case_.id) ? (
-                                      <ChevronDown className="h-4 w-4" />
-                                    ) : (
-                                      <ChevronRight className="h-4 w-4" />
-                                    )}
-                                  </div>
-                                </div>
-                              </CollapsibleTrigger>
-                              
-                              <CollapsibleContent className="px-3 pb-3">
-                                <div className="mr-6 space-y-3">
-                                  {getCaseStages(case_.id).map((stage) => (
-                                    <div key={stage.id} className="border rounded-md">
-                                      <Collapsible
-                                        open={expandedStages.has(stage.id)}
-                                        onOpenChange={() => toggleStage(stage.id)}
-                                      >
-                                        <CollapsibleTrigger className="w-full p-3 text-right hover:bg-muted transition-colors">
-                                          <div className="flex items-center justify-between">
-                                            <div className="flex gap-2">
+                              <Edit className="h-4 w-4" />
+                              تعديل
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openAddCaseDialog(client)}
+                              className="gap-1"
+                            >
+                              <Plus className="h-4 w-4" />
+                              قضية جديدة
+                            </Button>
+                          </div>
+                        </div>
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent>
+                        {expandedClients.has(client.id) && (
+                          <div className="px-4 pb-4 border-t">
+                            <div className="mt-4 space-y-3">
+                              {client.address && (
+                                <p><strong>العنوان:</strong> {client.address}</p>
+                              )}
+                              {client.nationalId && (
+                                <p><strong>الرقم الوطني:</strong> {client.nationalId}</p>
+                              )}
+                              {client.notes && (
+                                <p><strong>ملاحظات:</strong> {client.notes}</p>
+                              )}
+                            </div>
+                            
+                            <div className="mt-6">
+                              <h4 className="font-semibold mb-3">القضايا المرتبطة:</h4>
+                              {getCasesForClient(client.id).length === 0 ? (
+                                <p className="text-muted-foreground text-sm">لا توجد قضايا مرتبطة</p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {getCasesForClient(client.id).map((case_) => (
+                                    <Card key={case_.id} className="bg-muted/50">
+                                      <Collapsible>
+                                        <CollapsibleTrigger
+                                          className="w-full"
+                                          onClick={() => toggleCaseExpansion(case_.id)}
+                                        >
+                                          <div className="flex items-center justify-between p-3">
+                                            <div className="flex items-center gap-2 text-right">
+                                              {expandedCases.has(case_.id) ? (
+                                                <ChevronDown className="h-4 w-4" />
+                                              ) : (
+                                                <ChevronRight className="h-4 w-4" />
+                                              )}
+                                              <div>
+                                                <h5 className="font-medium">{case_.description}</h5>
+                                                <p className="text-sm text-muted-foreground">
+                                                  الخصم: {case_.opponent} • الحالة: {
+                                                    case_.status === 'active' ? 'نشطة' :
+                                                    case_.status === 'closed' ? 'مغلقة' : 'معلقة'
+                                                  }
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  openEditStageDialog(stage);
-                                                }}
+                                                onClick={() => openEditCaseDialog(case_)}
                                                 className="gap-1"
                                               >
                                                 <Edit className="h-4 w-4" />
@@ -511,315 +519,571 @@ const Clients = () => {
                                               <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  openAddSessionDialog(stage.id);
-                                                }}
+                                                onClick={() => openAddStageDialog(case_)}
                                                 className="gap-1"
                                               >
                                                 <Plus className="h-4 w-4" />
-                                                إضافة جلسة
+                                                مرحلة جديدة
                                               </Button>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                              <div className="text-right">
-                                                <span className="font-medium">{stage.courtName}</span>
-                                                <div className="text-sm text-muted-foreground">
-                                                  رقم الأساس: {stage.caseNumber}
-                                                </div>
-                                              </div>
-                                              <CalendarIcon className="h-4 w-4" />
-                                              {expandedStages.has(stage.id) ? (
-                                                <ChevronDown className="h-4 w-4" />
-                                              ) : (
-                                                <ChevronRight className="h-4 w-4" />
-                                              )}
                                             </div>
                                           </div>
                                         </CollapsibleTrigger>
                                         
-                                        <CollapsibleContent className="px-3 pb-3">
-                                          <div className="mr-6">
-                                            {getStageSessions(stage.id).length > 0 ? (
-                                              <Table>
-                                                <TableHeader>
-                                                  <TableRow>
-                                                    <TableHead className="text-right">تاريخ الجلسة</TableHead>
-                                                    <TableHead className="text-right">الجلسة القادمة</TableHead>
-                                                    <TableHead className="text-right">سبب التأجيل</TableHead>
-                                                  </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                  {getStageSessions(stage.id).map((session) => (
-                                                    <TableRow key={session.id}>
-                                                      <TableCell className="text-right">
-                                                        {formatSyrianDate(session.sessionDate)}
-                                                      </TableCell>
-                                                      <TableCell className="text-right">
-                                                        {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
-                                                      </TableCell>
-                                                      <TableCell className="text-right">
-                                                        {session.postponementReason || '-'}
-                                                      </TableCell>
-                                                    </TableRow>
-                                                  ))}
-                                                </TableBody>
-                                              </Table>
-                                            ) : (
-                                              <div className="text-center py-4 text-muted-foreground">
-                                                لا توجد جلسات حتى الآن
+                                        <CollapsibleContent>
+                                          {expandedCases.has(case_.id) && (
+                                            <div className="px-3 pb-3 border-t bg-white/50">
+                                              <div className="mt-3 space-y-2">
+                                                {case_.subject && (
+                                                  <p><strong>الموضوع:</strong> {case_.subject}</p>
+                                                )}
                                               </div>
-                                            )}
-                                          </div>
+                                              
+                                              <div className="mt-4">
+                                                <h6 className="font-medium mb-2">المراحل:</h6>
+                                                {getStagesForCase(case_.id).length === 0 ? (
+                                                  <p className="text-muted-foreground text-sm">لا توجد مراحل</p>
+                                                ) : (
+                                                  <div className="space-y-2">
+                                                    {getStagesForCase(case_.id).map((stage) => (
+                                                      <div key={stage.id} className="bg-white p-3 rounded border">
+                                                        <div className="flex items-start justify-between">
+                                                          <div className="text-right flex-1">
+                                                            <h6 className="font-medium">{stage.stageName || 'مرحلة غير محددة'}</h6>
+                                                            <p className="text-sm text-muted-foreground">
+                                                              {stage.courtName} - {stage.caseNumber}
+                                                            </p>
+                                                            <p className="text-sm">
+                                                              تاريخ الجلسة الأولى: {formatSyrianDate(stage.firstSessionDate)}
+                                                            </p>
+                                                            {stage.resolutionDate && (
+                                                              <p className="text-sm text-green-600">
+                                                                تاريخ الحسم: {formatSyrianDate(stage.resolutionDate)}
+                                                              </p>
+                                                            )}
+                                                            {stage.decisionNumber && (
+                                                              <p className="text-sm">
+                                                                رقم القرار: {stage.decisionNumber}
+                                                              </p>
+                                                            )}
+                                                            {stage.notes && (
+                                                              <p className="text-sm mt-1">
+                                                                <strong>ملاحظات:</strong> {stage.notes}
+                                                              </p>
+                                                            )}
+                                                          </div>
+                                                          <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => openEditStageDialog(stage)}
+                                                            className="gap-1"
+                                                          >
+                                                            <Edit className="h-4 w-4" />
+                                                            تعديل
+                                                          </Button>
+                                                        </div>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          )}
                                         </CollapsibleContent>
                                       </Collapsible>
-                                    </div>
+                                    </Card>
                                   ))}
                                 </div>
-                              </CollapsibleContent>
-                            </Collapsible>
+                              )}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              ))}
-            </div>
+                        )}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Client Dialog */}
-        <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
-          <DialogContent className="max-w-md">
+        {/* Edit Client Dialog */}
+        <Dialog open={isEditClientDialogOpen} onOpenChange={setIsEditClientDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right">{editingClient ? 'تعديل موكل' : 'إضافة موكل جديد'}</DialogTitle>
+              <DialogTitle className="text-right">تعديل بيانات الموكل</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="clientName">الاسم</Label>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="edit-name" className="text-right">الاسم *</Label>
                 <Input
-                  id="clientName"
-                  value={clientForm.name}
-                  onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
+                  id="edit-name"
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
                   placeholder="اسم الموكل"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="clientEmail">البريد الإلكتروني</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-phone" className="text-right">رقم الهاتف</Label>
                 <Input
-                  id="clientEmail"
-                  type="email"
-                  value={clientForm.email}
-                  onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
-                  placeholder="البريد الإلكتروني"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientPhone">رقم الهاتف</Label>
-                <Input
-                  id="clientPhone"
-                  value={clientForm.phone}
-                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
+                  id="edit-phone"
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
                   placeholder="رقم الهاتف"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="clientAddress">العنوان</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-email" className="text-right">البريد الإلكتروني</Label>
                 <Input
-                  id="clientAddress"
-                  value={clientForm.address}
-                  onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })}
+                  id="edit-email"
+                  type="email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  placeholder="البريد الإلكتروني"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-nationalId" className="text-right">الرقم الوطني</Label>
+                <Input
+                  id="edit-nationalId"
+                  value={newClient.nationalId}
+                  onChange={(e) => setNewClient({ ...newClient, nationalId: e.target.value })}
+                  placeholder="الرقم الوطني"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-address" className="text-right">العنوان</Label>
+                <Textarea
+                  id="edit-address"
+                  value={newClient.address}
+                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
                   placeholder="العنوان"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="clientNotes">ملاحظات</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-notes" className="text-right">ملاحظات</Label>
                 <Textarea
-                  id="clientNotes"
-                  value={clientForm.notes}
-                  onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })}
+                  id="edit-notes"
+                  value={newClient.notes}
+                  onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
                   placeholder="ملاحظات إضافية"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <Button 
-                onClick={editingClient ? handleEditClient : handleAddClient} 
-                className="w-full"
-              >
-                {editingClient ? 'تحديث الموكل' : 'إضافة موكل'}
+              <Button onClick={handleEditClient} className="w-full">
+                حفظ التعديلات
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Case Dialog */}
-        <Dialog open={isCaseDialogOpen} onOpenChange={setIsCaseDialogOpen}>
-          <DialogContent className="max-w-md">
+        {/* Add Case Dialog */}
+        <Dialog open={isAddCaseDialogOpen} onOpenChange={setIsAddCaseDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right">{editingCase ? 'تعديل قضية' : 'إضافة قضية جديدة'}</DialogTitle>
+              <DialogTitle className="text-right">إضافة قضية جديدة</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="caseTitle">عنوان القضية</Label>
-                <Input
-                  id="caseTitle"
-                  value={caseForm.title}
-                  onChange={(e) => setCaseForm({ ...caseForm, title: e.target.value })}
-                  placeholder="عنوان القضية"
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="case-description" className="text-right">وصف القضية *</Label>
+                <Textarea
+                  id="case-description"
+                  value={newCase.description}
+                  onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
+                  placeholder="وصف القضية"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="caseSubject">موضوع القضية</Label>
+              <div className="text-right">
+                <Label htmlFor="case-opponent" className="text-right">الخصم *</Label>
                 <Input
-                  id="caseSubject"
-                  value={caseForm.subject}
-                  onChange={(e) => setCaseForm({ ...caseForm, subject: e.target.value })}
-                  placeholder="موضوع القضية"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="caseOpponent">الخصم</Label>
-                <Input
-                  id="caseOpponent"
-                  value={caseForm.opponent}
-                  onChange={(e) => setCaseForm({ ...caseForm, opponent: e.target.value })}
+                  id="case-opponent"
+                  value={newCase.opponent}
+                  onChange={(e) => setNewCase({ ...newCase, opponent: e.target.value })}
                   placeholder="اسم الخصم"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="caseType">نوع القضية</Label>
+              <div className="text-right">
+                <Label htmlFor="case-subject" className="text-right">الموضوع</Label>
                 <Input
-                  id="caseType"
-                  value={caseForm.caseType}
-                  onChange={(e) => setCaseForm({ ...caseForm, caseType: e.target.value })}
-                  placeholder="نوع القضية"
+                  id="case-subject"
+                  value={newCase.subject}
+                  onChange={(e) => setNewCase({ ...newCase, subject: e.target.value })}
+                  placeholder="موضوع القضية"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="caseDescription">وصف القضية</Label>
-                <Textarea
-                  id="caseDescription"
-                  value={caseForm.description}
-                  onChange={(e) => setCaseForm({ ...caseForm, description: e.target.value })}
-                  placeholder="وصف تفصيلي للقضية"
-                  className="text-right"
-                />
+              <div className="text-right">
+                <Label htmlFor="case-status" className="text-right">الحالة</Label>
+                <Select value={newCase.status} onValueChange={(value: 'active' | 'closed' | 'pending') => setNewCase({ ...newCase, status: value })}>
+                  <SelectTrigger className="text-right" dir="rtl">
+                    <SelectValue placeholder="اختر الحالة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">نشطة</SelectItem>
+                    <SelectItem value="pending">معلقة</SelectItem>
+                    <SelectItem value="closed">مغلقة</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Button 
-                onClick={editingCase ? handleEditCase : handleAddCase} 
-                className="w-full"
-              >
-                {editingCase ? 'تحديث القضية' : 'إضافة قضية'}
+              <Button onClick={handleAddCase} className="w-full">
+                إضافة القضية
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Stage Dialog */}
-        <Dialog open={isStageDialogOpen} onOpenChange={setIsStageDialogOpen}>
-          <DialogContent className="max-w-md">
+        {/* Edit Case Dialog */}
+        <Dialog open={isEditCaseDialogOpen} onOpenChange={setIsEditCaseDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right">{editingStage ? 'تعديل مرحلة' : 'إضافة مرحلة جديدة'}</DialogTitle>
+              <DialogTitle className="text-right">تعديل القضية</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="stageCourt">المحكمة</Label>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="edit-case-description" className="text-right">وصف القضية *</Label>
+                <Textarea
+                  id="edit-case-description"
+                  value={newCase.description}
+                  onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
+                  placeholder="وصف القضية"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-case-opponent" className="text-right">الخصم *</Label>
                 <Input
-                  id="stageCourt"
-                  value={stageForm.courtName}
-                  onChange={(e) => setStageForm({ ...stageForm, courtName: e.target.value })}
+                  id="edit-case-opponent"
+                  value={newCase.opponent}
+                  onChange={(e) => setNewCase({ ...newCase, opponent: e.target.value })}
+                  placeholder="اسم الخصم"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-case-subject" className="text-right">الموضوع</Label>
+                <Input
+                  id="edit-case-subject"
+                  value={newCase.subject}
+                  onChange={(e) => setNewCase({ ...newCase, subject: e.target.value })}
+                  placeholder="موضوع القضية"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-case-status" className="text-right">الحالة</Label>
+                <Select value={newCase.status} onValueChange={(value: 'active' | 'closed' | 'pending') => setNewCase({ ...newCase, status: value })}>
+                  <SelectTrigger className="text-right" dir="rtl">
+                    <SelectValue placeholder="اختر الحالة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">نشطة</SelectItem>
+                    <SelectItem value="pending">معلقة</SelectItem>
+                    <SelectItem value="closed">مغلقة</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleEditCase} className="w-full">
+                حفظ التعديلات
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Stage Dialog */}
+        <Dialog open={isAddStageDialogOpen} onOpenChange={setIsAddStageDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">إضافة مرحلة جديدة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="stage-name" className="text-right">اسم المرحلة</Label>
+                <Input
+                  id="stage-name"
+                  value={newStage.stageName}
+                  onChange={(e) => setNewStage({ ...newStage, stageName: e.target.value })}
+                  placeholder="اسم المرحلة"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="stage-court" className="text-right">المحكمة *</Label>
+                <Input
+                  id="stage-court"
+                  value={newStage.courtName}
+                  onChange={(e) => setNewStage({ ...newStage, courtName: e.target.value })}
                   placeholder="اسم المحكمة"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="stageCaseNumber">رقم الأساس</Label>
+              <div className="text-right">
+                <Label htmlFor="stage-case-number" className="text-right">رقم الأساس *</Label>
                 <Input
-                  id="stageCaseNumber"
-                  value={stageForm.caseNumber}
-                  onChange={(e) => setStageForm({ ...stageForm, caseNumber: e.target.value })}
+                  id="stage-case-number"
+                  value={newStage.caseNumber}
+                  onChange={(e) => setNewStage({ ...newStage, caseNumber: e.target.value })}
                   placeholder="رقم الأساس"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="stageNotes">ملاحظات (اختياري)</Label>
-                <Textarea
-                  id="stageNotes"
-                  value={stageForm.notes}
-                  onChange={(e) => setStageForm({ ...stageForm, notes: e.target.value })}
-                  placeholder="ملاحظات إضافية"
-                  className="text-right"
-                />
-              </div>
-              <Button 
-                onClick={editingStage ? handleEditStage : handleAddStage} 
-                className="w-full"
-              >
-                {editingStage ? 'تحديث المرحلة' : 'إضافة مرحلة'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Session Dialog */}
-        <Dialog open={isSessionDialogOpen} onOpenChange={setIsSessionDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-right">إضافة جلسة</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label>تاريخ الجلسة الأولى</Label>
+              <div className="text-right">
+                <Label className="text-right">تاريخ الجلسة الأولى *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-end text-right font-normal",
-                        !sessionForm.firstSessionDate && "text-muted-foreground"
+                        "w-full justify-start text-right font-normal",
+                        !newStage.firstSessionDate && "text-muted-foreground"
                       )}
+                      dir="rtl"
                     >
                       <CalendarIcon className="ml-2 h-4 w-4" />
-                      {sessionForm.firstSessionDate ? (
-                        formatFullSyrianDate(sessionForm.firstSessionDate)
+                      {newStage.firstSessionDate ? (
+                        formatSyrianDate(newStage.firstSessionDate)
                       ) : (
-                        <span>اختر تاريخاً</span>
+                        <span>اختر التاريخ</span>
                       )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={sessionForm.firstSessionDate}
-                      onSelect={(date) => setSessionForm({ ...sessionForm, firstSessionDate: date })}
+                      selected={newStage.firstSessionDate}
+                      onSelect={(date) => setNewStage({ ...newStage, firstSessionDate: date })}
                       initialFocus
-                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-              <div>
-                <Label htmlFor="sessionReason">سبب التأجيل</Label>
-                <Textarea
-                  id="sessionReason"
-                  value={sessionForm.postponementReason}
-                  onChange={(e) => setSessionForm({ ...sessionForm, postponementReason: e.target.value })}
-                  placeholder="سبب التأجيل"
+              <div className="text-right">
+                <Label className="text-right">تاريخ الحسم</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newStage.resolutionDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newStage.resolutionDate ? (
+                        formatSyrianDate(newStage.resolutionDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newStage.resolutionDate}
+                      onSelect={(date) => setNewStage({ ...newStage, resolutionDate: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-right">
+                <Label htmlFor="stage-decision-number" className="text-right">رقم القرار</Label>
+                <Input
+                  id="stage-decision-number"
+                  value={newStage.decisionNumber}
+                  onChange={(e) => setNewStage({ ...newStage, decisionNumber: e.target.value })}
+                  placeholder="رقم القرار"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <Button onClick={handleAddSession} className="w-full">
-                إضافة جلسة
+              <div className="text-right">
+                <Label htmlFor="stage-status" className="text-right">الحالة</Label>
+                <Select value={newStage.status} onValueChange={(value: 'active' | 'completed') => setNewStage({ ...newStage, status: value })}>
+                  <SelectTrigger className="text-right" dir="rtl">
+                    <SelectValue placeholder="اختر الحالة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">نشطة</SelectItem>
+                    <SelectItem value="completed">مكتملة</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-right">
+                <Label htmlFor="stage-notes" className="text-right">ملاحظات</Label>
+                <Textarea
+                  id="stage-notes"
+                  value={newStage.notes}
+                  onChange={(e) => setNewStage({ ...newStage, notes: e.target.value })}
+                  placeholder="ملاحظات إضافية"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <Button onClick={handleAddStage} className="w-full">
+                إضافة المرحلة
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Stage Dialog */}
+        <Dialog open={isEditStageDialogOpen} onOpenChange={setIsEditStageDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">تعديل المرحلة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="edit-stage-name" className="text-right">اسم المرحلة</Label>
+                <Input
+                  id="edit-stage-name"
+                  value={newStage.stageName}
+                  onChange={(e) => setNewStage({ ...newStage, stageName: e.target.value })}
+                  placeholder="اسم المرحلة"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-stage-court" className="text-right">المحكمة *</Label>
+                <Input
+                  id="edit-stage-court"
+                  value={newStage.courtName}
+                  onChange={(e) => setNewStage({ ...newStage, courtName: e.target.value })}
+                  placeholder="اسم المحكمة"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-stage-case-number" className="text-right">رقم الأساس *</Label>
+                <Input
+                  id="edit-stage-case-number"
+                  value={newStage.caseNumber}
+                  onChange={(e) => setNewStage({ ...newStage, caseNumber: e.target.value })}
+                  placeholder="رقم الأساس"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label className="text-right">تاريخ الجلسة الأولى *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newStage.firstSessionDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newStage.firstSessionDate ? (
+                        formatSyrianDate(newStage.firstSessionDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newStage.firstSessionDate}
+                      onSelect={(date) => setNewStage({ ...newStage, firstSessionDate: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-right">
+                <Label className="text-right">تاريخ الحسم</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newStage.resolutionDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newStage.resolutionDate ? (
+                        formatSyrianDate(newStage.resolutionDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newStage.resolutionDate}
+                      onSelect={(date) => setNewStage({ ...newStage, resolutionDate: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-stage-decision-number" className="text-right">رقم القرار</Label>
+                <Input
+                  id="edit-stage-decision-number"
+                  value={newStage.decisionNumber}
+                  onChange={(e) => setNewStage({ ...newStage, decisionNumber: e.target.value })}
+                  placeholder="رقم القرار"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-stage-status" className="text-right">الحالة</Label>
+                <Select value={newStage.status} onValueChange={(value: 'active' | 'completed') => setNewStage({ ...newStage, status: value })}>
+                  <SelectTrigger className="text-right" dir="rtl">
+                    <SelectValue placeholder="اختر الحالة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">نشطة</SelectItem>
+                    <SelectItem value="completed">مكتملة</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-stage-notes" className="text-right">ملاحظات</Label>
+                <Textarea
+                  id="edit-stage-notes"
+                  value={newStage.notes}
+                  onChange={(e) => setNewStage({ ...newStage, notes: e.target.value })}
+                  placeholder="ملاحظات إضافية"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <Button onClick={handleEditStage} className="w-full">
+                حفظ التعديلات
               </Button>
             </div>
           </DialogContent>
