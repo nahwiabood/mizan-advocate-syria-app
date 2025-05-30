@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarIcon, Plus, Edit, Trash2 } from 'lucide-react';
+import { CalendarIcon, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
 import { Session } from '@/types';
 import { dataStore } from '@/store/dataStore';
@@ -103,6 +103,11 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     dataStore.deleteSession(selectedSession.id);
     setIsDeleteDialogOpen(false);
     setSelectedSession(null);
+    onSessionUpdate();
+  };
+
+  const handleResolveSession = (session: Session) => {
+    dataStore.resolveSession(session.id);
     onSessionUpdate();
   };
 
@@ -278,14 +283,29 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2">
-                        {!session.nextSessionDate && (
-                          <Button
-                            variant="outline"
-                            onClick={() => openTransferDialog(session)}
-                            size="sm"
-                          >
-                            الجلسة القادمة
-                          </Button>
+                        {session.isResolved ? (
+                          <span className="text-green-600 font-semibold">حُسمت</span>
+                        ) : (
+                          <>
+                            {!session.nextSessionDate && (
+                              <Button
+                                variant="outline"
+                                onClick={() => openTransferDialog(session)}
+                                size="sm"
+                              >
+                                الجلسة القادمة
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              onClick={() => handleResolveSession(session)}
+                              size="sm"
+                              className="gap-1 text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              حُسمت
+                            </Button>
+                          </>
                         )}
                         <Button
                           variant="ghost"

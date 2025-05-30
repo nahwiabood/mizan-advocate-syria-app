@@ -33,6 +33,10 @@ export interface CaseStage {
   firstSessionDate: Date;
   status: 'active' | 'completed';
   notes?: string;
+  // New fields for resolution
+  isResolved?: boolean;
+  resolutionDate?: Date;
+  decisionNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,6 +53,9 @@ export interface Session {
   nextSessionDate?: Date;
   nextPostponementReason?: string;
   isTransferred: boolean;
+  // New field for resolution
+  isResolved?: boolean;
+  resolutionDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
