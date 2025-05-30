@@ -41,6 +41,35 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     );
   };
 
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 5 || day === 6; // Friday (5) and Saturday (6)
+  };
+
+  const isHoliday = (date: Date) => {
+    // National and religious holidays in Syria
+    const holidays = [
+      // New Year's Day
+      { month: 0, day: 1 },
+      // Revolution Day
+      { month: 2, day: 8 },
+      // Mother's Day
+      { month: 2, day: 21 },
+      // Labor Day
+      { month: 4, day: 1 },
+      // Martyrs' Day
+      { month: 4, day: 6 },
+      // Independence Day
+      { month: 3, day: 17 },
+      // Christmas Day
+      { month: 11, day: 25 },
+    ];
+
+    return holidays.some(holiday => 
+      date.getMonth() === holiday.month && date.getDate() === holiday.day
+    );
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = new Date(currentMonth);
     if (direction === 'prev') {
@@ -118,6 +147,8 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             const dayAppointments = getAppointmentsForDate(day);
             const isToday = isDateToday(day);
             const isSelected = isSameDay(day, selectedDate);
+            const isWeekendDay = isWeekend(day);
+            const isHolidayDay = isHoliday(day);
 
             return (
               <div
@@ -126,13 +157,16 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
                   calendar-day relative p-2 h-12 text-center cursor-pointer border rounded-md transition-colors
                   ${isToday ? 'bg-legal-primary text-white' : ''}
                   ${isSelected ? 'ring-2 ring-legal-secondary' : ''}
-                  ${daySessions.length > 0 ? 'bg-blue-100' : ''}
-                  ${dayAppointments.length > 0 ? 'bg-green-100' : ''}
+                  ${isWeekendDay || isHolidayDay ? 'bg-red-100/50' : ''}
+                  ${daySessions.length > 0 && !isWeekendDay && !isHolidayDay ? 'bg-blue-100' : ''}
+                  ${dayAppointments.length > 0 && !isWeekendDay && !isHolidayDay ? 'bg-green-100' : ''}
                   hover:bg-accent
                 `}
                 onClick={() => onDateSelect(day)}
               >
-                <span className="text-sm font-medium">{day.getDate()}</span>
+                <span className={`text-sm font-medium ${isWeekendDay || isHolidayDay ? 'text-red-600' : ''}`}>
+                  {day.getDate()}
+                </span>
                 
                 {daySessions.length > 0 && (
                   <span className="session-badge absolute top-0 right-0 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
@@ -150,7 +184,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           })}
         </div>
         
-        <div className="mt-4 flex gap-4 text-sm justify-center">
+        <div className="mt-4 flex gap-4 text-sm justify-center flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-100 rounded border"></div>
             <span>جلسات</span>
@@ -158,6 +192,10 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-green-100 rounded border"></div>
             <span>مواعيد</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-100/50 rounded border"></div>
+            <span>عطلة</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-legal-primary rounded border"></div>
