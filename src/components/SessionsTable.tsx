@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CalendarIcon, Plus, Edit, Trash2 } from 'lucide-react';
@@ -43,15 +41,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     clientName: '',
     opponent: '',
     postponementReason: '',
-  });
-  const [editData, setEditData] = useState({
-    courtName: '',
-    caseNumber: '',
-    clientName: '',
-    opponent: '',
-    postponementReason: '',
-    isResolved: false,
-    nextSessionDate: undefined as Date | undefined,
   });
   const [transferData, setTransferData] = useState({
     nextDate: undefined as Date | undefined,
@@ -89,25 +78,21 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     if (!selectedSession) return;
     
     dataStore.updateSession(selectedSession.id, {
-      courtName: editData.courtName || selectedSession.courtName,
-      caseNumber: editData.caseNumber || selectedSession.caseNumber,
-      clientName: editData.clientName || selectedSession.clientName,
-      opponent: editData.opponent || selectedSession.opponent,
-      postponementReason: editData.postponementReason || selectedSession.postponementReason,
-      isResolved: editData.isResolved,
-      nextSessionDate: editData.nextSessionDate,
+      courtName: newSession.courtName || selectedSession.courtName,
+      caseNumber: newSession.caseNumber || selectedSession.caseNumber,
+      clientName: newSession.clientName || selectedSession.clientName,
+      opponent: newSession.opponent || selectedSession.opponent,
+      postponementReason: newSession.postponementReason || selectedSession.postponementReason,
     });
     
     setIsEditDialogOpen(false);
     setSelectedSession(null);
-    setEditData({
+    setNewSession({
       courtName: '',
       caseNumber: '',
       clientName: '',
       opponent: '',
       postponementReason: '',
-      isResolved: false,
-      nextSessionDate: undefined,
     });
     onSessionUpdate();
   };
@@ -139,14 +124,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     onSessionUpdate();
   };
 
-  const handleResolveSession = (session: Session) => {
-    dataStore.updateSession(session.id, {
-      isResolved: true,
-      resolvedAt: new Date(),
-    });
-    onSessionUpdate();
-  };
-
   const openTransferDialog = (session: Session) => {
     setSelectedSession(session);
     setIsTransferDialogOpen(true);
@@ -154,14 +131,12 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
 
   const openEditDialog = (session: Session) => {
     setSelectedSession(session);
-    setEditData({
+    setNewSession({
       courtName: session.courtName,
       caseNumber: session.caseNumber,
       clientName: session.clientName,
       opponent: session.opponent,
       postponementReason: session.postponementReason || '',
-      isResolved: session.isResolved || false,
-      nextSessionDate: session.nextSessionDate,
     });
     setIsEditDialogOpen(true);
   };
@@ -272,7 +247,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                   <TableHead className="text-right min-w-[120px]">رقم الأساس</TableHead>
                   <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
                   <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
-                  <TableHead className="text-right min-w-[150px]">سبب التأجيل</TableHead>
                   <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
                   <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
                   <TableHead className="text-right min-w-[200px]">الإجراءات</TableHead>
@@ -297,39 +271,21 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                       {session.opponent}
                     </TableCell>
                     <TableCell className="text-right">
-                      {session.postponementReason || '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
                       {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {session.nextPostponementReason || '-'}
+                      {session.nextPostponementReason || session.postponementReason || '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2">
-                        {!session.nextSessionDate && !session.isResolved && (
-                          <>
-                            <Button
-                              variant="outline"
-                              onClick={() => openTransferDialog(session)}
-                              size="sm"
-                            >
-                              الجلسة القادمة
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => handleResolveSession(session)}
-                              size="sm"
-                              className="bg-green-50 hover:bg-green-100"
-                            >
-                              حُسمت
-                            </Button>
-                          </>
-                        )}
-                        {session.isResolved && (
-                          <span className="text-green-600 font-medium text-sm">
-                            مُحسمة
-                          </span>
+                        {!session.nextSessionDate && (
+                          <Button
+                            variant="outline"
+                            onClick={() => openTransferDialog(session)}
+                            size="sm"
+                          >
+                            الجلسة القادمة
+                          </Button>
                         )}
                         <Button
                           variant="ghost"
@@ -360,8 +316,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-courtName" className="text-right">المحكمة</Label>
                 <Input
                   id="edit-courtName"
-                  value={editData.courtName}
-                  onChange={(e) => setEditData({ ...editData, courtName: e.target.value })}
+                  value={newSession.courtName}
+                  onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
                   placeholder="اسم المحكمة"
                   className="text-right"
                   dir="rtl"
@@ -371,8 +327,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-caseNumber" className="text-right">رقم الأساس</Label>
                 <Input
                   id="edit-caseNumber"
-                  value={editData.caseNumber}
-                  onChange={(e) => setEditData({ ...editData, caseNumber: e.target.value })}
+                  value={newSession.caseNumber}
+                  onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
                   placeholder="رقم الأساس"
                   className="text-right"
                   dir="rtl"
@@ -382,8 +338,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-clientName" className="text-right">الموكل</Label>
                 <Input
                   id="edit-clientName"
-                  value={editData.clientName}
-                  onChange={(e) => setEditData({ ...editData, clientName: e.target.value })}
+                  value={newSession.clientName}
+                  onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
                   placeholder="اسم الموكل"
                   className="text-right"
                   dir="rtl"
@@ -393,8 +349,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-opponent" className="text-right">الخصم</Label>
                 <Input
                   id="edit-opponent"
-                  value={editData.opponent}
-                  onChange={(e) => setEditData({ ...editData, opponent: e.target.value })}
+                  value={newSession.opponent}
+                  onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
                   placeholder="اسم الخصم"
                   className="text-right"
                   dir="rtl"
@@ -404,57 +360,13 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-postponementReason" className="text-right">سبب التأجيل</Label>
                 <Textarea
                   id="edit-postponementReason"
-                  value={editData.postponementReason}
-                  onChange={(e) => setEditData({ ...editData, postponementReason: e.target.value })}
+                  value={newSession.postponementReason}
+                  onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
                   placeholder="سبب التأجيل (اختياري)"
                   className="text-right"
                   dir="rtl"
                 />
               </div>
-              
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Checkbox
-                  id="edit-resolved"
-                  checked={editData.isResolved}
-                  onCheckedChange={(checked) => setEditData({ ...editData, isResolved: !!checked })}
-                />
-                <Label htmlFor="edit-resolved" className="text-right">
-                  مُحسمة
-                </Label>
-              </div>
-
-              <div className="text-right">
-                <Label className="text-right">تاريخ الجلسة القادمة</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-right font-normal",
-                        !editData.nextSessionDate && "text-muted-foreground"
-                      )}
-                      dir="rtl"
-                    >
-                      <CalendarIcon className="ml-2 h-4 w-4" />
-                      {editData.nextSessionDate ? (
-                        formatSyrianDate(editData.nextSessionDate)
-                      ) : (
-                        <span>اختر التاريخ</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={editData.nextSessionDate}
-                      onSelect={(date) => setEditData({ ...editData, nextSessionDate: date })}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
               <div className="flex gap-2">
                 <Button onClick={handleEditSession} className="flex-1">
                   حفظ التعديلات
