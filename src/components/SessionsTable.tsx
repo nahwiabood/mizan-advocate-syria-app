@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -41,6 +43,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     clientName: '',
     opponent: '',
     postponementReason: '',
+    isResolved: false,
+    decisionNumber: '',
+    decisionSummary: '',
   });
   const [transferData, setTransferData] = useState({
     nextDate: undefined as Date | undefined,
@@ -61,6 +66,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       opponent: newSession.opponent,
       postponementReason: newSession.postponementReason,
       isTransferred: false,
+      isResolved: false,
     });
 
     setNewSession({
@@ -69,6 +75,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: '',
       opponent: '',
       postponementReason: '',
+      isResolved: false,
+      decisionNumber: '',
+      decisionSummary: '',
     });
     setIsAddDialogOpen(false);
     onSessionUpdate();
@@ -83,6 +92,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: newSession.clientName || selectedSession.clientName,
       opponent: newSession.opponent || selectedSession.opponent,
       postponementReason: newSession.postponementReason || selectedSession.postponementReason,
+      isResolved: newSession.isResolved,
+      decisionNumber: newSession.decisionNumber,
+      decisionSummary: newSession.decisionSummary,
     });
     
     setIsEditDialogOpen(false);
@@ -93,6 +105,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: '',
       opponent: '',
       postponementReason: '',
+      isResolved: false,
+      decisionNumber: '',
+      decisionSummary: '',
     });
     onSessionUpdate();
   };
@@ -137,6 +152,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: session.clientName,
       opponent: session.opponent,
       postponementReason: session.postponementReason || '',
+      isResolved: session.isResolved || false,
+      decisionNumber: session.decisionNumber || '',
+      decisionSummary: session.decisionSummary || '',
     });
     setIsEditDialogOpen(true);
   };
@@ -249,6 +267,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                   <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
                   <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
                   <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
+                  <TableHead className="text-right min-w-[80px]">الحالة</TableHead>
                   <TableHead className="text-right min-w-[200px]">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
@@ -277,8 +296,18 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                       {session.nextPostponementReason || session.postponementReason || '-'}
                     </TableCell>
                     <TableCell className="text-right">
+                      <span className={cn(
+                        "px-2 py-1 rounded text-xs font-medium",
+                        session.isResolved 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-yellow-100 text-yellow-800"
+                      )}>
+                        {session.isResolved ? 'محسومة' : 'جارية'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
                       <div className="flex gap-2">
-                        {!session.nextSessionDate && (
+                        {!session.nextSessionDate && !session.isResolved && (
                           <Button
                             variant="outline"
                             onClick={() => openTransferDialog(session)}
@@ -367,6 +396,43 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                   dir="rtl"
                 />
               </div>
+              
+              <div className="flex items-center space-x-2 text-right">
+                <Checkbox
+                  id="edit-isResolved"
+                  checked={newSession.isResolved}
+                  onCheckedChange={(checked) => setNewSession({ ...newSession, isResolved: !!checked })}
+                />
+                <Label htmlFor="edit-isResolved" className="text-right mr-2">حسمت</Label>
+              </div>
+              
+              {newSession.isResolved && (
+                <>
+                  <div className="text-right">
+                    <Label htmlFor="edit-decisionNumber" className="text-right">رقم القرار</Label>
+                    <Input
+                      id="edit-decisionNumber"
+                      value={newSession.decisionNumber}
+                      onChange={(e) => setNewSession({ ...newSession, decisionNumber: e.target.value })}
+                      placeholder="رقم القرار"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="edit-decisionSummary" className="text-right">ملخص القرار</Label>
+                    <Textarea
+                      id="edit-decisionSummary"
+                      value={newSession.decisionSummary}
+                      onChange={(e) => setNewSession({ ...newSession, decisionSummary: e.target.value })}
+                      placeholder="ملخص القرار"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                </>
+              )}
+              
               <div className="flex gap-2">
                 <Button onClick={handleEditSession} className="flex-1">
                   حفظ التعديلات

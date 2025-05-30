@@ -49,6 +49,9 @@ export interface Session {
   nextSessionDate?: Date;
   nextPostponementReason?: string;
   isTransferred: boolean;
+  isResolved: boolean;
+  decisionNumber?: string;
+  decisionSummary?: string;
   createdAt: Date;
   updatedAt: Date;
 }

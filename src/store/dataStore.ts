@@ -1,4 +1,3 @@
-
 import { Client, Case, CaseStage, Session, Task, Appointment } from '@/types';
 
 class DataStore {
@@ -47,6 +46,9 @@ class DataStore {
       
       const updatedAt = safeConvertDate(session.updatedAt);
       if (updatedAt) session.updatedAt = updatedAt;
+      
+      // Set default values for new fields
+      if (session.isResolved === undefined) session.isResolved = false;
     });
 
     // Convert task dates
@@ -125,6 +127,7 @@ class DataStore {
     const newSession: Session = {
       ...session,
       id: crypto.randomUUID(),
+      isResolved: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -178,6 +181,7 @@ class DataStore {
       clientName: session.clientName,
       opponent: session.opponent,
       isTransferred: false,
+      isResolved: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
