@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Printer, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react';
+import { Printer, Calendar as CalendarIcon, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { ArabicCalendar } from '@/components/ArabicCalendar';
 import { SessionsTable } from '@/components/SessionsTable';
 import { TasksTable } from '@/components/TasksTable';
@@ -23,6 +23,7 @@ const Index = () => {
   const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
   const [unTransferredSessions, setUnTransferredSessions] = useState<Session[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
+  const [showUnTransferred, setShowUnTransferred] = useState(false);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const printContentRef = useRef<HTMLDivElement>(null);
@@ -44,12 +45,10 @@ const Index = () => {
     );
     setSelectedDateAppointments(filteredAppointments);
 
-    // Filter untransferred sessions - sessions before today with no next session date and not resolved
+    // Filter untransferred sessions - sessions before today with no next session date
     const today = new Date();
     const untransferred = sessions.filter(session => 
-      isBefore(session.sessionDate, today) && 
-      !session.nextSessionDate && 
-      !session.isResolved
+      isBefore(session.sessionDate, today) && !session.nextSessionDate
     );
     setUnTransferredSessions(untransferred);
 
@@ -67,6 +66,7 @@ const Index = () => {
   };
 
   const getDisplaySessions = () => {
+    if (showUnTransferred) return unTransferredSessions;
     if (showUpcoming) return upcomingSessions;
     return selectedDateSessions;
   };
@@ -262,9 +262,22 @@ const Index = () => {
               {/* Session Filter Buttons - under calendar for mobile */}
               <div className="lg:hidden flex gap-2 justify-start flex-wrap">
                 <Button
+                  variant={showUnTransferred ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUpcoming(false);
+                    setShowUnTransferred(!showUnTransferred);
+                  }}
+                  className="gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                </Button>
+                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
+                    setShowUnTransferred(false);
                     setShowUpcoming(!showUpcoming);
                   }}
                   className="gap-2"
@@ -289,9 +302,22 @@ const Index = () => {
               {/* Session Filter Buttons - for desktop only */}
               <div className="hidden lg:flex gap-2 justify-start flex-wrap">
                 <Button
+                  variant={showUnTransferred ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUpcoming(false);
+                    setShowUnTransferred(!showUnTransferred);
+                  }}
+                  className="gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                </Button>
+                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
+                    setShowUnTransferred(false);
                     setShowUpcoming(!showUpcoming);
                   }}
                   className="gap-2"

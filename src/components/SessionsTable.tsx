@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarIcon, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
 import { Session } from '@/types';
@@ -48,16 +46,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     nextDate: undefined as Date | undefined,
     reason: '',
   });
-  const [editData, setEditData] = useState({
-    courtName: '',
-    caseNumber: '',
-    clientName: '',
-    opponent: '',
-    postponementReason: '',
-    isResolved: false,
-    nextSessionDate: undefined as Date | undefined,
-    nextPostponementReason: '',
-  });
 
   const handleAddSession = () => {
     if (!newSession.courtName || !newSession.caseNumber || !newSession.clientName) {
@@ -89,34 +77,22 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
   const handleEditSession = () => {
     if (!selectedSession) return;
     
-    const updates: Partial<Session> = {
-      courtName: editData.courtName || selectedSession.courtName,
-      caseNumber: editData.caseNumber || selectedSession.caseNumber,
-      clientName: editData.clientName || selectedSession.clientName,
-      opponent: editData.opponent || selectedSession.opponent,
-      postponementReason: editData.postponementReason || selectedSession.postponementReason,
-      isResolved: editData.isResolved,
-      nextSessionDate: editData.nextSessionDate,
-      nextPostponementReason: editData.nextPostponementReason || selectedSession.nextPostponementReason,
-    };
-
-    if (editData.isResolved) {
-      updates.resolutionDate = new Date();
-    }
-    
-    dataStore.updateSession(selectedSession.id, updates);
+    dataStore.updateSession(selectedSession.id, {
+      courtName: newSession.courtName || selectedSession.courtName,
+      caseNumber: newSession.caseNumber || selectedSession.caseNumber,
+      clientName: newSession.clientName || selectedSession.clientName,
+      opponent: newSession.opponent || selectedSession.opponent,
+      postponementReason: newSession.postponementReason || selectedSession.postponementReason,
+    });
     
     setIsEditDialogOpen(false);
     setSelectedSession(null);
-    setEditData({
+    setNewSession({
       courtName: '',
       caseNumber: '',
       clientName: '',
       opponent: '',
       postponementReason: '',
-      isResolved: false,
-      nextSessionDate: undefined,
-      nextPostponementReason: '',
     });
     onSessionUpdate();
   };
@@ -160,15 +136,12 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
 
   const openEditDialog = (session: Session) => {
     setSelectedSession(session);
-    setEditData({
+    setNewSession({
       courtName: session.courtName,
       caseNumber: session.caseNumber,
       clientName: session.clientName,
       opponent: session.opponent,
       postponementReason: session.postponementReason || '',
-      isResolved: session.isResolved || false,
-      nextSessionDate: session.nextSessionDate,
-      nextPostponementReason: session.nextPostponementReason || '',
     });
     setIsEditDialogOpen(true);
   };
@@ -178,116 +151,89 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     setIsDeleteDialogOpen(true);
   };
 
-  const exportAllData = () => {
-    const allData = {
-      clients: dataStore.getClients(),
-      cases: dataStore.getCases(),
-      stages: dataStore.getStages(),
-      sessions: dataStore.getSessions(),
-      tasks: dataStore.getTasks(),
-      appointments: dataStore.getAppointments(),
-      exportDate: new Date().toISOString(),
-    };
-
-    const dataStr = JSON.stringify(allData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `backup-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
-
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-right">جلسات {formatFullSyrianDate(selectedDate)}</CardTitle>
-          <div className="flex gap-2">
-            <Button onClick={exportAllData} variant="outline" size="sm">
-              تصدير نسخة احتياطية
-            </Button>
-            {showAddButton && (
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    إضافة جلسة
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md" dir="rtl">
-                  <DialogHeader>
-                    <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
-                    <p className="text-sm text-muted-foreground text-right">
-                      التاريخ المحدد: {format(selectedDate, 'EEEE, MMMM d, yyyy')} - {formatFullSyrianDate(selectedDate)}
-                    </p>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="text-right">
-                      <Label htmlFor="courtName" className="text-right">المحكمة</Label>
-                      <Input
-                        id="courtName"
-                        value={newSession.courtName}
-                        onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
-                        placeholder="اسم المحكمة"
-                        className="text-right"
-                        dir="rtl"
-                      />
-                    </div>
-                    <div className="text-right">
-                      <Label htmlFor="caseNumber" className="text-right">رقم الأساس</Label>
-                      <Input
-                        id="caseNumber"
-                        value={newSession.caseNumber}
-                        onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
-                        placeholder="رقم الأساس"
-                        className="text-right"
-                        dir="rtl"
-                      />
-                    </div>
-                    <div className="text-right">
-                      <Label htmlFor="clientName" className="text-right">الموكل</Label>
-                      <Input
-                        id="clientName"
-                        value={newSession.clientName}
-                        onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
-                        placeholder="اسم الموكل"
-                        className="text-right"
-                        dir="rtl"
-                      />
-                    </div>
-                    <div className="text-right">
-                      <Label htmlFor="opponent" className="text-right">الخصم</Label>
-                      <Input
-                        id="opponent"
-                        value={newSession.opponent}
-                        onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
-                        placeholder="اسم الخصم"
-                        className="text-right"
-                        dir="rtl"
-                      />
-                    </div>
-                    <div className="text-right">
-                      <Label htmlFor="postponementReason" className="text-right">سبب التأجيل</Label>
-                      <Textarea
-                        id="postponementReason"
-                        value={newSession.postponementReason}
-                        onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
-                        placeholder="سبب التأجيل (اختياري)"
-                        className="text-right"
-                        dir="rtl"
-                      />
-                    </div>
-                    <Button onClick={handleAddSession} className="w-full">
-                      إضافة الجلسة
-                    </Button>
+          {showAddButton && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  إضافة جلسة
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
+                  <p className="text-sm text-muted-foreground text-right">
+                    التاريخ المحدد: {format(selectedDate, 'EEEE, MMMM d, yyyy')} - {formatFullSyrianDate(selectedDate)}
+                  </p>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="text-right">
+                    <Label htmlFor="courtName" className="text-right">المحكمة</Label>
+                    <Input
+                      id="courtName"
+                      value={newSession.courtName}
+                      onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
+                      placeholder="اسم المحكمة"
+                      className="text-right"
+                      dir="rtl"
+                    />
                   </div>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
+                  <div className="text-right">
+                    <Label htmlFor="caseNumber" className="text-right">رقم الأساس</Label>
+                    <Input
+                      id="caseNumber"
+                      value={newSession.caseNumber}
+                      onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
+                      placeholder="رقم الأساس"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="clientName" className="text-right">الموكل</Label>
+                    <Input
+                      id="clientName"
+                      value={newSession.clientName}
+                      onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
+                      placeholder="اسم الموكل"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="opponent" className="text-right">الخصم</Label>
+                    <Input
+                      id="opponent"
+                      value={newSession.opponent}
+                      onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
+                      placeholder="اسم الخصم"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="postponementReason" className="text-right">سبب التأجيل</Label>
+                    <Textarea
+                      id="postponementReason"
+                      value={newSession.postponementReason}
+                      onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
+                      placeholder="سبب التأجيل (اختياري)"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <Button onClick={handleAddSession} className="w-full">
+                    إضافة الجلسة
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </CardHeader>
       
@@ -301,7 +247,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
             <Table dir="rtl" className="min-w-[1000px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right min-w-[150px]">التاريخ وسبب التأجيل</TableHead>
+                  <TableHead className="text-right min-w-[120px]">تاريخ الجلسة</TableHead>
                   <TableHead className="text-right min-w-[150px]">المحكمة</TableHead>
                   <TableHead className="text-right min-w-[120px]">رقم الأساس</TableHead>
                   <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
@@ -315,14 +261,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 {sessions.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell className="text-right">
-                      <div>
-                        <div className="font-medium">{formatSyrianDate(session.sessionDate)}</div>
-                        {session.postponementReason && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {session.postponementReason}
-                          </div>
-                        )}
-                      </div>
+                      {formatSyrianDate(session.sessionDate)}
                     </TableCell>
                     <TableCell className="text-right">
                       {session.courtName}
@@ -340,7 +279,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                       {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {session.nextPostponementReason || '-'}
+                      {session.nextPostponementReason || session.postponementReason || '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2">
@@ -397,8 +336,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-courtName" className="text-right">المحكمة</Label>
                 <Input
                   id="edit-courtName"
-                  value={editData.courtName}
-                  onChange={(e) => setEditData({ ...editData, courtName: e.target.value })}
+                  value={newSession.courtName}
+                  onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
                   placeholder="اسم المحكمة"
                   className="text-right"
                   dir="rtl"
@@ -408,8 +347,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-caseNumber" className="text-right">رقم الأساس</Label>
                 <Input
                   id="edit-caseNumber"
-                  value={editData.caseNumber}
-                  onChange={(e) => setEditData({ ...editData, caseNumber: e.target.value })}
+                  value={newSession.caseNumber}
+                  onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
                   placeholder="رقم الأساس"
                   className="text-right"
                   dir="rtl"
@@ -419,8 +358,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-clientName" className="text-right">الموكل</Label>
                 <Input
                   id="edit-clientName"
-                  value={editData.clientName}
-                  onChange={(e) => setEditData({ ...editData, clientName: e.target.value })}
+                  value={newSession.clientName}
+                  onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
                   placeholder="اسم الموكل"
                   className="text-right"
                   dir="rtl"
@@ -430,8 +369,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-opponent" className="text-right">الخصم</Label>
                 <Input
                   id="edit-opponent"
-                  value={editData.opponent}
-                  onChange={(e) => setEditData({ ...editData, opponent: e.target.value })}
+                  value={newSession.opponent}
+                  onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
                   placeholder="اسم الخصم"
                   className="text-right"
                   dir="rtl"
@@ -441,67 +380,13 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <Label htmlFor="edit-postponementReason" className="text-right">سبب التأجيل</Label>
                 <Textarea
                   id="edit-postponementReason"
-                  value={editData.postponementReason}
-                  onChange={(e) => setEditData({ ...editData, postponementReason: e.target.value })}
+                  value={newSession.postponementReason}
+                  onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
                   placeholder="سبب التأجيل (اختياري)"
                   className="text-right"
                   dir="rtl"
                 />
               </div>
-              
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Checkbox
-                  id="edit-resolved"
-                  checked={editData.isResolved}
-                  onCheckedChange={(checked) => setEditData({ ...editData, isResolved: checked as boolean })}
-                />
-                <Label htmlFor="edit-resolved" className="text-right">محسومة</Label>
-              </div>
-
-              <div className="text-right">
-                <Label className="text-right">تاريخ الجلسة القادمة</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-right font-normal",
-                        !editData.nextSessionDate && "text-muted-foreground"
-                      )}
-                      dir="rtl"
-                    >
-                      <CalendarIcon className="ml-2 h-4 w-4" />
-                      {editData.nextSessionDate ? (
-                        formatSyrianDate(editData.nextSessionDate)
-                      ) : (
-                        <span>اختر التاريخ</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={editData.nextSessionDate}
-                      onSelect={(date) => setEditData({ ...editData, nextSessionDate: date })}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="text-right">
-                <Label htmlFor="edit-nextReason" className="text-right">سبب التأجيل القادم</Label>
-                <Textarea
-                  id="edit-nextReason"
-                  value={editData.nextPostponementReason}
-                  onChange={(e) => setEditData({ ...editData, nextPostponementReason: e.target.value })}
-                  placeholder="سبب التأجيل القادم"
-                  className="text-right"
-                  dir="rtl"
-                />
-              </div>
-              
               <div className="flex gap-2">
                 <Button onClick={handleEditSession} className="flex-1">
                   حفظ التعديلات
