@@ -27,6 +27,7 @@ const Clients = () => {
   const [isEditCaseDialogOpen, setIsEditCaseDialogOpen] = useState(false);
   const [isAddStageDialogOpen, setIsAddStageDialogOpen] = useState(false);
   const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
+  const [isAddSessionDialogOpen, setIsAddSessionDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [selectedStage, setSelectedStage] = useState<CaseStage | null>(null);
@@ -46,7 +47,7 @@ const Clients = () => {
     description: '',
     opponent: '',
     subject: '',
-    status: 'active' as const,
+    status: 'active' as 'active' | 'closed' | 'pending',
   });
 
   const [newStage, setNewStage] = useState({
@@ -54,10 +55,17 @@ const Clients = () => {
     caseNumber: '',
     stageName: '',
     firstSessionDate: undefined as Date | undefined,
-    status: 'active' as const,
+    status: 'active' as 'active' | 'completed',
     notes: '',
     resolutionDate: undefined as Date | undefined,
     decisionNumber: '',
+  });
+
+  const [newSession, setNewSession] = useState({
+    sessionDate: undefined as Date | undefined,
+    postponementReason: '',
+    nextSessionDate: undefined as Date | undefined,
+    nextPostponementReason: '',
   });
 
   useEffect(() => {
@@ -124,11 +132,11 @@ const Clients = () => {
 
     dataStore.addCase({
       clientId: selectedClient.id,
-      title: newCase.description, // Use description as title
+      title: newCase.description,
       description: newCase.description,
       opponent: newCase.opponent,
       subject: newCase.subject,
-      caseType: 'عام', // Default case type
+      caseType: 'عام',
       status: newCase.status,
     });
 
@@ -222,6 +230,41 @@ const Clients = () => {
     loadData();
   };
 
+  const handleAddSession = () => {
+    if (!selectedStage || !newSession.sessionDate) return;
+
+    const client = clients.find(c => 
+      cases.find(case_ => case_.clientId === c.id && 
+        stages.find(stage => stage.caseId === case_.id && stage.id === selectedStage.id)
+      )
+    );
+    const case_ = cases.find(c => stages.find(stage => stage.caseId === c.id && stage.id === selectedStage.id));
+
+    if (!client || !case_) return;
+
+    dataStore.addSession({
+      stageId: selectedStage.id,
+      courtName: selectedStage.courtName,
+      caseNumber: selectedStage.caseNumber,
+      sessionDate: newSession.sessionDate,
+      clientName: client.name,
+      opponent: case_.opponent,
+      postponementReason: newSession.postponementReason,
+      nextSessionDate: newSession.nextSessionDate,
+      nextPostponementReason: newSession.nextPostponementReason,
+      isTransferred: false,
+    });
+
+    setNewSession({
+      sessionDate: undefined,
+      postponementReason: '',
+      nextSessionDate: undefined,
+      nextPostponementReason: '',
+    });
+    setIsAddSessionDialogOpen(false);
+    loadData();
+  };
+
   const toggleClientExpansion = (clientId: string) => {
     const newExpanded = new Set(expandedClients);
     if (newExpanded.has(clientId)) {
@@ -300,6 +343,11 @@ const Clients = () => {
       decisionNumber: stage.decisionNumber || '',
     });
     setIsEditStageDialogOpen(true);
+  };
+
+  const openAddSessionDialog = (stage: CaseStage) => {
+    setSelectedStage(stage);
+    setIsAddSessionDialogOpen(true);
   };
 
   const getCasesForClient = (clientId: string) => {
@@ -448,15 +496,19 @@ const Clients = () => {
                               <Edit className="h-4 w-4" />
                               تعديل
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openAddCaseDialog(client)}
-                              className="gap-1"
-                            >
-                              <Plus className="h-4 w-4" />
-                              قضية جديدة
-                            </Button>
+                            <Dialog open={isAddCaseDialogOpen} onOpenChange={setIsAddCaseDialogOpen}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openAddCaseDialog(client)}
+                                  className="gap-1"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  قضية جديدة
+                                </Button>
+                              </DialogTrigger>
+                            </Dialog>
                           </div>
                         </div>
                       </CollapsibleTrigger>
@@ -516,15 +568,19 @@ const Clients = () => {
                                                 <Edit className="h-4 w-4" />
                                                 تعديل
                                               </Button>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => openAddStageDialog(case_)}
-                                                className="gap-1"
-                                              >
-                                                <Plus className="h-4 w-4" />
-                                                مرحلة جديدة
-                                              </Button>
+                                              <Dialog open={isAddStageDialogOpen} onOpenChange={setIsAddStageDialogOpen}>
+                                                <DialogTrigger asChild>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => openAddStageDialog(case_)}
+                                                    className="gap-1"
+                                                  >
+                                                    <Plus className="h-4 w-4" />
+                                                    مرحلة جديدة
+                                                  </Button>
+                                                </DialogTrigger>
+                                              </Dialog>
                                             </div>
                                           </div>
                                         </CollapsibleTrigger>
@@ -571,15 +627,30 @@ const Clients = () => {
                                                               </p>
                                                             )}
                                                           </div>
-                                                          <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => openEditStageDialog(stage)}
-                                                            className="gap-1"
-                                                          >
-                                                            <Edit className="h-4 w-4" />
-                                                            تعديل
-                                                          </Button>
+                                                          <div className="flex gap-2">
+                                                            <Button
+                                                              variant="ghost"
+                                                              size="sm"
+                                                              onClick={() => openEditStageDialog(stage)}
+                                                              className="gap-1"
+                                                            >
+                                                              <Edit className="h-4 w-4" />
+                                                              تعديل
+                                                            </Button>
+                                                            <Dialog open={isAddSessionDialogOpen} onOpenChange={setIsAddSessionDialogOpen}>
+                                                              <DialogTrigger asChild>
+                                                                <Button
+                                                                  variant="outline"
+                                                                  size="sm"
+                                                                  onClick={() => openAddSessionDialog(stage)}
+                                                                  className="gap-1"
+                                                                >
+                                                                  <Plus className="h-4 w-4" />
+                                                                  جلسة جديدة
+                                                                </Button>
+                                                              </DialogTrigger>
+                                                            </Dialog>
+                                                          </div>
                                                         </div>
                                                       </div>
                                                     ))}
@@ -680,9 +751,23 @@ const Clients = () => {
                   dir="rtl"
                 />
               </div>
-              <Button onClick={handleEditClient} className="w-full">
-                حفظ التعديلات
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleEditClient} className="flex-1">
+                  حفظ التعديلات
+                </Button>
+                <Dialog open={isAddCaseDialogOpen} onOpenChange={setIsAddCaseDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => openAddCaseDialog(selectedClient!)}
+                      className="gap-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      قضية جديدة
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -800,9 +885,23 @@ const Clients = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleEditCase} className="w-full">
-                حفظ التعديلات
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleEditCase} className="flex-1">
+                  حفظ التعديلات
+                </Button>
+                <Dialog open={isAddStageDialogOpen} onOpenChange={setIsAddStageDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => openAddStageDialog(selectedCase!)}
+                      className="gap-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      مرحلة جديدة
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -1082,8 +1181,118 @@ const Clients = () => {
                   dir="rtl"
                 />
               </div>
-              <Button onClick={handleEditStage} className="w-full">
-                حفظ التعديلات
+              <div className="flex gap-2">
+                <Button onClick={handleEditStage} className="flex-1">
+                  حفظ التعديلات
+                </Button>
+                <Dialog open={isAddSessionDialogOpen} onOpenChange={setIsAddSessionDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => openAddSessionDialog(selectedStage!)}
+                      className="gap-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      جلسة جديدة
+                    </Button>
+                  </DialogTrigger>
+                </Dialog>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Session Dialog */}
+        <Dialog open={isAddSessionDialogOpen} onOpenChange={setIsAddSessionDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label className="text-right">تاريخ الجلسة *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newSession.sessionDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newSession.sessionDate ? (
+                        formatSyrianDate(newSession.sessionDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newSession.sessionDate}
+                      onSelect={(date) => setNewSession({ ...newSession, sessionDate: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-right">
+                <Label htmlFor="session-postponement" className="text-right">سبب التأجيل</Label>
+                <Textarea
+                  id="session-postponement"
+                  value={newSession.postponementReason}
+                  onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
+                  placeholder="سبب التأجيل"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label className="text-right">تاريخ الجلسة القادمة</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newSession.nextSessionDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newSession.nextSessionDate ? (
+                        formatSyrianDate(newSession.nextSessionDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newSession.nextSessionDate}
+                      onSelect={(date) => setNewSession({ ...newSession, nextSessionDate: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-right">
+                <Label htmlFor="session-next-postponement" className="text-right">سبب التأجيل القادم</Label>
+                <Textarea
+                  id="session-next-postponement"
+                  value={newSession.nextPostponementReason}
+                  onChange={(e) => setNewSession({ ...newSession, nextPostponementReason: e.target.value })}
+                  placeholder="سبب التأجيل القادم"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <Button onClick={handleAddSession} className="w-full">
+                إضافة الجلسة
               </Button>
             </div>
           </DialogContent>
