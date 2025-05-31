@@ -1,377 +1,480 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Printer, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react';
-import { ArabicCalendar } from '@/components/ArabicCalendar';
-import { SessionsTable } from '@/components/SessionsTable';
-import { TasksTable } from '@/components/TasksTable';
-import { AppointmentsTable } from '@/components/AppointmentsTable';
-import { PastSessionsDialog } from '@/components/PastSessionsDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { 
+  Calendar as CalendarIcon, 
+  Clock, 
+  Users, 
+  Scale, 
+  CheckCircle, 
+  AlertCircle, 
+  Plus,
+  Eye,
+  ChevronRight,
+  MapPin
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { dataStore } from '@/store/dataStore';
-import { Session, Task, Appointment } from '@/types';
-import { isDateToday, formatFullSyrianDate } from '@/utils/dateUtils';
-import { isSameDay, isAfter, isBefore } from 'date-fns';
+import { Session, Appointment, Client, Case, CaseStage } from '@/types';
+import { formatSyrianDate, formatSyrianDateTime, isDateToday, isDatePast } from '@/utils/dateUtils';
 import { Layout } from '@/components/Layout';
+import { SessionsTable } from '@/components/SessionsTable';
+import { AppointmentsTable } from '@/components/AppointmentsTable';
+import { TasksTable } from '@/components/TasksTable';
+import { ArabicCalendar } from '@/components/ArabicCalendar';
+import { AppointmentTimePicker } from '@/components/AppointmentTimePicker';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedDateSessions, setSelectedDateSessions] = useState<Session[]>([]);
-  const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
-  const [unTransferredSessions, setUnTransferredSessions] = useState<Session[]>([]);
-  const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
-  const [showUpcoming, setShowUpcoming] = useState(false);
-  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
-  const printContentRef = useRef<HTMLDivElement>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [cases, setCases] = useState<Case[]>([]);
+  const [stages, setStages] = useState<CaseStage[]>([]);
+  const [isAddSessionDialogOpen, setIsAddSessionDialogOpen] = useState(false);
+  const [isAddAppointmentDialogOpen, setIsAddAppointmentDialogOpen] = useState(false);
+  const [selectedStage, setSelectedStage] = useState<string>('');
+
+  const [newSession, setNewSession] = useState({
+    sessionDate: new Date(),
+    sessionTime: '',
+    notes: '',
+    status: 'scheduled' as const,
+  });
+
+  const [newAppointment, setNewAppointment] = useState({
+    appointmentDate: new Date(),
+    appointmentTime: '',
+    clientName: '',
+    description: '',
+    location: '',
+    status: 'scheduled' as const,
+  });
 
   useEffect(() => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    // Filter sessions for selected date
-    const filteredSessions = sessions.filter(session => 
-      isSameDay(session.sessionDate, selectedDate)
-    );
-    setSelectedDateSessions(filteredSessions);
-
-    // Filter appointments for selected date
-    const filteredAppointments = appointments.filter(appointment => 
-      isSameDay(appointment.appointmentDate, selectedDate)
-    );
-    setSelectedDateAppointments(filteredAppointments);
-
-    // Filter untransferred sessions - sessions before today with no next session date and not resolved
-    const today = new Date();
-    const untransferred = sessions.filter(session => 
-      isBefore(session.sessionDate, today) && 
-      !session.nextSessionDate && 
-      !session.isResolved
-    );
-    setUnTransferredSessions(untransferred);
-
-    // Filter upcoming sessions (after selected date)
-    const upcoming = sessions.filter(session => 
-      isAfter(session.sessionDate, selectedDate)
-    );
-    setUpcomingSessions(upcoming);
-  }, [selectedDate, sessions, appointments]);
-
   const loadData = () => {
     setSessions(dataStore.getSessions());
-    setTasks(dataStore.getTasks());
     setAppointments(dataStore.getAppointments());
+    setClients(dataStore.getClients());
+    setCases(dataStore.getCases());
+    setStages(dataStore.getStages());
   };
 
-  const getDisplaySessions = () => {
-    if (showUpcoming) return upcomingSessions;
-    return selectedDateSessions;
+  const handleAddSession = () => {
+    if (!selectedStage || !newSession.sessionDate) return;
+
+    dataStore.addSession({
+      stageId: selectedStage,
+      sessionDate: newSession.sessionDate,
+      sessionTime: newSession.sessionTime,
+      notes: newSession.notes,
+      status: newSession.status,
+    });
+
+    setNewSession({
+      sessionDate: new Date(),
+      sessionTime: '',
+      notes: '',
+      status: 'scheduled',
+    });
+    setSelectedStage('');
+    setIsAddSessionDialogOpen(false);
+    loadData();
   };
 
-  const getDisplayTasks = () => {
-    return showCompletedTasks 
-      ? tasks.filter(task => task.isCompleted)
-      : tasks.filter(task => !task.isCompleted);
+  const handleAddAppointment = () => {
+    if (!newAppointment.appointmentDate || !newAppointment.clientName) return;
+
+    dataStore.addAppointment({
+      appointmentDate: newAppointment.appointmentDate,
+      appointmentTime: newAppointment.appointmentTime,
+      clientName: newAppointment.clientName,
+      description: newAppointment.description,
+      location: newAppointment.location,
+      status: newAppointment.status,
+    });
+
+    setNewAppointment({
+      appointmentDate: new Date(),
+      appointmentTime: '',
+      clientName: '',
+      description: '',
+      location: '',
+      status: 'scheduled',
+    });
+    setIsAddAppointmentDialogOpen(false);
+    loadData();
   };
 
-  const isWeekend = (date: Date) => {
-    const day = date.getDay();
-    return day === 5 || day === 6; // Friday (5) and Saturday (6)
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
   };
 
-  const checkWeekendWarning = (date: Date) => {
-    if (isWeekend(date)) {
-      alert('تحذير: التاريخ المحدد يوافق يوم عطلة رسمية (جمعة أو سبت)');
-    }
-  };
+  const todaySessions = sessions.filter(session => isDateToday(session.sessionDate));
+  const upcomingSessions = sessions.filter(session => !isDatePast(session.sessionDate) && !isDateToday(session.sessionDate)).slice(0, 5);
+  const todayAppointments = appointments.filter(appointment => isDateToday(appointment.appointmentDate));
+  const upcomingAppointments = appointments.filter(appointment => !isDatePast(appointment.appointmentDate) && !isDateToday(appointment.appointmentDate)).slice(0, 5);
 
-  const handlePrintSchedule = () => {
-    const printWindow = window.open('', '_blank');
-    
-    if (printWindow) {
-      printWindow.document.write(`
-        <html dir="rtl">
-          <head>
-            <title>أجندة - جدول الأعمال ${formatFullSyrianDate(selectedDate)}</title>
-            <style>
-              body { 
-                font-family: Arial, sans-serif; 
-                padding: 20px; 
-                direction: rtl;
-                text-align: right;
-              }
-              h1, h2, h3 { 
-                text-align: center; 
-                margin-bottom: 20px;
-              }
-              .page-break { 
-                page-break-after: always; 
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 30px;
-                direction: rtl;
-              }
-              th, td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: right;
-              }
-              th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-              }
-              .section-title {
-                font-size: 18px;
-                font-weight: bold;
-                margin: 20px 0 10px 0;
-                color: #333;
-              }
-              .no-data {
-                text-align: center;
-                color: #666;
-                font-style: italic;
-              }
-            </style>
-          </head>
-          <body>
-            <h1>أجندة - جدول الأعمال</h1>
-            <h2>${formatFullSyrianDate(selectedDate)}</h2>
-            
-            <div class="section-title">سجل الجلسات</div>
-            ${selectedDateSessions.length > 0 ? `
-              <table>
-                <thead>
-                  <tr>
-                    <th>تاريخ الجلسة</th>
-                    <th>المحكمة ورقم الأساس</th>
-                    <th>الموكل</th>
-                    <th>الخصم</th>
-                    <th>سبب التأجيل</th>
-                    <th>الجلسة القادمة</th>
-                    <th>سبب التأجيل القادم</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${selectedDateSessions.map(session => `
-                    <tr>
-                      <td>${formatFullSyrianDate(session.sessionDate)}</td>
-                      <td>${session.courtName} - ${session.caseNumber}</td>
-                      <td>${session.clientName}</td>
-                      <td>${session.opponent}</td>
-                      <td>${session.postponementReason || '-'}</td>
-                      <td>${session.nextSessionDate ? formatFullSyrianDate(session.nextSessionDate) : '-'}</td>
-                      <td>${session.nextPostponementReason || '-'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            ` : '<p class="no-data">لا توجد جلسات في هذا التاريخ</p>'}
-            
-            <div class="section-title">المهام الإدارية</div>
-            ${tasks.filter(task => !task.isCompleted).length > 0 ? `
-              <table>
-                <thead>
-                  <tr>
-                    <th>المهمة</th>
-                    <th>الوصف</th>
-                    <th>تاريخ الاستحقاق</th>
-                    <th>درجة الأهمية</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${tasks.filter(task => !task.isCompleted).map(task => `
-                    <tr>
-                      <td>${task.title}</td>
-                      <td>${task.description || '-'}</td>
-                      <td>${task.dueDate ? formatFullSyrianDate(task.dueDate) : '-'}</td>
-                      <td>${task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            ` : '<p class="no-data">لا توجد مهام غير مكتملة</p>'}
-            
-            <div class="section-title">المواعيد</div>
-            ${selectedDateAppointments.length > 0 ? `
-              <table>
-                <thead>
-                  <tr>
-                    <th>العنوان</th>
-                    <th>الوصف</th>
-                    <th>تاريخ الموعد</th>
-                    <th>الوقت</th>
-                    <th>المكان</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${selectedDateAppointments.map(appointment => `
-                    <tr>
-                      <td>${appointment.title}</td>
-                      <td>${appointment.description || '-'}</td>
-                      <td>${formatFullSyrianDate(appointment.appointmentDate)}</td>
-                      <td>${appointment.time || '-'}</td>
-                      <td>${appointment.location || '-'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            ` : '<p class="no-data">لا توجد مواعيد في هذا التاريخ</p>'}
-          </body>
-        </html>
-      `);
-      
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
+  const activeStages = stages.filter(stage => stage.status === 'active');
+
+  const onWeekendWarning = (date: Date) => {
+    console.log('Weekend warning for date:', date);
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
-        <Card className="p-4">
-          <div className="flex justify-end items-center mb-6 gap-2">
-            <Button className="gap-2" onClick={handlePrintSchedule}>
-              <Printer className="h-4 w-4" />
-              طباعة جدول الأعمال
-            </Button>
+      <div className="container mx-auto p-4 space-y-6" dir="rtl">
+        {/* Header Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">إجمالي الموكلين</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-right">{clients.length}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">القضايا النشطة</CardTitle>
+              <Scale className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-right">{cases.filter(c => c.status === 'active').length}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">جلسات اليوم</CardTitle>
+              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-right">{todaySessions.length}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">مواعيد اليوم</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-right">{todayAppointments.length}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar */}
+          <div className="lg:col-span-1">
+            <ArabicCalendar
+              sessions={sessions}
+              appointments={appointments}
+              selectedDate={selectedDate}
+              onDateSelect={handleDateSelect}
+            />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-            {/* Right column - Calendar */}
-            <div className="lg:col-span-5 xl:col-span-4 space-y-4">
-              <ArabicCalendar
-                sessions={sessions}
-                appointments={appointments}
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-              />
+          {/* Today's Activities */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Today's Sessions */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-right">جلسات اليوم</CardTitle>
+                  <Dialog open={isAddSessionDialogOpen} onOpenChange={setIsAddSessionDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        إضافة جلسة
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md" dir="rtl">
+                      <DialogHeader>
+                        <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="text-right">
+                          <Label htmlFor="stage" className="text-right">المرحلة *</Label>
+                          <Select value={selectedStage} onValueChange={setSelectedStage}>
+                            <SelectTrigger className="text-right" dir="rtl">
+                              <SelectValue placeholder="اختر المرحلة" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {activeStages.map((stage) => {
+                                const case_ = cases.find(c => c.id === stage.caseId);
+                                const client = clients.find(c => c.id === case_?.clientId);
+                                return (
+                                  <SelectItem key={stage.id} value={stage.id}>
+                                    {client?.name} - {case_?.description} - {stage.stageName}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="text-right">
+                          <Label className="text-right">تاريخ الجلسة *</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-right font-normal",
+                                  !newSession.sessionDate && "text-muted-foreground"
+                                )}
+                                dir="rtl"
+                              >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {newSession.sessionDate ? (
+                                  formatSyrianDate(newSession.sessionDate)
+                                ) : (
+                                  <span>اختر التاريخ</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={newSession.sessionDate}
+                                onSelect={(date) => setNewSession({ ...newSession, sessionDate: date || new Date() })}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="text-right">
+                          <Label htmlFor="sessionTime" className="text-right">وقت الجلسة</Label>
+                          <Input
+                            id="sessionTime"
+                            type="time"
+                            value={newSession.sessionTime}
+                            onChange={(e) => setNewSession({ ...newSession, sessionTime: e.target.value })}
+                            className="text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div className="text-right">
+                          <Label htmlFor="sessionStatus" className="text-right">الحالة</Label>
+                          <Select value={newSession.status} onValueChange={(value: 'scheduled' | 'completed' | 'postponed') => setNewSession({ ...newSession, status: value })}>
+                            <SelectTrigger className="text-right" dir="rtl">
+                              <SelectValue placeholder="اختر الحالة" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="scheduled">مجدولة</SelectItem>
+                              <SelectItem value="completed">مكتملة</SelectItem>
+                              <SelectItem value="postponed">مؤجلة</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="text-right">
+                          <Label htmlFor="sessionNotes" className="text-right">ملاحظات</Label>
+                          <Textarea
+                            id="sessionNotes"
+                            value={newSession.notes}
+                            onChange={(e) => setNewSession({ ...newSession, notes: e.target.value })}
+                            placeholder="ملاحظات الجلسة"
+                            className="text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <Button onClick={handleAddSession} className="w-full">
+                          إضافة الجلسة
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {todaySessions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">لا توجد جلسات اليوم</p>
+                ) : (
+                  <SessionsTable 
+                    sessions={todaySessions} 
+                    onSessionUpdate={loadData}
+                    showAddButton={false}
+                    onWeekendWarning={onWeekendWarning}
+                  />
+                )}
+              </CardContent>
+            </Card>
 
-              <div className="flex flex-col gap-2">
-                <PastSessionsDialog
-                  sessions={sessions}
-                  onSelectSession={setSelectedDate}
-                />
-              </div>
+            {/* Today's Appointments */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-right">مواعيد اليوم</CardTitle>
+                  <Dialog open={isAddAppointmentDialogOpen} onOpenChange={setIsAddAppointmentDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        إضافة موعد
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md" dir="rtl">
+                      <DialogHeader>
+                        <DialogTitle className="text-right">إضافة موعد جديد</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="text-right">
+                          <Label htmlFor="clientName" className="text-right">اسم الموكل *</Label>
+                          <Input
+                            id="clientName"
+                            value={newAppointment.clientName}
+                            onChange={(e) => setNewAppointment({ ...newAppointment, clientName: e.target.value })}
+                            placeholder="اسم الموكل"
+                            className="text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div className="text-right">
+                          <Label className="text-right">تاريخ الموعد *</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-right font-normal",
+                                  !newAppointment.appointmentDate && "text-muted-foreground"
+                                )}
+                                dir="rtl"
+                              >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {newAppointment.appointmentDate ? (
+                                  formatSyrianDate(newAppointment.appointmentDate)
+                                ) : (
+                                  <span>اختر التاريخ</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={newAppointment.appointmentDate}
+                                onSelect={(date) => setNewAppointment({ ...newAppointment, appointmentDate: date || new Date() })}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <AppointmentTimePicker
+                          value={newAppointment.appointmentTime}
+                          onChange={(time) => setNewAppointment({ ...newAppointment, appointmentTime: time })}
+                        />
+                        <div className="text-right">
+                          <Label htmlFor="description" className="text-right">الوصف</Label>
+                          <Textarea
+                            id="description"
+                            value={newAppointment.description}
+                            onChange={(e) => setNewAppointment({ ...newAppointment, description: e.target.value })}
+                            placeholder="وصف الموعد"
+                            className="text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div className="text-right">
+                          <Label htmlFor="location" className="text-right">المكان</Label>
+                          <Input
+                            id="location"
+                            value={newAppointment.location}
+                            onChange={(e) => setNewAppointment({ ...newAppointment, location: e.target.value })}
+                            placeholder="مكان الموعد"
+                            className="text-right"
+                            dir="rtl"
+                          />
+                        </div>
+                        <div className="text-right">
+                          <Label htmlFor="appointmentStatus" className="text-right">الحالة</Label>
+                          <Select value={newAppointment.status} onValueChange={(value: 'scheduled' | 'completed' | 'cancelled') => setNewAppointment({ ...newAppointment, status: value })}>
+                            <SelectTrigger className="text-right" dir="rtl">
+                              <SelectValue placeholder="اختر الحالة" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="scheduled">مجدول</SelectItem>
+                              <SelectItem value="completed">مكتمل</SelectItem>
+                              <SelectItem value="cancelled">ملغي</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button onClick={handleAddAppointment} className="w-full">
+                          إضافة الموعد
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {todayAppointments.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">لا توجد مواعيد اليوم</p>
+                ) : (
+                  <AppointmentsTable appointments={todayAppointments} onAppointmentUpdate={loadData} showAddButton={false} />
+                )}
+              </CardContent>
+            </Card>
 
-              {/* Session Filter Buttons - under calendar for mobile */}
-              <div className="lg:hidden flex gap-2 justify-start flex-wrap">
-                <Button
-                  variant={showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(!showUpcoming);
-                  }}
-                  className="gap-2"
-                >
-                  <Clock className="h-4 w-4" />
-                  الجلسات القادمة ({upcomingSessions.length})
-                </Button>
-              </div>
-
-              {/* Appointments under Calendar for desktop */}
-              <div className="hidden lg:block">
-                <AppointmentsTable
-                  appointments={selectedDateAppointments}
-                  selectedDate={selectedDate}
-                  onAppointmentUpdate={loadData}
-                />
-              </div>
-            </div>
-
-            {/* Left column - Sessions */}
-            <div className="lg:col-span-7 xl:col-span-8 space-y-4">
-              {/* Session Filter Buttons - for desktop only */}
-              <div className="hidden lg:flex gap-2 justify-start flex-wrap">
-                <Button
-                  variant={showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(!showUpcoming);
-                  }}
-                  className="gap-2"
-                >
-                  <Clock className="h-4 w-4" />
-                  الجلسات القادمة ({upcomingSessions.length})
-                </Button>
-              </div>
-
-              {/* Sessions Table */}
-              <SessionsTable
-                sessions={getDisplaySessions()}
-                selectedDate={selectedDate}
-                onSessionUpdate={loadData}
-                showAddButton={false}
-                onWeekendWarning={checkWeekendWarning}
-              />
-
-              {/* Tasks under Sessions for desktop */}
-              <div className="hidden lg:block">
-                <Card className="w-full">
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-right">
-                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
-                    </h3>
-                    <Button
-                      variant={showCompletedTasks ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                      className="gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
-                    </Button>
+            {/* Upcoming Sessions Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-right">الجلسات القادمة</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {upcomingSessions.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">لا توجد جلسات قادمة</p>
+                ) : (
+                  <div className="space-y-3">
+                    {upcomingSessions.map((session) => {
+                      const stage = stages.find(s => s.id === session.stageId);
+                      const case_ = cases.find(c => c.id === stage?.caseId);
+                      const client = clients.find(c => c.id === case_?.clientId);
+                      
+                      return (
+                        <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="text-right">
+                            <p className="font-medium">{client?.name} - {case_?.description}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatSyrianDate(session.sessionDate)} {session.sessionTime && `- ${session.sessionTime}`}
+                            </p>
+                          </div>
+                          <Badge variant={session.status === 'scheduled' ? 'default' : session.status === 'completed' ? 'outline' : 'destructive'}>
+                            {session.status === 'scheduled' ? 'مجدولة' : session.status === 'completed' ? 'مكتملة' : 'مؤجلة'}
+                          </Badge>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="p-4">
-                    <TasksTable
-                      tasks={getDisplayTasks()}
-                      onTaskUpdate={loadData}
-                    />
-                  </div>
-                </Card>
-              </div>
-
-              {/* Tasks for mobile - under sessions */}
-              <div className="lg:hidden">
-                <Card className="w-full">
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-right">
-                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
-                    </h3>
-                    <Button
-                      variant={showCompletedTasks ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                      className="gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
-                    </Button>
-                  </div>
-                  <div className="p-4">
-                    <TasksTable
-                      tasks={getDisplayTasks()}
-                      onTaskUpdate={loadData}
-                    />
-                  </div>
-                </Card>
-              </div>
-
-              {/* Appointments for mobile - under tasks */}
-              <div className="lg:hidden">
-                <AppointmentsTable
-                  appointments={selectedDateAppointments}
-                  selectedDate={selectedDate}
-                  onAppointmentUpdate={loadData}
-                />
-              </div>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
+        </div>
+
+        {/* Tasks Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-right">المهام</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TasksTable />
+          </CardContent>
         </Card>
       </div>
     </Layout>

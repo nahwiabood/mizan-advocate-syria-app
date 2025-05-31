@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIconLucide } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName } from '@/utils/dateUtils';
+import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName, getSyrianHolidayForDate, isWeekend, isSyrianHoliday } from '@/utils/dateUtils';
 import { Session, Appointment } from '@/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
@@ -41,11 +41,6 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     );
   };
 
-  const isWeekend = (date: Date) => {
-    const day = getDay(date);
-    return day === 5 || day === 6; // Friday (5) and Saturday (6)
-  };
-
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = new Date(currentMonth);
     if (direction === 'prev') {
@@ -63,6 +58,9 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   };
 
   const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  
+  // Get holiday name for selected date
+  const selectedDateHoliday = getSyrianHolidayForDate(selectedDate);
 
   return (
     <Card className="w-full">
@@ -102,6 +100,15 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             اليوم
           </Button>
         </div>
+
+        {/* Holiday name display */}
+        {selectedDateHoliday && (
+          <div className="mt-3 text-center">
+            <div className="bg-red-100 border border-red-300 rounded-md px-3 py-2">
+              <span className="text-red-800 font-medium">{selectedDateHoliday}</span>
+            </div>
+          </div>
+        )}
       </CardHeader>
       
       <CardContent>
@@ -124,6 +131,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             const isToday = isDateToday(day);
             const isSelected = isSameDay(day, selectedDate);
             const isWeekendDay = isWeekend(day);
+            const isHoliday = isSyrianHoliday(day);
 
             return (
               <div
@@ -132,14 +140,15 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
                   calendar-day relative p-2 h-12 text-center cursor-pointer border rounded-md transition-colors
                   ${isToday ? 'bg-legal-primary text-white' : ''}
                   ${isSelected ? 'ring-2 ring-legal-secondary' : ''}
-                  ${isWeekendDay ? 'bg-gray-100 bg-opacity-50 text-gray-500' : ''}
-                  ${daySessions.length > 0 && !isWeekendDay ? 'bg-blue-100' : ''}
-                  ${dayAppointments.length > 0 && !isWeekendDay ? 'bg-green-100' : ''}
+                  ${isWeekendDay ? 'bg-orange-200 bg-opacity-70 text-orange-800' : ''}
+                  ${isHoliday ? 'bg-red-200 bg-opacity-70 text-red-800' : ''}
+                  ${daySessions.length > 0 && !isWeekendDay && !isHoliday ? 'bg-blue-100' : ''}
+                  ${dayAppointments.length > 0 && !isWeekendDay && !isHoliday ? 'bg-green-100' : ''}
                   hover:bg-accent
                 `}
                 onClick={() => onDateSelect(day)}
               >
-                <span className={`text-sm font-medium ${isWeekendDay ? 'text-gray-400' : ''}`}>
+                <span className={`text-sm font-medium ${(isWeekendDay || isHoliday) ? 'text-gray-600' : ''}`}>
                   {day.getDate()}
                 </span>
                 
@@ -173,8 +182,12 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             <span>اليوم</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-100 bg-opacity-50 rounded border"></div>
-            <span>عطلة</span>
+            <div className="w-4 h-4 bg-orange-200 bg-opacity-70 rounded border"></div>
+            <span>عطلة أسبوعية</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-200 bg-opacity-70 rounded border"></div>
+            <span>عطلة رسمية</span>
           </div>
         </div>
         <div className="mt-2 text-center">
