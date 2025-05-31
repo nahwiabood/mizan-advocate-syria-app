@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CalendarIcon, Plus, Edit, Trash2, ChevronDown, ChevronRight, User, Users, Scale, Gavel, Clock } from 'lucide-react';
+import { CalendarIcon, Plus, Edit, Trash2, ChevronDown, ChevronRight, User, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { dataStore } from '@/store/dataStore';
@@ -27,7 +27,6 @@ const Clients = () => {
   const [isEditCaseDialogOpen, setIsEditCaseDialogOpen] = useState(false);
   const [isAddStageDialogOpen, setIsAddStageDialogOpen] = useState(false);
   const [isEditStageDialogOpen, setIsEditStageDialogOpen] = useState(false);
-  const [isAddSessionDialogOpen, setIsAddSessionDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [selectedStage, setSelectedStage] = useState<CaseStage | null>(null);
@@ -47,7 +46,7 @@ const Clients = () => {
     description: '',
     opponent: '',
     subject: '',
-    status: 'active' as 'active' | 'closed' | 'pending',
+    status: 'active' as const,
   });
 
   const [newStage, setNewStage] = useState({
@@ -55,17 +54,10 @@ const Clients = () => {
     caseNumber: '',
     stageName: '',
     firstSessionDate: undefined as Date | undefined,
-    status: 'active' as 'active' | 'completed',
+    status: 'active' as const,
     notes: '',
     resolutionDate: undefined as Date | undefined,
     decisionNumber: '',
-  });
-
-  const [newSession, setNewSession] = useState({
-    sessionDate: undefined as Date | undefined,
-    sessionTime: '',
-    notes: '',
-    status: 'scheduled' as 'scheduled' | 'completed' | 'postponed',
   });
 
   useEffect(() => {
@@ -132,11 +124,11 @@ const Clients = () => {
 
     dataStore.addCase({
       clientId: selectedClient.id,
-      title: newCase.description,
+      title: newCase.description, // Use description as title
       description: newCase.description,
       opponent: newCase.opponent,
       subject: newCase.subject,
-      caseType: 'عام',
+      caseType: 'عام', // Default case type
       status: newCase.status,
     });
 
@@ -230,27 +222,6 @@ const Clients = () => {
     loadData();
   };
 
-  const handleAddSession = () => {
-    if (!selectedStage || !newSession.sessionDate) return;
-
-    dataStore.addSession({
-      stageId: selectedStage.id,
-      sessionDate: newSession.sessionDate,
-      sessionTime: newSession.sessionTime,
-      notes: newSession.notes,
-      status: newSession.status,
-    });
-
-    setNewSession({
-      sessionDate: undefined,
-      sessionTime: '',
-      notes: '',
-      status: 'scheduled',
-    });
-    setIsAddSessionDialogOpen(false);
-    loadData();
-  };
-
   const toggleClientExpansion = (clientId: string) => {
     const newExpanded = new Set(expandedClients);
     if (newExpanded.has(clientId)) {
@@ -271,6 +242,7 @@ const Clients = () => {
   const toggleCaseExpansion = (caseId: string) => {
     const newExpanded = new Set(expandedCases);
     
+    // If opening this case, close all other cases
     if (!newExpanded.has(caseId)) {
       newExpanded.clear();
       newExpanded.add(caseId);
@@ -330,11 +302,6 @@ const Clients = () => {
     setIsEditStageDialogOpen(true);
   };
 
-  const openAddSessionDialog = (stage: CaseStage) => {
-    setSelectedStage(stage);
-    setIsAddSessionDialogOpen(true);
-  };
-
   const getCasesForClient = (clientId: string) => {
     return cases.filter(case_ => case_.clientId === clientId);
   };
@@ -355,8 +322,9 @@ const Clients = () => {
               </CardTitle>
               <Dialog open={isAddClientDialogOpen} onOpenChange={setIsAddClientDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="p-2 h-10 w-10">
-                    <Plus className="h-5 w-5" />
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    إضافة موكل جديد
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md" dir="rtl">
@@ -448,7 +416,7 @@ const Clients = () => {
             ) : (
               <div className="space-y-4">
                 {clients.map((client) => (
-                  <Card key={client.id} className="border border-blue-200 bg-blue-50">
+                  <Card key={client.id} className="border">
                     <Collapsible>
                       <CollapsibleTrigger
                         className="w-full"
@@ -461,13 +429,12 @@ const Clients = () => {
                             ) : (
                               <ChevronRight className="h-4 w-4" />
                             )}
-                            <User className="h-4 w-4 text-blue-600" />
+                            <User className="h-4 w-4" />
                             <div className="text-right">
-                              <h3 className="font-semibold text-blue-800">{client.name}</h3>
-                              <p className="text-xs text-blue-600">
-                                {client.phone && `${client.phone}`}
-                                {client.email && ` • ${client.email}`}
-                                {client.nationalId && ` • ${client.nationalId}`}
+                              <h3 className="font-semibold">{client.name}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {client.phone && `هاتف: ${client.phone}`}
+                                {client.email && ` • إيميل: ${client.email}`}
                               </p>
                             </div>
                           </div>
@@ -481,6 +448,15 @@ const Clients = () => {
                               <Edit className="h-4 w-4" />
                               تعديل
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openAddCaseDialog(client)}
+                              className="gap-1"
+                            >
+                              <Plus className="h-4 w-4" />
+                              قضية جديدة
+                            </Button>
                           </div>
                         </div>
                       </CollapsibleTrigger>
@@ -491,6 +467,9 @@ const Clients = () => {
                             <div className="mt-4 space-y-3">
                               {client.address && (
                                 <p><strong>العنوان:</strong> {client.address}</p>
+                              )}
+                              {client.nationalId && (
+                                <p><strong>الرقم الوطني:</strong> {client.nationalId}</p>
                               )}
                               {client.notes && (
                                 <p><strong>ملاحظات:</strong> {client.notes}</p>
@@ -504,7 +483,7 @@ const Clients = () => {
                               ) : (
                                 <div className="space-y-2">
                                   {getCasesForClient(client.id).map((case_) => (
-                                    <Card key={case_.id} className="border border-green-200 bg-green-50">
+                                    <Card key={case_.id} className="bg-muted/50">
                                       <Collapsible>
                                         <CollapsibleTrigger
                                           className="w-full"
@@ -517,11 +496,10 @@ const Clients = () => {
                                               ) : (
                                                 <ChevronRight className="h-4 w-4" />
                                               )}
-                                              <Scale className="h-4 w-4 text-green-600" />
                                               <div>
-                                                <h5 className="font-medium text-green-800">{case_.description}</h5>
-                                                <p className="text-xs text-green-600">
-                                                  الخصم: {case_.opponent} • الموضوع: {case_.subject} • الحالة: {
+                                                <h5 className="font-medium">{case_.description}</h5>
+                                                <p className="text-sm text-muted-foreground">
+                                                  الخصم: {case_.opponent} • الحالة: {
                                                     case_.status === 'active' ? 'نشطة' :
                                                     case_.status === 'closed' ? 'مغلقة' : 'معلقة'
                                                   }
@@ -538,6 +516,15 @@ const Clients = () => {
                                                 <Edit className="h-4 w-4" />
                                                 تعديل
                                               </Button>
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => openAddStageDialog(case_)}
+                                                className="gap-1"
+                                              >
+                                                <Plus className="h-4 w-4" />
+                                                مرحلة جديدة
+                                              </Button>
                                             </div>
                                           </div>
                                         </CollapsibleTrigger>
@@ -545,6 +532,12 @@ const Clients = () => {
                                         <CollapsibleContent>
                                           {expandedCases.has(case_.id) && (
                                             <div className="px-3 pb-3 border-t bg-white/50">
+                                              <div className="mt-3 space-y-2">
+                                                {case_.subject && (
+                                                  <p><strong>الموضوع:</strong> {case_.subject}</p>
+                                                )}
+                                              </div>
+                                              
                                               <div className="mt-4">
                                                 <h6 className="font-medium mb-2">المراحل:</h6>
                                                 {getStagesForCase(case_.id).length === 0 ? (
@@ -552,14 +545,11 @@ const Clients = () => {
                                                 ) : (
                                                   <div className="space-y-2">
                                                     {getStagesForCase(case_.id).map((stage) => (
-                                                      <div key={stage.id} className="border border-yellow-200 bg-yellow-50 p-3 rounded">
+                                                      <div key={stage.id} className="bg-white p-3 rounded border">
                                                         <div className="flex items-start justify-between">
                                                           <div className="text-right flex-1">
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                              <Gavel className="h-4 w-4 text-yellow-600" />
-                                                              <h6 className="font-medium text-yellow-800">{stage.stageName || 'مرحلة غير محددة'}</h6>
-                                                            </div>
-                                                            <p className="text-sm text-yellow-600">
+                                                            <h6 className="font-medium">{stage.stageName || 'مرحلة غير محددة'}</h6>
+                                                            <p className="text-sm text-muted-foreground">
                                                               {stage.courtName} - {stage.caseNumber}
                                                             </p>
                                                             <p className="text-sm">
@@ -620,18 +610,7 @@ const Clients = () => {
         <Dialog open={isEditClientDialogOpen} onOpenChange={setIsEditClientDialogOpen}>
           <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right flex items-center justify-between">
-                تعديل بيانات الموكل
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openAddCaseDialog(selectedClient!)}
-                  className="gap-1"
-                >
-                  <Plus className="h-4 w-4" />
-                  قضية جديدة
-                </Button>
-              </DialogTitle>
+              <DialogTitle className="text-right">تعديل بيانات الموكل</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-right">
@@ -772,18 +751,7 @@ const Clients = () => {
         <Dialog open={isEditCaseDialogOpen} onOpenChange={setIsEditCaseDialogOpen}>
           <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right flex items-center justify-between">
-                تعديل القضية
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openAddStageDialog(selectedCase!)}
-                  className="gap-1"
-                >
-                  <Plus className="h-4 w-4" />
-                  مرحلة جديدة
-                </Button>
-              </DialogTitle>
+              <DialogTitle className="text-right">تعديل القضية</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-right">
@@ -984,18 +952,7 @@ const Clients = () => {
         <Dialog open={isEditStageDialogOpen} onOpenChange={setIsEditStageDialogOpen}>
           <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right flex items-center justify-between">
-                تعديل المرحلة
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openAddSessionDialog(selectedStage!)}
-                  className="gap-1"
-                >
-                  <Plus className="h-4 w-4" />
-                  جلسة جديدة
-                </Button>
-              </DialogTitle>
+              <DialogTitle className="text-right">تعديل المرحلة</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-right">
@@ -1127,85 +1084,6 @@ const Clients = () => {
               </div>
               <Button onClick={handleEditStage} className="w-full">
                 حفظ التعديلات
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Add Session Dialog */}
-        <Dialog open={isAddSessionDialogOpen} onOpenChange={setIsAddSessionDialogOpen}>
-          <DialogContent className="max-w-md" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-right">
-                <Label className="text-right">تاريخ الجلسة *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-right font-normal",
-                        !newSession.sessionDate && "text-muted-foreground"
-                      )}
-                      dir="rtl"
-                    >
-                      <CalendarIcon className="ml-2 h-4 w-4" />
-                      {newSession.sessionDate ? (
-                        formatSyrianDate(newSession.sessionDate)
-                      ) : (
-                        <span>اختر التاريخ</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={newSession.sessionDate}
-                      onSelect={(date) => setNewSession({ ...newSession, sessionDate: date })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="text-right">
-                <Label htmlFor="session-time" className="text-right">وقت الجلسة</Label>
-                <Input
-                  id="session-time"
-                  type="time"
-                  value={newSession.sessionTime}
-                  onChange={(e) => setNewSession({ ...newSession, sessionTime: e.target.value })}
-                  className="text-right"
-                  dir="rtl"
-                />
-              </div>
-              <div className="text-right">
-                <Label htmlFor="session-status" className="text-right">الحالة</Label>
-                <Select value={newSession.status} onValueChange={(value: 'scheduled' | 'completed' | 'postponed') => setNewSession({ ...newSession, status: value })}>
-                  <SelectTrigger className="text-right" dir="rtl">
-                    <SelectValue placeholder="اختر الحالة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="scheduled">مجدولة</SelectItem>
-                    <SelectItem value="completed">مكتملة</SelectItem>
-                    <SelectItem value="postponed">مؤجلة</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="text-right">
-                <Label htmlFor="session-notes" className="text-right">ملاحظات</Label>
-                <Textarea
-                  id="session-notes"
-                  value={newSession.notes}
-                  onChange={(e) => setNewSession({ ...newSession, notes: e.target.value })}
-                  placeholder="ملاحظات الجلسة"
-                  className="text-right"
-                  dir="rtl"
-                />
-              </div>
-              <Button onClick={handleAddSession} className="w-full">
-                إضافة الجلسة
               </Button>
             </div>
           </DialogContent>
