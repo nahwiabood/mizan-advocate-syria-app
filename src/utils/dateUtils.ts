@@ -47,3 +47,36 @@ export const formatFullSyrianDate = (date: Date): string => {
   
   return `${dayName} ${day} ${monthName} ${year}`;
 };
+
+// Syrian holidays (fixed dates and calculated dates)
+export const getSyrianHolidays = (year: number): { date: Date; name: string }[] => {
+  const holidays = [
+    { date: new Date(year, 0, 1), name: 'رأس السنة الميلادية' },
+    { date: new Date(year, 2, 8), name: 'عيد الثورة' },
+    { date: new Date(year, 2, 21), name: 'عيد الأم' },
+    { date: new Date(year, 3, 17), name: 'عيد الجلاء' },
+    { date: new Date(year, 4, 1), name: 'عيد العمال' },
+    { date: new Date(year, 4, 6), name: 'عيد الشهداء' },
+    { date: new Date(year, 11, 25), name: 'عيد الميلاد المجيد' },
+  ];
+  
+  return holidays;
+};
+
+export const isWeekend = (date: Date): boolean => {
+  const day = date.getDay();
+  return day === 5 || day === 6; // Friday (5) and Saturday (6)
+};
+
+export const isHoliday = (date: Date): { isHoliday: boolean; name?: string } => {
+  const holidays = getSyrianHolidays(date.getFullYear());
+  const holiday = holidays.find(h => 
+    h.date.getDate() === date.getDate() && 
+    h.date.getMonth() === date.getMonth()
+  );
+  
+  return {
+    isHoliday: !!holiday,
+    name: holiday?.name
+  };
+};

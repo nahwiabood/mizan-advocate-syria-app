@@ -19,7 +19,6 @@ import { cn } from '@/lib/utils';
 
 interface SessionsTableProps {
   sessions: Session[];
-  selectedDate: Date;
   onSessionUpdate: () => void;
   showAddButton?: boolean;
   onWeekendWarning?: (date: Date) => void;
@@ -27,7 +26,6 @@ interface SessionsTableProps {
 
 export const SessionsTable: React.FC<SessionsTableProps> = ({
   sessions,
-  selectedDate,
   onSessionUpdate,
   showAddButton = true,
   onWeekendWarning
@@ -68,7 +66,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       stageId: '',
       courtName: newSession.courtName,
       caseNumber: newSession.caseNumber,
-      sessionDate: selectedDate,
+      sessionDate: new Date(),
       clientName: newSession.clientName,
       opponent: newSession.opponent,
       postponementReason: newSession.postponementReason,
@@ -178,37 +176,12 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     setIsDeleteDialogOpen(true);
   };
 
-  const exportAllData = () => {
-    const allData = {
-      clients: dataStore.getClients(),
-      cases: dataStore.getCases(),
-      stages: dataStore.getStages(),
-      sessions: dataStore.getSessions(),
-      tasks: dataStore.getTasks(),
-      appointments: dataStore.getAppointments(),
-      exportDate: new Date().toISOString(),
-    };
-
-    const dataStr = JSON.stringify(allData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `backup-${format(new Date(), 'yyyy-MM-dd-HH-mm')}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
-
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-right">جلسات {formatFullSyrianDate(selectedDate)}</CardTitle>
+          <CardTitle className="text-right">جلسات اليوم</CardTitle>
           <div className="flex gap-2">
-            <Button onClick={exportAllData} variant="outline" size="sm">
-              تصدير نسخة احتياطية
-            </Button>
             {showAddButton && (
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
@@ -220,9 +193,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 <DialogContent className="max-w-md" dir="rtl">
                   <DialogHeader>
                     <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
-                    <p className="text-sm text-muted-foreground text-right">
-                      التاريخ المحدد: {format(selectedDate, 'EEEE, MMMM d, yyyy')} - {formatFullSyrianDate(selectedDate)}
-                    </p>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="text-right">
