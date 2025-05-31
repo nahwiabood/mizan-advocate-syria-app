@@ -41,14 +41,16 @@ class DataStore {
         if (nextDate) session.nextSessionDate = nextDate;
       }
       
+      if (session.resolutionDate) {
+        const resolutionDate = safeConvertDate(session.resolutionDate);
+        if (resolutionDate) session.resolutionDate = resolutionDate;
+      }
+      
       const createdAt = safeConvertDate(session.createdAt);
       if (createdAt) session.createdAt = createdAt;
       
       const updatedAt = safeConvertDate(session.updatedAt);
       if (updatedAt) session.updatedAt = updatedAt;
-      
-      // Set default values for new fields
-      if (session.isResolved === undefined) session.isResolved = false;
     });
 
     // Convert task dates
@@ -105,6 +107,11 @@ class DataStore {
       const firstSessionDate = safeConvertDate(stage.firstSessionDate);
       if (firstSessionDate) stage.firstSessionDate = firstSessionDate;
       
+      if (stage.resolutionDate) {
+        const resolutionDate = safeConvertDate(stage.resolutionDate);
+        if (resolutionDate) stage.resolutionDate = resolutionDate;
+      }
+      
       const createdAt = safeConvertDate(stage.createdAt);
       if (createdAt) stage.createdAt = createdAt;
       
@@ -127,7 +134,6 @@ class DataStore {
     const newSession: Session = {
       ...session,
       id: crypto.randomUUID(),
-      isResolved: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -160,6 +166,19 @@ class DataStore {
     return true;
   }
 
+  resolveSession(sessionId: string): Session | null {
+    const data = this.getData();
+    const session = data.sessions.find(s => s.id === sessionId);
+    if (!session) return null;
+
+    session.isResolved = true;
+    session.resolutionDate = new Date();
+    session.updatedAt = new Date();
+
+    this.saveData(data);
+    return session;
+  }
+
   transferSession(sessionId: string, nextDate: Date, reason: string): Session | null {
     const data = this.getData();
     const session = data.sessions.find(s => s.id === sessionId);
@@ -181,7 +200,6 @@ class DataStore {
       clientName: session.clientName,
       opponent: session.opponent,
       isTransferred: false,
-      isResolved: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

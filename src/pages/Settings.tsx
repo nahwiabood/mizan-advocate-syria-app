@@ -35,13 +35,18 @@ const Settings: React.FC = () => {
 
   // Load settings from localStorage on component mount
   useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = () => {
     const savedLawyerInfo = localStorage.getItem('lawyer-info');
     const savedPrintSettings = localStorage.getItem('print-settings');
     const savedDisplaySettings = localStorage.getItem('display-settings');
 
     if (savedLawyerInfo) {
       try {
-        setLawyerInfo(JSON.parse(savedLawyerInfo));
+        const parsed = JSON.parse(savedLawyerInfo);
+        setLawyerInfo(parsed);
       } catch (error) {
         console.error('Error parsing lawyer info:', error);
       }
@@ -49,7 +54,8 @@ const Settings: React.FC = () => {
 
     if (savedPrintSettings) {
       try {
-        setPrintSettings(JSON.parse(savedPrintSettings));
+        const parsed = JSON.parse(savedPrintSettings);
+        setPrintSettings(parsed);
       } catch (error) {
         console.error('Error parsing print settings:', error);
       }
@@ -57,12 +63,13 @@ const Settings: React.FC = () => {
 
     if (savedDisplaySettings) {
       try {
-        setDisplaySettings(JSON.parse(savedDisplaySettings));
+        const parsed = JSON.parse(savedDisplaySettings);
+        setDisplaySettings(parsed);
       } catch (error) {
         console.error('Error parsing display settings:', error);
       }
     }
-  }, []);
+  };
 
   const handleSaveLawyerInfo = () => {
     try {
@@ -212,46 +219,69 @@ const Settings: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="lawyer-info" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6">
-                <TabsTrigger value="lawyer-info" className="text-sm">معلومات المحامي</TabsTrigger>
-                <TabsTrigger value="print" className="text-sm">إعدادات الطباعة</TabsTrigger>
-                <TabsTrigger value="display" className="text-sm">إعدادات العرض</TabsTrigger>
-                <TabsTrigger value="data" className="text-sm">إدارة البيانات</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted rounded-lg p-1">
+                <TabsTrigger 
+                  value="lawyer-info" 
+                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  معلومات المحامي
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="print" 
+                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  إعدادات الطباعة
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="display" 
+                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  إعدادات العرض
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="data" 
+                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  إدارة البيانات
+                </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="lawyer-info" className="mt-4 space-y-4">
+              <TabsContent value="lawyer-info" className="mt-6 space-y-6">
                 <div>
-                  <Label htmlFor="lawyerName">اسم المحامي</Label>
+                  <Label htmlFor="lawyerName" className="block mb-2 text-right">اسم المحامي</Label>
                   <Input
                     id="lawyerName"
                     value={lawyerInfo.name}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, name: e.target.value })}
                     placeholder="أدخل اسم المحامي"
                     className="text-right"
+                    dir="rtl"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lawyerTitle">المسمى الوظيفي</Label>
+                  <Label htmlFor="lawyerTitle" className="block mb-2 text-right">المسمى الوظيفي</Label>
                   <Input
                     id="lawyerTitle"
                     value={lawyerInfo.title}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, title: e.target.value })}
                     placeholder="مثال: محامي قانوني"
                     className="text-right"
+                    dir="rtl"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lawyerPhone">رقم الهاتف</Label>
+                  <Label htmlFor="lawyerPhone" className="block mb-2 text-right">رقم الهاتف</Label>
                   <Input
                     id="lawyerPhone"
                     value={lawyerInfo.phone}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, phone: e.target.value })}
                     placeholder="أدخل رقم الهاتف"
                     className="text-right"
+                    dir="rtl"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lawyerEmail">البريد الإلكتروني</Label>
+                  <Label htmlFor="lawyerEmail" className="block mb-2 text-right">البريد الإلكتروني</Label>
                   <Input
                     id="lawyerEmail"
                     value={lawyerInfo.email}
@@ -259,16 +289,18 @@ const Settings: React.FC = () => {
                     placeholder="أدخل البريد الإلكتروني"
                     type="email"
                     className="text-right"
+                    dir="rtl"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lawyerAddress">العنوان</Label>
+                  <Label htmlFor="lawyerAddress" className="block mb-2 text-right">العنوان</Label>
                   <Input
                     id="lawyerAddress"
                     value={lawyerInfo.address}
                     onChange={(e) => setLawyerInfo({ ...lawyerInfo, address: e.target.value })}
                     placeholder="أدخل عنوان المكتب"
                     className="text-right"
+                    dir="rtl"
                   />
                 </div>
                 <Button onClick={handleSaveLawyerInfo} className="w-full">
@@ -276,9 +308,9 @@ const Settings: React.FC = () => {
                 </Button>
               </TabsContent>
               
-              <TabsContent value="print" className="mt-4 space-y-6">
+              <TabsContent value="print" className="mt-6 space-y-6">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="includeLogo">إظهار الشعار في الطباعة</Label>
+                  <Label htmlFor="includeLogo" className="text-right">إظهار الشعار في الطباعة</Label>
                   <Switch
                     id="includeLogo"
                     checked={printSettings.includeLogo}
@@ -286,7 +318,7 @@ const Settings: React.FC = () => {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="includeHeader">إظهار الترويسة في الطباعة</Label>
+                  <Label htmlFor="includeHeader" className="text-right">إظهار الترويسة في الطباعة</Label>
                   <Switch
                     id="includeHeader"
                     checked={printSettings.includeHeader}
@@ -294,7 +326,7 @@ const Settings: React.FC = () => {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="includeFooter">إظهار التذييل في الطباعة</Label>
+                  <Label htmlFor="includeFooter" className="text-right">إظهار التذييل في الطباعة</Label>
                   <Switch
                     id="includeFooter"
                     checked={printSettings.includeFooter}
@@ -302,7 +334,7 @@ const Settings: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label className="block mb-3">حجم الخط في الطباعة</Label>
+                  <Label className="block mb-3 text-right">حجم الخط في الطباعة</Label>
                   <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant={printSettings.fontSize === 'small' ? 'default' : 'outline'}
@@ -332,9 +364,9 @@ const Settings: React.FC = () => {
                 </Button>
               </TabsContent>
               
-              <TabsContent value="display" className="mt-4 space-y-6">
+              <TabsContent value="display" className="mt-6 space-y-6">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="showPastSessions">إظهار الجلسات السابقة</Label>
+                  <Label htmlFor="showPastSessions" className="text-right">إظهار الجلسات السابقة</Label>
                   <Switch
                     id="showPastSessions"
                     checked={displaySettings.showPastSessions}
@@ -342,7 +374,7 @@ const Settings: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <Label className="block mb-3">عرض التقويم الافتراضي</Label>
+                  <Label className="block mb-3 text-right">عرض التقويم الافتراضي</Label>
                   <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant={displaySettings.defaultCalendarView === 'day' ? 'default' : 'outline'}
@@ -368,7 +400,7 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="sessionsColor" className="block mb-2">لون الجلسات</Label>
+                  <Label htmlFor="sessionsColor" className="block mb-2 text-right">لون الجلسات</Label>
                   <div className="flex gap-2">
                     <Input
                       id="sessionsColor"
@@ -381,11 +413,12 @@ const Settings: React.FC = () => {
                       value={displaySettings.sessionsColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, sessionsColor: e.target.value })}
                       className="flex-1 text-right"
+                      dir="rtl"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="appointmentsColor" className="block mb-2">لون المواعيد</Label>
+                  <Label htmlFor="appointmentsColor" className="block mb-2 text-right">لون المواعيد</Label>
                   <div className="flex gap-2">
                     <Input
                       id="appointmentsColor"
@@ -398,11 +431,12 @@ const Settings: React.FC = () => {
                       value={displaySettings.appointmentsColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, appointmentsColor: e.target.value })}
                       className="flex-1 text-right"
+                      dir="rtl"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="tasksColor" className="block mb-2">لون المهام</Label>
+                  <Label htmlFor="tasksColor" className="block mb-2 text-right">لون المهام</Label>
                   <div className="flex gap-2">
                     <Input
                       id="tasksColor"
@@ -415,6 +449,7 @@ const Settings: React.FC = () => {
                       value={displaySettings.tasksColor}
                       onChange={(e) => setDisplaySettings({ ...displaySettings, tasksColor: e.target.value })}
                       className="flex-1 text-right"
+                      dir="rtl"
                     />
                   </div>
                 </div>
@@ -423,7 +458,7 @@ const Settings: React.FC = () => {
                 </Button>
               </TabsContent>
               
-              <TabsContent value="data" className="mt-4 space-y-6">
+              <TabsContent value="data" className="mt-6 space-y-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg text-right">تصدير/استيراد البيانات</CardTitle>
