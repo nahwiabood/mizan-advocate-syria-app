@@ -41,6 +41,11 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     );
   };
 
+  const isWeekend = (date: Date) => {
+    const day = getDay(date);
+    return day === 5 || day === 6; // Friday (5) and Saturday (6)
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     const newMonth = new Date(currentMonth);
     if (direction === 'prev') {
@@ -118,6 +123,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             const dayAppointments = getAppointmentsForDate(day);
             const isToday = isDateToday(day);
             const isSelected = isSameDay(day, selectedDate);
+            const isWeekendDay = isWeekend(day);
 
             return (
               <div
@@ -126,13 +132,16 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
                   calendar-day relative p-2 h-12 text-center cursor-pointer border rounded-md transition-colors
                   ${isToday ? 'bg-legal-primary text-white' : ''}
                   ${isSelected ? 'ring-2 ring-legal-secondary' : ''}
-                  ${daySessions.length > 0 ? 'bg-blue-100' : ''}
-                  ${dayAppointments.length > 0 ? 'bg-green-100' : ''}
+                  ${isWeekendDay ? 'bg-gray-100 bg-opacity-50 text-gray-500' : ''}
+                  ${daySessions.length > 0 && !isWeekendDay ? 'bg-blue-100' : ''}
+                  ${dayAppointments.length > 0 && !isWeekendDay ? 'bg-green-100' : ''}
                   hover:bg-accent
                 `}
                 onClick={() => onDateSelect(day)}
               >
-                <span className="text-sm font-medium">{day.getDate()}</span>
+                <span className={`text-sm font-medium ${isWeekendDay ? 'text-gray-400' : ''}`}>
+                  {day.getDate()}
+                </span>
                 
                 {daySessions.length > 0 && (
                   <span className="session-badge absolute top-0 right-0 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
@@ -162,6 +171,10 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-legal-primary rounded border"></div>
             <span>اليوم</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-gray-100 bg-opacity-50 rounded border"></div>
+            <span>عطلة</span>
           </div>
         </div>
         <div className="mt-2 text-center">
