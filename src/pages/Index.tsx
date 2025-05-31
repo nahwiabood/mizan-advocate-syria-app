@@ -22,7 +22,9 @@ const Index = () => {
   const [selectedDateSessions, setSelectedDateSessions] = useState<Session[]>([]);
   const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
+  const [unresolvedSessions, setUnresolvedSessions] = useState<Session[]>([]);
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const [showUnresolved, setShowUnresolved] = useState(false);
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const printContentRef = useRef<HTMLDivElement>(null);
 
@@ -45,9 +47,13 @@ const Index = () => {
 
     // Filter upcoming sessions (after selected date)
     const upcoming = sessions.filter(session => 
-      isAfter(session.sessionDate, selectedDate)
+      isAfter(session.sessionDate, selectedDate) && !session.isResolved
     );
     setUpcomingSessions(upcoming);
+
+    // Filter unresolved sessions
+    const unresolved = sessions.filter(session => !session.isResolved);
+    setUnresolvedSessions(unresolved);
   }, [selectedDate, sessions, appointments]);
 
   const loadData = () => {
@@ -57,6 +63,7 @@ const Index = () => {
   };
 
   const getDisplaySessions = () => {
+    if (showUnresolved) return unresolvedSessions;
     if (showUpcoming) return upcomingSessions;
     return selectedDateSessions;
   };
@@ -239,13 +246,21 @@ const Index = () => {
                 sessions={sessions}
                 appointments={appointments}
                 selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
+                onDateSelect={(date) => {
+                  setSelectedDate(date);
+                  setShowUpcoming(false);
+                  setShowUnresolved(false);
+                }}
               />
 
               <div className="flex flex-col gap-2">
                 <PastSessionsDialog
                   sessions={sessions}
-                  onSelectSession={setSelectedDate}
+                  onSelectSession={(date) => {
+                    setSelectedDate(date);
+                    setShowUpcoming(false);
+                    setShowUnresolved(false);
+                  }}
                 />
               </div>
 
@@ -256,11 +271,23 @@ const Index = () => {
                   size="sm"
                   onClick={() => {
                     setShowUpcoming(!showUpcoming);
+                    setShowUnresolved(false);
                   }}
                   className="gap-2"
                 >
                   <Clock className="h-4 w-4" />
                   الجلسات القادمة ({upcomingSessions.length})
+                </Button>
+                <Button
+                  variant={showUnresolved ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnresolved(!showUnresolved);
+                    setShowUpcoming(false);
+                  }}
+                  className="gap-2"
+                >
+                  الجلسات غير المرحلة ({unresolvedSessions.length})
                 </Button>
               </div>
 
@@ -283,11 +310,23 @@ const Index = () => {
                   size="sm"
                   onClick={() => {
                     setShowUpcoming(!showUpcoming);
+                    setShowUnresolved(false);
                   }}
                   className="gap-2"
                 >
                   <Clock className="h-4 w-4" />
                   الجلسات القادمة ({upcomingSessions.length})
+                </Button>
+                <Button
+                  variant={showUnresolved ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setShowUnresolved(!showUnresolved);
+                    setShowUpcoming(false);
+                  }}
+                  className="gap-2"
+                >
+                  الجلسات غير المرحلة ({unresolvedSessions.length})
                 </Button>
               </div>
 
@@ -296,7 +335,7 @@ const Index = () => {
                 sessions={getDisplaySessions()}
                 selectedDate={selectedDate}
                 onSessionUpdate={loadData}
-                showAddButton={!showUpcoming}
+                showAddButton={!showUpcoming && !showUnresolved}
                 onWeekendWarning={checkWeekendWarning}
               />
 

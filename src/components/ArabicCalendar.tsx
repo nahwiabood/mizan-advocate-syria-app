@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIconLucide } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName } from '@/utils/dateUtils';
+import { formatSyrianDate, formatFullSyrianDate, isDateToday, getFullSyrianDayName } from '@/utils/dateUtils';
 import { Session, Appointment } from '@/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
@@ -29,6 +29,23 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   const firstDayOfMonth = getDay(monthStart);
   const emptyCells = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
+  // Syrian national and religious holidays (approximate dates - these would need to be updated yearly for Islamic holidays)
+  const syrianHolidays = [
+    { month: 0, day: 1, name: 'رأس السنة الميلادية' },
+    { month: 2, day: 8, name: 'يوم المرأة العالمي' },
+    { month: 2, day: 21, name: 'عيد الأم' },
+    { month: 3, day: 17, name: 'عيد الجلاء' },
+    { month: 4, day: 1, name: 'عيد العمال' },
+    { month: 4, day: 6, name: 'عيد الشهداء' },
+    { month: 7, day: 23, name: 'عيد المقاومة' },
+    { month: 9, day: 16, name: 'عيد التصحيح' },
+    { month: 11, day: 25, name: 'عيد الميلاد المجيد' },
+    // Islamic holidays (these dates change yearly - this is just an example)
+    { month: 3, day: 21, name: 'عيد الفطر المبارك', isIslamic: true },
+    { month: 5, day: 28, name: 'عيد الأضحى المبارك', isIslamic: true },
+    { month: 2, day: 18, name: 'المولد النبوي الشريف', isIslamic: true },
+  ];
+
   const getSessionsForDate = (date: Date) => {
     return sessions.filter(session => 
       isSameDay(session.sessionDate, date)
@@ -38,6 +55,17 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   const getAppointmentsForDate = (date: Date) => {
     return appointments.filter(appointment => 
       isSameDay(appointment.appointmentDate, date)
+    );
+  };
+
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 5 || day === 6; // Friday (5) and Saturday (6)
+  };
+
+  const getHolidayForDate = (date: Date) => {
+    return syrianHolidays.find(holiday => 
+      holiday.month === date.getMonth() && holiday.day === date.getDate()
     );
   };
 
@@ -73,7 +101,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           </Button>
           
           <CardTitle className="text-xl font-bold text-center">
-            {getSyrianMonthName(currentMonth.getMonth())} {currentMonth.getFullYear()}
+            {currentMonth.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
           </CardTitle>
           
           <Button
@@ -118,6 +146,8 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             const dayAppointments = getAppointmentsForDate(day);
             const isToday = isDateToday(day);
             const isSelected = isSameDay(day, selectedDate);
+            const isWeekendDay = isWeekend(day);
+            const holiday = getHolidayForDate(day);
 
             return (
               <div
@@ -126,11 +156,13 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
                   calendar-day relative p-2 h-12 text-center cursor-pointer border rounded-md transition-colors
                   ${isToday ? 'bg-legal-primary text-white' : ''}
                   ${isSelected ? 'ring-2 ring-legal-secondary' : ''}
+                  ${(isWeekendDay || holiday) ? 'bg-red-100/50' : ''}
                   ${daySessions.length > 0 ? 'bg-blue-100' : ''}
                   ${dayAppointments.length > 0 ? 'bg-green-100' : ''}
                   hover:bg-accent
                 `}
                 onClick={() => onDateSelect(day)}
+                title={holiday ? holiday.name : (isWeekendDay ? 'عطلة أسبوعية' : '')}
               >
                 <span className="text-sm font-medium">{day.getDate()}</span>
                 
@@ -145,12 +177,18 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
                     {dayAppointments.length}
                   </span>
                 )}
+
+                {holiday && (
+                  <div className="absolute bottom-0 left-0 text-xs text-red-600 truncate w-full px-1">
+                    {holiday.name}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
         
-        <div className="mt-4 flex gap-4 text-sm justify-center">
+        <div className="mt-4 flex gap-4 text-sm justify-center flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-blue-100 rounded border"></div>
             <span>جلسات</span>
@@ -160,12 +198,16 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             <span>مواعيد</span>
           </div>
           <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-100/50 rounded border"></div>
+            <span>عطل</span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-legal-primary rounded border"></div>
             <span>اليوم</span>
           </div>
         </div>
         <div className="mt-2 text-center">
-          <p className="text-lg font-bold">{getFullSyrianDayName(selectedDate.getDay())} {selectedDate.getDate()} {getSyrianMonthName(selectedDate.getMonth())} {selectedDate.getFullYear()}</p>
+          <p className="text-lg font-bold">{getFullSyrianDayName(selectedDate.getDay())} {selectedDate.getDate()} {selectedDate.toLocaleDateString('ar-EG', { month: 'long' })} {selectedDate.getFullYear()}</p>
         </div>
       </CardContent>
     </Card>

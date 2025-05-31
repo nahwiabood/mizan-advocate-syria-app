@@ -265,6 +265,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                   <TableHead className="text-right min-w-[120px]">رقم الأساس</TableHead>
                   <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
                   <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
+                  <TableHead className="text-right min-w-[120px]">سبب التأجيل</TableHead>
                   <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
                   <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
                   <TableHead className="text-right min-w-[80px]">الحالة</TableHead>
@@ -290,10 +291,13 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                       {session.opponent}
                     </TableCell>
                     <TableCell className="text-right">
+                      {session.postponementReason || '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
                       {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {session.nextPostponementReason || session.postponementReason || '-'}
+                      {session.nextPostponementReason || '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <span className={cn(
@@ -320,10 +324,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                           variant="ghost"
                           size="sm"
                           onClick={() => openEditDialog(session)}
-                          className="gap-1"
+                          className="p-2"
                         >
                           <Edit className="h-4 w-4" />
-                          تعديل
                         </Button>
                       </div>
                     </TableCell>
