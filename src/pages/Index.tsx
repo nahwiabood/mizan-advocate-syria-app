@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Printer, Calendar as CalendarIcon, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { ArabicCalendar } from '@/components/ArabicCalendar';
 import { SessionsTable } from '@/components/SessionsTable';
 import { TasksTable } from '@/components/TasksTable';
@@ -23,7 +23,6 @@ const Index = () => {
   const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
   const [unTransferredSessions, setUnTransferredSessions] = useState<Session[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
-  const [showUnTransferred, setShowUnTransferred] = useState(false);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const printContentRef = useRef<HTMLDivElement>(null);
@@ -66,7 +65,6 @@ const Index = () => {
   };
 
   const getDisplaySessions = () => {
-    if (showUnTransferred) return unTransferredSessions;
     if (showUpcoming) return upcomingSessions;
     return selectedDateSessions;
   };
@@ -232,16 +230,9 @@ const Index = () => {
   };
 
   return (
-    <Layout>
+    <Layout onPrint={handlePrintSchedule}>
       <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
         <Card className="p-4">
-          <div className="flex justify-end items-center mb-6 gap-2">
-            <Button className="gap-2" onClick={handlePrintSchedule}>
-              <Printer className="h-4 w-4" />
-              طباعة جدول الأعمال
-            </Button>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
             {/* Right column - Calendar */}
             <div className="lg:col-span-5 xl:col-span-4 space-y-4">
@@ -262,22 +253,9 @@ const Index = () => {
               {/* Session Filter Buttons - under calendar for mobile */}
               <div className="lg:hidden flex gap-2 justify-start flex-wrap">
                 <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(false);
-                    setShowUnTransferred(!showUnTransferred);
-                  }}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  الجلسات غير المرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
-                    setShowUnTransferred(false);
                     setShowUpcoming(!showUpcoming);
                   }}
                   className="gap-2"
@@ -302,22 +280,9 @@ const Index = () => {
               {/* Session Filter Buttons - for desktop only */}
               <div className="hidden lg:flex gap-2 justify-start flex-wrap">
                 <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(false);
-                    setShowUnTransferred(!showUnTransferred);
-                  }}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  الجلسات غير المرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
                   variant={showUpcoming ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
-                    setShowUnTransferred(false);
                     setShowUpcoming(!showUpcoming);
                   }}
                   className="gap-2"
