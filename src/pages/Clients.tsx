@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -399,16 +398,15 @@ const Clients = () => {
                             تعديل
                           </Button>
                           <Button
-                            variant="outline"
-                            size="sm"
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => {
                               e.stopPropagation();
                               openAddCaseDialog(client.id);
                             }}
-                            className="gap-1"
+                            title="إضافة قضية"
                           >
                             <Plus className="h-4 w-4" />
-                            إضافة قضية
                           </Button>
                         </div>
                         <div className="flex items-center gap-3">
@@ -456,16 +454,15 @@ const Clients = () => {
                                       تعديل
                                     </Button>
                                     <Button
-                                      variant="outline"
-                                      size="sm"
+                                      variant="ghost"
+                                      size="icon"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openAddStageDialog(case_.id);
                                       }}
-                                      className="gap-1"
+                                      title="إضافة مرحلة"
                                     >
                                       <Plus className="h-4 w-4" />
-                                      إضافة مرحلة
                                     </Button>
                                   </div>
                                   <div className="flex items-center gap-3">
@@ -509,16 +506,15 @@ const Clients = () => {
                                                 تعديل
                                               </Button>
                                               <Button
-                                                variant="outline"
-                                                size="sm"
+                                                variant="ghost"
+                                                size="icon"
                                                 onClick={(e) => {
                                                   e.stopPropagation();
                                                   openAddSessionDialog(stage.id);
                                                 }}
-                                                className="gap-1"
+                                                title="إضافة جلسة"
                                               >
                                                 <Plus className="h-4 w-4" />
-                                                إضافة جلسة
                                               </Button>
                                             </div>
                                             <div className="flex items-center gap-3">
