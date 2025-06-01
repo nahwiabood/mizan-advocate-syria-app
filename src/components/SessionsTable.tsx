@@ -34,7 +34,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-  const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [newSession, setNewSession] = useState({
     courtName: '',
@@ -46,10 +45,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
   const [transferData, setTransferData] = useState({
     nextDate: undefined as Date | undefined,
     reason: '',
-  });
-  const [resolutionData, setResolutionData] = useState({
-    decisionNumber: '',
-    resolutionResult: '',
   });
 
   const handleAddSession = () => {
@@ -111,31 +106,8 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     onSessionUpdate();
   };
 
-  const handleResolveSession = () => {
-    if (!selectedSession || !resolutionData.decisionNumber || !resolutionData.resolutionResult) {
-      return;
-    }
-
-    // Update session with resolution data
-    dataStore.updateSession(selectedSession.id, {
-      isResolved: true,
-      resolutionDate: new Date(),
-    });
-
-    // Find and update the stage with resolution data
-    const stages = dataStore.getStages();
-    const relatedStage = stages.find(stage => stage.id === selectedSession.stageId);
-    if (relatedStage) {
-      dataStore.updateStage(relatedStage.id, {
-        isResolved: true,
-        resolutionDate: new Date(),
-        decisionNumber: resolutionData.decisionNumber,
-      });
-    }
-
-    setResolutionData({ decisionNumber: '', resolutionResult: '' });
-    setIsResolveDialogOpen(false);
-    setSelectedSession(null);
+  const handleResolveSession = (session: Session) => {
+    dataStore.resolveSession(session.id);
     onSessionUpdate();
   };
 
@@ -177,11 +149,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
   const openDeleteDialog = (session: Session) => {
     setSelectedSession(session);
     setIsDeleteDialogOpen(true);
-  };
-
-  const openResolveDialog = (session: Session) => {
-    setSelectedSession(session);
-    setIsResolveDialogOpen(true);
   };
 
   return (
@@ -331,7 +298,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                             )}
                             <Button
                               variant="outline"
-                              onClick={() => openResolveDialog(session)}
+                              onClick={() => handleResolveSession(session)}
                               size="sm"
                               className="gap-1 text-green-600 border-green-600 hover:bg-green-50"
                             >
@@ -347,6 +314,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                           className="gap-1"
                         >
                           <Edit className="h-4 w-4" />
+                          تعديل
                         </Button>
                       </div>
                     </TableCell>
@@ -357,44 +325,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
           </div>
         )}
         
-        {/* Resolution Dialog */}
-        <Dialog open={isResolveDialogOpen} onOpenChange={setIsResolveDialogOpen}>
-          <DialogContent className="max-w-md" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="text-right">حسم الجلسة</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="text-right">
-                <Label htmlFor="decisionNumber" className="text-right">رقم القرار</Label>
-                <Input
-                  id="decisionNumber"
-                  value={resolutionData.decisionNumber}
-                  onChange={(e) => setResolutionData({ ...resolutionData, decisionNumber: e.target.value })}
-                  placeholder="أدخل رقم القرار"
-                  className="text-right"
-                  dir="rtl"
-                />
-              </div>
-              
-              <div className="text-right">
-                <Label htmlFor="resolutionResult" className="text-right">نتيجة القرار</Label>
-                <Textarea
-                  id="resolutionResult"
-                  value={resolutionData.resolutionResult}
-                  onChange={(e) => setResolutionData({ ...resolutionData, resolutionResult: e.target.value })}
-                  placeholder="أدخل نتيجة القرار"
-                  className="text-right"
-                  dir="rtl"
-                />
-              </div>
-              
-              <Button onClick={handleResolveSession} className="w-full">
-                حسم الجلسة
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
         {/* Edit Session Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="max-w-md" dir="rtl">

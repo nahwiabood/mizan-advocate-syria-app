@@ -70,17 +70,17 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigateMonth('next')}
-            className="p-2"
+            className="p-2 order-1 sm:order-none"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <CardTitle className="text-xl sm:text-2xl font-bold text-center">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-center order-2 sm:order-none">
             {getSyrianMonthName(currentMonth.getMonth())} {currentMonth.getFullYear()}
           </CardTitle>
           
@@ -88,7 +88,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             variant="outline"
             size="sm"
             onClick={() => navigateMonth('prev')}
-            className="p-2"
+            className="p-2 order-3 sm:order-none"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

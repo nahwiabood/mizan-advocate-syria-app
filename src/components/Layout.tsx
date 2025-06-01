@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Users, Settings as SettingsIcon, Printer } from 'lucide-react';
+import { Home, Users, Settings as SettingsIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -40,41 +40,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto p-2 sm:p-4">
           <div className="flex justify-between items-center">
             <div className="text-xl sm:text-2xl font-bold text-legal-primary">أجندة</div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-                onClick={() => {
-                  if (location.pathname === '/') {
-                    // Trigger print function from Index page
-                    window.dispatchEvent(new CustomEvent('print-schedule'));
-                  }
-                }}
-              >
-                <Printer className="h-4 w-4" />
-                <span className="hidden sm:inline">طباعة</span>
-              </Button>
-              <nav className="flex items-center space-x-1">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.path}
-                    variant={isActive(item.path) ? 'default' : 'ghost'}
-                    size="sm"
-                    className={cn(
-                      'flex items-center justify-center mx-1 text-xs sm:text-sm px-2 sm:px-3',
-                      isActive(item.path) ? 'bg-legal-primary' : ''
-                    )}
-                    asChild
-                  >
-                    <Link to={item.path}>
-                      {item.icon}
-                      <span className="hidden sm:inline">{item.name}</span>
-                    </Link>
-                  </Button>
-                ))}
-              </nav>
-            </div>
+            <nav className="flex items-center space-x-1">
+              {navItems.map((item) => (
+                <Button
+                  key={item.path}
+                  variant={isActive(item.path) ? 'default' : 'ghost'}
+                  size="sm"
+                  className={cn(
+                    'flex items-center justify-center mx-1 text-xs sm:text-sm px-2 sm:px-3',
+                    isActive(item.path) ? 'bg-legal-primary' : ''
+                  )}
+                  asChild
+                >
+                  <Link to={item.path}>
+                    {item.icon}
+                    <span className="hidden sm:inline">{item.name}</span>
+                  </Link>
+                </Button>
+              ))}
+            </nav>
           </div>
         </div>
       </header>
