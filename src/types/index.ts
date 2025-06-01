@@ -37,7 +37,6 @@ export interface CaseStage {
   isResolved?: boolean;
   resolutionDate?: Date;
   decisionNumber?: string;
-  resolutionResult?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,8 +56,6 @@ export interface Session {
   // New field for resolution
   isResolved?: boolean;
   resolutionDate?: Date;
-  decisionNumber?: string;
-  resolutionResult?: string;
   createdAt: Date;
   updatedAt: Date;
 }
