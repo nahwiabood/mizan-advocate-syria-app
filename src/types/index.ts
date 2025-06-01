@@ -37,6 +37,7 @@ export interface CaseStage {
   isResolved?: boolean;
   resolutionDate?: Date;
   decisionNumber?: string;
+  resolutionResult?: string; // Added field for resolution result
   createdAt: Date;
   updatedAt: Date;
 }
