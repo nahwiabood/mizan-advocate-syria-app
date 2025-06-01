@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -360,29 +361,29 @@ const Clients = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-4 space-y-6" dir="rtl">
+      <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-full" dir="rtl">
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-right flex items-center gap-2">
-                <Users className="h-5 w-5" />
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <CardTitle className="text-right flex items-center gap-2 text-lg sm:text-xl">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                 إدارة الموكلين
               </CardTitle>
-              <Button onClick={openAddClientDialog} className="gap-2">
-                <Plus className="h-4 w-4" />
+              <Button onClick={openAddClientDialog} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-5 w-5" />
                 إضافة موكل
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="px-2 sm:px-6">
+            <div className="space-y-3 sm:space-y-4">
               {clients.map((client) => (
-                <div key={client.id} className="border rounded-lg">
+                <div key={client.id} className="border-2 border-blue-200 rounded-lg bg-blue-50">
                   <Collapsible 
                     open={expandedClients.has(client.id)} 
                     onOpenChange={() => toggleClient(client.id)}
                   >
-                    <CollapsibleTrigger className="w-full p-4 text-right hover:bg-muted transition-colors">
+                    <CollapsibleTrigger className="w-full p-3 sm:p-4 text-right hover:bg-blue-100 transition-colors rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="flex gap-2">
                           <Button
@@ -392,35 +393,36 @@ const Clients = () => {
                               e.stopPropagation();
                               openEditClientDialog(client);
                             }}
-                            className="gap-1"
+                            className="p-2"
+                            title="تعديل الموكل"
                           >
-                            <Edit className="h-4 w-4" />
-                            تعديل
+                            <Edit className="h-5 w-5 text-blue-600" />
                           </Button>
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
                               openAddCaseDialog(client.id);
                             }}
+                            className="p-2"
                             title="إضافة قضية"
                           >
-                            <Plus className="h-4 w-4" />
+                            <Plus className="h-5 w-5 text-green-600" />
                           </Button>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <span className="font-medium">{client.name}</span>
+                            <span className="font-medium text-sm sm:text-base">{client.name}</span>
                             {(client.phone || client.email) && (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-xs sm:text-sm text-muted-foreground">
                                 {client.phone && <span>{client.phone}</span>}
                                 {client.phone && client.email && <span> • </span>}
                                 {client.email && <span>{client.email}</span>}
                               </div>
                             )}
                           </div>
-                          <User className="h-4 w-4" />
+                          <User className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                           {expandedClients.has(client.id) ? (
                             <ChevronDown className="h-4 w-4" />
                           ) : (
@@ -430,15 +432,15 @@ const Clients = () => {
                       </div>
                     </CollapsibleTrigger>
                     
-                    <CollapsibleContent className="px-4 pb-4">
-                      <div className="mr-6 space-y-3">
+                    <CollapsibleContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+                      <div className="mr-4 sm:mr-6 space-y-3">
                         {getClientCases(client.id).map((case_) => (
-                          <div key={case_.id} className="border rounded-md">
+                          <div key={case_.id} className="border-2 border-green-200 rounded-md bg-green-50">
                             <Collapsible
                               open={expandedCases.has(case_.id)}
                               onOpenChange={() => toggleCase(case_.id)}
                             >
-                              <CollapsibleTrigger className="w-full p-3 text-right hover:bg-muted transition-colors">
+                              <CollapsibleTrigger className="w-full p-3 text-right hover:bg-green-100 transition-colors rounded-md">
                                 <div className="flex items-center justify-between">
                                   <div className="flex gap-2">
                                     <Button
@@ -448,31 +450,32 @@ const Clients = () => {
                                         e.stopPropagation();
                                         openEditCaseDialog(case_);
                                       }}
-                                      className="gap-1"
+                                      className="p-2"
+                                      title="تعديل القضية"
                                     >
-                                      <Edit className="h-4 w-4" />
-                                      تعديل
+                                      <Edit className="h-5 w-5 text-green-600" />
                                     </Button>
                                     <Button
                                       variant="ghost"
-                                      size="icon"
+                                      size="sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openAddStageDialog(case_.id);
                                       }}
+                                      className="p-2"
                                       title="إضافة مرحلة"
                                     >
-                                      <Plus className="h-4 w-4" />
+                                      <Plus className="h-5 w-5 text-yellow-600" />
                                     </Button>
                                   </div>
                                   <div className="flex items-center gap-3">
                                     <div className="text-right">
-                                      <span className="font-medium">{case_.subject}</span>
-                                      <div className="text-sm text-muted-foreground">
+                                      <span className="font-medium text-sm sm:text-base">{case_.subject}</span>
+                                      <div className="text-xs sm:text-sm text-muted-foreground">
                                         ضد: {case_.opponent}
                                       </div>
                                     </div>
-                                    <FileText className="h-4 w-4" />
+                                    <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                                     {expandedCases.has(case_.id) ? (
                                       <ChevronDown className="h-4 w-4" />
                                     ) : (
@@ -483,14 +486,14 @@ const Clients = () => {
                               </CollapsibleTrigger>
                               
                               <CollapsibleContent className="px-3 pb-3">
-                                <div className="mr-6 space-y-3">
+                                <div className="mr-4 sm:mr-6 space-y-3">
                                   {getCaseStages(case_.id).map((stage) => (
-                                    <div key={stage.id} className="border rounded-md">
+                                    <div key={stage.id} className="border-2 border-yellow-200 rounded-md bg-yellow-50">
                                       <Collapsible
                                         open={expandedStages.has(stage.id)}
                                         onOpenChange={() => toggleStage(stage.id)}
                                       >
-                                        <CollapsibleTrigger className="w-full p-3 text-right hover:bg-muted transition-colors">
+                                        <CollapsibleTrigger className="w-full p-3 text-right hover:bg-yellow-100 transition-colors rounded-md">
                                           <div className="flex items-center justify-between">
                                             <div className="flex gap-2">
                                               <Button
@@ -500,31 +503,32 @@ const Clients = () => {
                                                   e.stopPropagation();
                                                   openEditStageDialog(stage);
                                                 }}
-                                                className="gap-1"
+                                                className="p-2"
+                                                title="تعديل المرحلة"
                                               >
-                                                <Edit className="h-4 w-4" />
-                                                تعديل
+                                                <Edit className="h-5 w-5 text-yellow-600" />
                                               </Button>
                                               <Button
                                                 variant="ghost"
-                                                size="icon"
+                                                size="sm"
                                                 onClick={(e) => {
                                                   e.stopPropagation();
                                                   openAddSessionDialog(stage.id);
                                                 }}
+                                                className="p-2"
                                                 title="إضافة جلسة"
                                               >
-                                                <Plus className="h-4 w-4" />
+                                                <Plus className="h-5 w-5 text-purple-600" />
                                               </Button>
                                             </div>
                                             <div className="flex items-center gap-3">
                                               <div className="text-right">
-                                                <span className="font-medium">{stage.courtName}</span>
-                                                <div className="text-sm text-muted-foreground">
+                                                <span className="font-medium text-sm sm:text-base">{stage.courtName}</span>
+                                                <div className="text-xs sm:text-sm text-muted-foreground">
                                                   رقم الأساس: {stage.caseNumber}
                                                 </div>
                                               </div>
-                                              <CalendarIcon className="h-4 w-4" />
+                                              <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
                                               {expandedStages.has(stage.id) ? (
                                                 <ChevronDown className="h-4 w-4" />
                                               ) : (
@@ -535,34 +539,36 @@ const Clients = () => {
                                         </CollapsibleTrigger>
                                         
                                         <CollapsibleContent className="px-3 pb-3">
-                                          <div className="mr-6">
+                                          <div className="mr-4 sm:mr-6">
                                             {getStageSessions(stage.id).length > 0 ? (
-                                              <Table>
-                                                <TableHeader>
-                                                  <TableRow>
-                                                    <TableHead className="text-right">تاريخ الجلسة</TableHead>
-                                                    <TableHead className="text-right">الجلسة القادمة</TableHead>
-                                                    <TableHead className="text-right">سبب التأجيل</TableHead>
-                                                  </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                  {getStageSessions(stage.id).map((session) => (
-                                                    <TableRow key={session.id}>
-                                                      <TableCell className="text-right">
-                                                        {formatSyrianDate(session.sessionDate)}
-                                                      </TableCell>
-                                                      <TableCell className="text-right">
-                                                        {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
-                                                      </TableCell>
-                                                      <TableCell className="text-right">
-                                                        {session.postponementReason || '-'}
-                                                      </TableCell>
+                                              <div className="overflow-x-auto">
+                                                <Table>
+                                                  <TableHeader>
+                                                    <TableRow className="bg-purple-50">
+                                                      <TableHead className="text-right text-purple-700 text-xs sm:text-sm">تاريخ الجلسة</TableHead>
+                                                      <TableHead className="text-right text-purple-700 text-xs sm:text-sm">الجلسة القادمة</TableHead>
+                                                      <TableHead className="text-right text-purple-700 text-xs sm:text-sm">سبب التأجيل</TableHead>
                                                     </TableRow>
-                                                  ))}
-                                                </TableBody>
-                                              </Table>
+                                                  </TableHeader>
+                                                  <TableBody>
+                                                    {getStageSessions(stage.id).map((session) => (
+                                                      <TableRow key={session.id} className="bg-purple-25">
+                                                        <TableCell className="text-right text-xs sm:text-sm">
+                                                          {formatSyrianDate(session.sessionDate)}
+                                                        </TableCell>
+                                                        <TableCell className="text-right text-xs sm:text-sm">
+                                                          {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
+                                                        </TableCell>
+                                                        <TableCell className="text-right text-xs sm:text-sm">
+                                                          {session.postponementReason || '-'}
+                                                        </TableCell>
+                                                      </TableRow>
+                                                    ))}
+                                                  </TableBody>
+                                                </Table>
+                                              </div>
                                             ) : (
-                                              <div className="text-center py-4 text-muted-foreground">
+                                              <div className="text-center py-4 text-muted-foreground text-xs sm:text-sm">
                                                 لا توجد جلسات حتى الآن
                                               </div>
                                             )}

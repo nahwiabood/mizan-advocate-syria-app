@@ -21,6 +21,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   onDateSelect,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedHolidayName, setSelectedHolidayName] = useState<string>('');
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -55,37 +56,31 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     const today = new Date();
     setCurrentMonth(today);
     onDateSelect(today);
+    setSelectedHolidayName('');
+  };
+
+  const handleDateSelect = (date: Date) => {
+    onDateSelect(date);
+    const holidayName = getSyrianHoliday(date);
+    setSelectedHolidayName(holidayName || '');
   };
 
   const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
-  // Get current holiday name if any day in the month has a holiday
-  const getCurrentHolidayName = () => {
-    for (const day of monthDays) {
-      const holidayName = getSyrianHoliday(day);
-      if (holidayName) {
-        return holidayName;
-      }
-    }
-    return null;
-  };
-
-  const currentHolidayName = getCurrentHolidayName();
-
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigateMonth('next')}
-            className="p-2"
+            className="p-2 order-1 sm:order-none"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <CardTitle className="text-xl font-bold text-center">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-center order-2 sm:order-none">
             {getSyrianMonthName(currentMonth.getMonth())} {currentMonth.getFullYear()}
           </CardTitle>
           
@@ -93,15 +88,15 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             variant="outline"
             size="sm"
             onClick={() => navigateMonth('prev')}
-            className="p-2"
+            className="p-2 order-3 sm:order-none"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
         
-        {currentHolidayName && (
-          <div className="text-center mt-2 p-2 bg-red-100 border border-red-300 rounded-md">
-            <p className="text-red-800 font-medium">{currentHolidayName}</p>
+        {selectedHolidayName && (
+          <div className="text-center mt-2 p-3 bg-red-100 border border-red-300 rounded-md">
+            <p className="text-red-800 font-medium text-sm sm:text-base">{selectedHolidayName}</p>
           </div>
         )}
         
@@ -118,10 +113,10 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         <div className="grid grid-cols-7 gap-1 mb-2">
           {dayNames.map((day, index) => (
-            <div key={index} className="p-1 text-center font-semibold text-muted-foreground text-xs">
+            <div key={index} className="p-1 text-center font-semibold text-muted-foreground text-xs sm:text-sm">
               {day}
             </div>
           ))}
@@ -129,7 +124,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
         
         <div className="grid grid-cols-7 gap-1">
           {emptyCells.map((_, index) => (
-            <div key={`empty-${index}`} className="p-2 h-12" />
+            <div key={`empty-${index}`} className="p-1 h-10 sm:h-12" />
           ))}
           
           {monthDays.map((day) => {
@@ -142,8 +137,8 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             const isHoliday = isSyrianHoliday(day);
 
             let dayClassName = `
-              calendar-day relative p-2 h-12 text-center cursor-pointer border rounded-md transition-colors
-              hover:bg-accent
+              calendar-day relative p-1 sm:p-2 h-10 sm:h-12 text-center cursor-pointer border rounded-md transition-colors
+              hover:bg-accent text-xs sm:text-sm
             `;
 
             if (isToday) {
@@ -166,19 +161,19 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
               <div
                 key={format(day, 'yyyy-MM-dd')}
                 className={dayClassName}
-                onClick={() => onDateSelect(day)}
+                onClick={() => handleDateSelect(day)}
                 title={holidayName || undefined}
               >
-                <span className="text-sm font-medium">{day.getDate()}</span>
+                <span className="font-medium">{day.getDate()}</span>
                 
                 {daySessions.length > 0 && (
-                  <span className="session-badge absolute top-0 right-0 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="session-badge absolute top-0 right-0 bg-blue-600 text-white text-xs rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center">
                     {daySessions.length}
                   </span>
                 )}
                 
                 {dayAppointments.length > 0 && (
-                  <span className="appointment-badge absolute bottom-0 right-0 bg-green-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="appointment-badge absolute bottom-0 right-0 bg-green-600 text-white text-xs rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center">
                     {dayAppointments.length}
                   </span>
                 )}
@@ -187,30 +182,30 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           })}
         </div>
         
-        <div className="mt-4 flex gap-4 text-sm justify-center flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-100 rounded border"></div>
+        <div className="mt-4 flex gap-2 sm:gap-4 text-xs sm:text-sm justify-center flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-100 rounded border"></div>
             <span>جلسات</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-100 rounded border"></div>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-100 rounded border"></div>
             <span>مواعيد</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-100 rounded border"></div>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-100 rounded border"></div>
             <span>عطلة أسبوعية</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-500 rounded border"></div>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded border"></div>
             <span>عطلة رسمية</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-legal-primary rounded border"></div>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-legal-primary rounded border"></div>
             <span>اليوم</span>
           </div>
         </div>
-        <div className="mt-2 text-center">
-          <p className="text-lg font-bold">{getFullSyrianDayName(selectedDate.getDay())} {selectedDate.getDate()} {getSyrianMonthName(selectedDate.getMonth())} {selectedDate.getFullYear()}</p>
+        <div className="mt-3 text-center">
+          <p className="text-sm sm:text-lg font-bold">{getFullSyrianDayName(selectedDate.getDay())} {selectedDate.getDate()} {getSyrianMonthName(selectedDate.getMonth())} {selectedDate.getFullYear()}</p>
         </div>
       </CardContent>
     </Card>
