@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Printer, Calendar as CalendarIcon, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { ArabicCalendar } from '@/components/ArabicCalendar';
 import { SessionsTable } from '@/components/SessionsTable';
 import { TasksTable } from '@/components/TasksTable';
 import { AppointmentsTable } from '@/components/AppointmentsTable';
-import { PastSessionsDialog } from '@/components/PastSessionsDialog';
 import { dataStore } from '@/store/dataStore';
 import { Session, Task, Appointment } from '@/types';
 import { isDateToday, formatFullSyrianDate } from '@/utils/dateUtils';
@@ -232,16 +230,9 @@ const Index = () => {
   };
 
   return (
-    <Layout>
+    <Layout onPrintSchedule={handlePrintSchedule}>
       <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
         <Card className="p-4">
-          <div className="flex justify-end items-center mb-6 gap-2">
-            <Button className="gap-2" onClick={handlePrintSchedule}>
-              <Printer className="h-4 w-4" />
-              طباعة جدول الأعمال
-            </Button>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
             {/* Right column - Calendar */}
             <div className="lg:col-span-5 xl:col-span-4 space-y-4">
@@ -251,13 +242,6 @@ const Index = () => {
                 selectedDate={selectedDate}
                 onDateSelect={setSelectedDate}
               />
-
-              <div className="flex flex-col gap-2">
-                <PastSessionsDialog
-                  sessions={sessions}
-                  onSelectSession={setSelectedDate}
-                />
-              </div>
 
               {/* Session Filter Buttons - under calendar for mobile */}
               <div className="lg:hidden flex gap-2 justify-start flex-wrap">
