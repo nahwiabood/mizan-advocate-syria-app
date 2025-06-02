@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, Edit, ChevronDown, ChevronRight, User, FileText, Calendar as CalendarIcon, Users } from 'lucide-react';
+import { Plus, Edit, ChevronDown, ChevronRight, User, FileText, Calendar as CalendarIcon, Users, Search } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
 import { Client, Case, CaseStage, Session } from '@/types';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
@@ -26,6 +25,7 @@ const Clients = () => {
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedCases, setExpandedCases] = useState<Set<string>>(new Set());
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Dialog states
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
@@ -77,6 +77,11 @@ const Clients = () => {
     setStages(dataStore.getStages());
     setSessions(dataStore.getSessions());
   };
+
+  // Filter clients based on search term
+  const filteredClients = clients.filter(client =>
+    client.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const toggleClient = (clientId: string) => {
     const newExpanded = new Set(expandedClients);
@@ -374,10 +379,22 @@ const Clients = () => {
                 إضافة موكل
               </Button>
             </div>
+            
+            {/* Search input */}
+            <div className="relative w-full max-w-md mx-auto">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="البحث عن موكل..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="text-right pr-10"
+              />
+            </div>
           </CardHeader>
           <CardContent className="px-2 sm:px-6">
             <div className="space-y-3 sm:space-y-4">
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <div key={client.id} className="border-2 border-blue-200 rounded-lg bg-blue-50">
                   <Collapsible 
                     open={expandedClients.has(client.id)} 
