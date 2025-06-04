@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -153,6 +154,93 @@ export const TasksTable: React.FC<TasksTableProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Add Task Button */}
+      <div className="flex justify-start">
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              إضافة مهمة
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">إضافة مهمة جديدة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="add-title" className="text-right">عنوان المهمة</Label>
+                <Input
+                  id="add-title"
+                  value={newTask.title}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  placeholder="عنوان المهمة"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="add-description" className="text-right">الوصف (اختياري)</Label>
+                <Textarea
+                  id="add-description"
+                  value={newTask.description}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  placeholder="وصف المهمة"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label className="text-right">تاريخ الاستحقاق (اختياري)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newTask.dueDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newTask.dueDate ? (
+                        formatSyrianDate(newTask.dueDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newTask.dueDate}
+                      onSelect={(date) => setNewTask({ ...newTask, dueDate: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-right">
+                <Label className="text-right">درجة الأهمية</Label>
+                <Select value={newTask.priority} onValueChange={(value: 'low' | 'medium' | 'high') => setNewTask({ ...newTask, priority: value })}>
+                  <SelectTrigger className="text-right" dir="rtl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">منخفضة</SelectItem>
+                    <SelectItem value="medium">متوسطة</SelectItem>
+                    <SelectItem value="high">عالية</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleAddTask} className="w-full">
+                إضافة المهمة
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       {/* Incomplete Tasks */}
       {incompleteTasks.length > 0 && (
         <div className="space-y-3">
@@ -182,12 +270,12 @@ export const TasksTable: React.FC<TasksTableProps> = ({
                       <Badge className={cn("text-xs whitespace-nowrap", getPriorityColor(task.priority))}>
                         {getPriorityText(task.priority)}
                       </Badge>
-                      <h4 className="font-semibold text-lg leading-relaxed break-words">{task.title}</h4>
+                      <h4 className="font-semibold text-lg leading-relaxed break-words overflow-wrap-anywhere">{task.title}</h4>
                     </div>
                     
                     {task.description && (
                       <div className="bg-gray-50 p-3 rounded-md">
-                        <p className="text-gray-700 text-sm leading-relaxed break-words whitespace-pre-wrap">
+                        <p className="text-gray-700 text-sm leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere">
                           {task.description}
                         </p>
                       </div>
@@ -228,14 +316,14 @@ export const TasksTable: React.FC<TasksTableProps> = ({
                       <Badge className="bg-green-100 text-green-800 text-xs whitespace-nowrap">
                         مكتملة
                       </Badge>
-                      <h4 className="font-semibold text-lg line-through text-gray-600 leading-relaxed break-words">
+                      <h4 className="font-semibold text-lg line-through text-gray-600 leading-relaxed break-words overflow-wrap-anywhere">
                         {task.title}
                       </h4>
                     </div>
                     
                     {task.description && (
                       <div className="bg-green-100 p-3 rounded-md">
-                        <p className="text-gray-600 text-sm line-through leading-relaxed break-words whitespace-pre-wrap">
+                        <p className="text-gray-600 text-sm line-through leading-relaxed break-words whitespace-pre-wrap overflow-wrap-anywhere">
                           {task.description}
                         </p>
                       </div>

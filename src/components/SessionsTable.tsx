@@ -248,7 +248,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
             <Table dir="rtl" className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right min-w-[180px]">المحكمة ورقم الأساس</TableHead>
+                  <TableHead className="text-right min-w-[180px]">المحكمة</TableHead>
                   <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
                   <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
                   <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
