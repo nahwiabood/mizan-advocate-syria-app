@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -43,10 +44,10 @@ const Index = () => {
     );
     setSelectedDateAppointments(filteredAppointments);
 
-    // Filter untransferred sessions - sessions before today with no next session date
+    // Filter untransferred sessions - sessions before today with no next session date and not resolved
     const today = new Date();
     const untransferred = sessions.filter(session => 
-      isBefore(session.sessionDate, today) && !session.nextSessionDate
+      isBefore(session.sessionDate, today) && !session.nextSessionDate && !session.isResolved
     );
     setUnTransferredSessions(untransferred);
 

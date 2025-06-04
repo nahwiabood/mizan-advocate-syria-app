@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -268,16 +269,23 @@ export const TasksTable: React.FC<TasksTableProps> = ({
                         </Button>
                       </div>
                       
-                      <div className="flex-1 text-right space-y-2">
+                      <div className="flex-1 text-right space-y-3">
                         <div className="flex items-center justify-end gap-2">
                           <Badge className={cn("text-xs", getPriorityColor(task.priority))}>
                             {getPriorityText(task.priority)}
                           </Badge>
-                          <h4 className="font-semibold text-lg">{task.title}</h4>
                         </div>
                         
+                        {/* Task Title */}
+                        <div className="w-full">
+                          <h4 className="font-bold text-lg text-right leading-relaxed">{task.title}</h4>
+                        </div>
+                        
+                        {/* Task Description */}
                         {task.description && (
-                          <p className="text-gray-600 text-sm leading-relaxed">{task.description}</p>
+                          <div className="w-full mt-2">
+                            <p className="text-gray-600 text-sm leading-relaxed text-right">{task.description}</p>
+                          </div>
                         )}
                         
                         {task.dueDate && (
@@ -310,16 +318,23 @@ export const TasksTable: React.FC<TasksTableProps> = ({
                         <CheckCircle className="h-5 w-5 text-green-600" />
                       </div>
                       
-                      <div className="flex-1 text-right space-y-2">
+                      <div className="flex-1 text-right space-y-3">
                         <div className="flex items-center justify-end gap-2">
                           <Badge className="bg-green-100 text-green-800 text-xs">
                             مكتملة
                           </Badge>
-                          <h4 className="font-semibold text-lg line-through text-gray-600">{task.title}</h4>
                         </div>
                         
+                        {/* Task Title */}
+                        <div className="w-full">
+                          <h4 className="font-bold text-lg line-through text-gray-600 text-right leading-relaxed">{task.title}</h4>
+                        </div>
+                        
+                        {/* Task Description */}
                         {task.description && (
-                          <p className="text-gray-500 text-sm line-through">{task.description}</p>
+                          <div className="w-full mt-2">
+                            <p className="text-gray-500 text-sm line-through text-right leading-relaxed">{task.description}</p>
+                          </div>
                         )}
                       </div>
                     </div>
