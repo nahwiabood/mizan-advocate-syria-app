@@ -1,5 +1,22 @@
 import { Client, Case, CaseStage, Session, Task, Appointment } from '@/types';
 
+interface Court {
+  id: string;
+  name: string;
+}
+
+interface CaseType {
+  id: string;
+  name: string;
+}
+
+interface Stats {
+  totalClients: number;
+  totalCases: number;
+  totalSessions: number;
+  totalTasks: number;
+}
+
 class DataStore {
   private storageKey = 'lawyer-management-data';
 
@@ -10,6 +27,8 @@ class DataStore {
     sessions: [] as Session[],
     tasks: [] as Task[],
     appointments: [] as Appointment[],
+    courts: [] as Court[],
+    caseTypes: [] as CaseType[],
   };
 
   getData() {
@@ -18,6 +37,9 @@ class DataStore {
       const data = JSON.parse(stored);
       // Convert date strings back to Date objects
       this.convertDates(data);
+      // Ensure courts and caseTypes exist
+      if (!data.courts) data.courts = [];
+      if (!data.caseTypes) data.caseTypes = [];
       return data;
     }
     return this.defaultData;
@@ -122,6 +144,92 @@ class DataStore {
 
   saveData(data: any) {
     localStorage.setItem(this.storageKey, JSON.stringify(data));
+  }
+
+  // Courts methods
+  getCourts(): Court[] {
+    return this.getData().courts;
+  }
+
+  addCourt(name: string): Court {
+    const data = this.getData();
+    const newCourt: Court = {
+      id: crypto.randomUUID(),
+      name: name
+    };
+    data.courts.push(newCourt);
+    this.saveData(data);
+    return newCourt;
+  }
+
+  deleteCourt(id: string): boolean {
+    const data = this.getData();
+    const courtIndex = data.courts.findIndex(c => c.id === id);
+    if (courtIndex === -1) return false;
+
+    data.courts.splice(courtIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Case Types methods
+  getCaseTypes(): CaseType[] {
+    return this.getData().caseTypes;
+  }
+
+  addCaseType(name: string): CaseType {
+    const data = this.getData();
+    const newCaseType: CaseType = {
+      id: crypto.randomUUID(),
+      name: name
+    };
+    data.caseTypes.push(newCaseType);
+    this.saveData(data);
+    return newCaseType;
+  }
+
+  deleteCaseType(id: string): boolean {
+    const data = this.getData();
+    const typeIndex = data.caseTypes.findIndex(t => t.id === id);
+    if (typeIndex === -1) return false;
+
+    data.caseTypes.splice(typeIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Import/Export methods
+  importData(importedData: any): void {
+    // Validate and merge with existing structure
+    const currentData = this.getData();
+    
+    const mergedData = {
+      clients: importedData.clients || currentData.clients,
+      cases: importedData.cases || currentData.cases,
+      stages: importedData.stages || currentData.stages,
+      sessions: importedData.sessions || currentData.sessions,
+      tasks: importedData.tasks || currentData.tasks,
+      appointments: importedData.appointments || currentData.appointments,
+      courts: importedData.courts || currentData.courts,
+      caseTypes: importedData.caseTypes || currentData.caseTypes,
+    };
+
+    this.saveData(mergedData);
+  }
+
+  clearAllData(): void {
+    this.saveData(this.defaultData);
+  }
+
+  // Stats method
+  getStats(): Stats {
+    const data = this.getData();
+    return {
+      totalClients: data.clients.length,
+      totalCases: data.cases.length,
+      totalSessions: data.sessions.length,
+      totalTasks: data.tasks.length,
+    };
   }
 
   // Session methods
