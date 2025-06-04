@@ -116,7 +116,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       return;
     }
 
-    // Check for weekend warning
     if (onWeekendWarning) {
       onWeekendWarning(transferData.nextDate);
     }
@@ -155,7 +154,9 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-right">جلسات {formatFullSyrianDate(selectedDate)}</CardTitle>
+          <CardTitle className="text-right text-base sm:text-lg truncate">
+            جلسات {formatSyrianDate(selectedDate)}
+          </CardTitle>
           {showAddButton && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -244,12 +245,10 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
           </div>
         ) : (
           <div className="w-full overflow-x-auto">
-            <Table dir="rtl" className="min-w-[1000px]">
+            <Table dir="rtl" className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right min-w-[120px]">تاريخ الجلسة</TableHead>
-                  <TableHead className="text-right min-w-[150px]">المحكمة</TableHead>
-                  <TableHead className="text-right min-w-[120px]">رقم الأساس</TableHead>
+                  <TableHead className="text-right min-w-[180px]">المحكمة ورقم الأساس</TableHead>
                   <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
                   <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
                   <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
@@ -261,13 +260,10 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                 {sessions.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell className="text-right">
-                      {formatSyrianDate(session.sessionDate)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {session.courtName}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {session.caseNumber}
+                      <div className="space-y-1">
+                        <div className="font-medium">{session.courtName}</div>
+                        <div className="text-sm text-muted-foreground">{session.caseNumber}</div>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       {session.clientName}

@@ -257,7 +257,7 @@ const Index = () => {
                   className="gap-2"
                 >
                   <AlertTriangle className="h-4 w-4" />
-                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                  غير مرحلة ({unTransferredSessions.length})
                 </Button>
                 <Button
                   variant={showUpcoming ? "default" : "outline"}
@@ -269,7 +269,7 @@ const Index = () => {
                   className="gap-2"
                 >
                   <Clock className="h-4 w-4" />
-                  الجلسات القادمة ({upcomingSessions.length})
+                  القادمة ({upcomingSessions.length})
                 </Button>
               </div>
 
@@ -297,7 +297,7 @@ const Index = () => {
                   className="gap-2"
                 >
                   <AlertTriangle className="h-4 w-4" />
-                  الجلسات غير المرحلة ({unTransferredSessions.length})
+                  غير مرحلة ({unTransferredSessions.length})
                 </Button>
                 <Button
                   variant={showUpcoming ? "default" : "outline"}
@@ -309,7 +309,7 @@ const Index = () => {
                   className="gap-2"
                 >
                   <Clock className="h-4 w-4" />
-                  الجلسات القادمة ({upcomingSessions.length})
+                  القادمة ({upcomingSessions.length})
                 </Button>
               </div>
 
