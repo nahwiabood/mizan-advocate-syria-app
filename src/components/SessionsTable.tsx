@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     clientName: '',
     opponent: '',
     postponementReason: '',
+    sessionDate: undefined as Date | undefined,
   });
   const [transferData, setTransferData] = useState({
     nextDate: undefined as Date | undefined,
@@ -69,6 +71,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: '',
       opponent: '',
       postponementReason: '',
+      sessionDate: undefined,
     });
     setIsAddDialogOpen(false);
     onSessionUpdate();
@@ -83,6 +86,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: newSession.clientName || selectedSession.clientName,
       opponent: newSession.opponent || selectedSession.opponent,
       postponementReason: newSession.postponementReason || selectedSession.postponementReason,
+      sessionDate: newSession.sessionDate || selectedSession.sessionDate,
     });
     
     setIsEditDialogOpen(false);
@@ -93,6 +97,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: '',
       opponent: '',
       postponementReason: '',
+      sessionDate: undefined,
     });
     onSessionUpdate();
   };
@@ -141,6 +146,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       clientName: session.clientName,
       opponent: session.opponent,
       postponementReason: session.postponementReason || '',
+      sessionDate: session.sessionDate,
     });
     setIsEditDialogOpen(true);
   };
@@ -154,7 +160,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     <Card className="w-full">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-right text-base sm:text-lg truncate">
+          <CardTitle className="text-right text-sm sm:text-base truncate">
             جلسات {formatSyrianDate(selectedDate)}
           </CardTitle>
           {showAddButton && (
@@ -371,6 +377,37 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                   className="text-right"
                   dir="rtl"
                 />
+              </div>
+              <div className="text-right">
+                <Label className="text-right">تاريخ الجلسة</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newSession.sessionDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newSession.sessionDate ? (
+                        formatSyrianDate(newSession.sessionDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newSession.sessionDate}
+                      onSelect={(date) => setNewSession({ ...newSession, sessionDate: date })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="text-right">
                 <Label htmlFor="edit-postponementReason" className="text-right">سبب التأجيل</Label>

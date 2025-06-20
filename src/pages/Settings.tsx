@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -156,15 +155,16 @@ const Settings: React.FC = () => {
     const dataString = JSON.stringify(allData);
     const blob = new Blob([dataString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+    const fileName = `mizan-lawyer-data-${new Date().toISOString().split('T')[0]}.json`;
     const a = document.createElement('a');
     a.href = url;
-    a.download = `mizan-lawyer-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    toast.success('تم تصدير البيانات بنجاح');
+    toast.success(`تم تصدير البيانات بنجاح. سيتم حفظ الملف في مجلد التحميلات باسم: ${fileName}`);
   };
 
   const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -466,10 +466,10 @@ const Settings: React.FC = () => {
                   <CardContent className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground mb-2 text-right">
-                        يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي أو النقل إلى جهاز آخر.
+                        يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي أو النقل إلى جهاز آخر. سيتم حفظ الملف في مجلد التحميلات الخاص بك.
                       </p>
                       <Button onClick={handleExportData} className="w-full">
-                        تصدير البيانات
+                        تصدير البيانات إلى مجلد التحميلات
                       </Button>
                     </div>
                     <div>
@@ -489,7 +489,7 @@ const Settings: React.FC = () => {
                           className="w-full"
                           onClick={() => document.getElementById('importData')?.click()}
                         >
-                          استيراد البيانات
+                          استيراد البيانات من ملف
                         </Button>
                       </div>
                     </div>
