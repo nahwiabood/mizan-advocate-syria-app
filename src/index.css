@@ -80,19 +80,59 @@
 @layer base {
   * {
     @apply border-border;
+    /* Prevent text selection on mobile for better UX */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Allow text selection for inputs and content areas */
+  input,
+  textarea,
+  [contenteditable],
+  .selectable {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
   }
 
   body {
     @apply bg-background text-foreground font-arabic;
     direction: rtl;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior-y: contain;
+    /* Smooth scrolling */
+    -webkit-overflow-scrolling: touch;
   }
 
   html {
     direction: rtl;
+    /* Prevent horizontal scrolling */
+    overflow-x: hidden;
   }
 
   .date-syrian {
     font-family: 'Noto Sans Arabic', Arial, sans-serif;
+  }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    body {
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    /* Better touch targets */
+    button, 
+    [role="button"],
+    input,
+    select,
+    textarea {
+      min-height: 44px; /* Apple's recommended minimum touch target size */
+    }
   }
 }
 
@@ -103,6 +143,11 @@
 
   .calendar-day {
     @apply relative p-2 text-center hover:bg-accent rounded-md cursor-pointer transition-colors;
+    /* Better touch targets on mobile */
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .calendar-day.today {
@@ -123,5 +168,25 @@
 
   .appointment-badge {
     @apply absolute -bottom-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center;
+  }
+
+  /* Mobile-friendly scrollbars */
+  .mobile-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  }
+
+  .mobile-scroll::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .mobile-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .mobile-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
   }
 }

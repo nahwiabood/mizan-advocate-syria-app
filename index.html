@@ -3,10 +3,16 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>أجندة - نظام إدارة مكتب المحاماة</title>
     <meta name="description" content="نظام لإدارة أعمال المحامين باللغة العربية" />
     <meta name="author" content="Lovable" />
+
+    <!-- Mobile app meta tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
 
     <meta property="og:title" content="أجندة - نظام إدارة مكتب المحاماة" />
     <meta property="og:description" content="نظام لإدارة أعمال المحامين باللغة العربية" />
@@ -16,6 +22,30 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <!-- Prevent zooming on inputs on iOS -->
+    <style>
+      @media screen and (-webkit-min-device-pixel-ratio:0) {
+        select,
+        textarea,
+        input[type="text"],
+        input[type="password"],
+        input[type="datetime"],
+        input[type="datetime-local"],
+        input[type="date"],
+        input[type="month"],
+        input[type="time"],
+        input[type="week"],
+        input[type="number"],
+        input[type="email"],
+        input[type="url"],
+        input[type="search"],
+        input[type="tel"],
+        input[type="color"] {
+          font-size: 16px;
+        }
+      }
+    </style>
   </head>
 
   <body>
