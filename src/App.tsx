@@ -12,7 +12,14 @@ import MobileSplashScreen from "./components/MobileSplashScreen";
 import { useCapacitor } from "./hooks/use-capacitor";
 import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: false, // No retries for offline app
+    },
+  },
+});
 
 const App = () => {
   const { isNative, platform } = useCapacitor();

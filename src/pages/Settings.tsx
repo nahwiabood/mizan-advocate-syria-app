@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
+import { dataStore } from '@/store/dataStore';
 
 const Settings: React.FC = () => {
   const [lawyerInfo, setLawyerInfo] = useState({
@@ -102,69 +104,81 @@ const Settings: React.FC = () => {
 
   const handleResetData = () => {
     if (confirm('هل أنت متأكد من رغبتك في حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.')) {
-      // Clear all data from local storage
-      localStorage.removeItem('lawyer-management-data');
-      localStorage.removeItem('lawyer-info');
-      localStorage.removeItem('print-settings');
-      localStorage.removeItem('display-settings');
-      
-      // Reset state
-      setLawyerInfo({
-        name: '',
-        title: '',
-        phone: '',
-        email: '',
-        address: '',
-      });
-      setPrintSettings({
-        includeLogo: true,
-        includeHeader: true,
-        includeFooter: true,
-        fontSize: 'medium',
-      });
-      setDisplaySettings({
-        showPastSessions: true,
-        defaultCalendarView: 'month',
-        sessionsColor: '#3b82f6',
-        appointmentsColor: '#f59e0b',
-        tasksColor: '#10b981',
-      });
-      
-      toast.success('تم إعادة تعيين البيانات بنجاح');
-      
-      // Reload the page to refresh the application
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      try {
+        // Clear all data using dataStore
+        dataStore.clearAllData();
+        
+        // Clear settings
+        localStorage.removeItem('lawyer-info');
+        localStorage.removeItem('print-settings');
+        localStorage.removeItem('display-settings');
+        
+        // Reset state
+        setLawyerInfo({
+          name: '',
+          title: '',
+          phone: '',
+          email: '',
+          address: '',
+        });
+        setPrintSettings({
+          includeLogo: true,
+          includeHeader: true,
+          includeFooter: true,
+          fontSize: 'medium',
+        });
+        setDisplaySettings({
+          showPastSessions: true,
+          defaultCalendarView: 'month',
+          sessionsColor: '#3b82f6',
+          appointmentsColor: '#f59e0b',
+          tasksColor: '#10b981',
+        });
+        
+        toast.success('تم إعادة تعيين البيانات بنجاح');
+        
+        // Reload the page to refresh the application
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (error) {
+        toast.error('فشل في إعادة تعيين البيانات');
+        console.error('Error resetting data:', error);
+      }
     }
   };
 
   const handleExportData = () => {
-    const allData = {
-      lawyerData: localStorage.getItem('lawyer-management-data'),
-      lawyerInfo: localStorage.getItem('lawyer-info'),
-      printSettings: localStorage.getItem('print-settings'),
-      displaySettings: localStorage.getItem('display-settings')
-    };
+    try {
+      const allData = {
+        lawyerData: dataStore.exportData(),
+        lawyerInfo: localStorage.getItem('lawyer-info'),
+        printSettings: localStorage.getItem('print-settings'),
+        displaySettings: localStorage.getItem('display-settings')
+      };
 
-    if (!allData.lawyerData && !allData.lawyerInfo) {
-      toast.error('لا توجد بيانات للتصدير');
-      return;
+      if (!allData.lawyerData && !allData.lawyerInfo) {
+        toast.error('لا توجد بيانات للتصدير');
+        return;
+      }
+
+      const dataString = JSON.stringify(allData);
+      const blob = new Blob([dataString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const fileName = `mizan-lawyer-data-${new Date().toISOString().split('T')[0]}.json`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`تم تصدير البيانات بنجاح. سيتم حفظ الملف باسم: ${fileName}`);
+    } catch (error) {
+      toast.error('فشل في تصدير البيانات');
+      console.error('Error exporting data:', error);
     }
-
-    const dataString = JSON.stringify(allData);
-    const blob = new Blob([dataString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const fileName = `mizan-lawyer-data-${new Date().toISOString().split('T')[0]}.json`;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success(`تم تصدير البيانات بنجاح. سيتم حفظ الملف في مجلد التحميلات باسم: ${fileName}`);
   };
 
   const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,10 +190,14 @@ const Settings: React.FC = () => {
       try {
         const data = JSON.parse(event.target?.result as string);
         
-        // Import all data
+        // Import main data using dataStore
         if (data.lawyerData) {
-          localStorage.setItem('lawyer-management-data', data.lawyerData);
+          if (dataStore.importData(data.lawyerData)) {
+            toast.success('تم استيراد بيانات المحامي بنجاح');
+          }
         }
+        
+        // Import settings
         if (data.lawyerInfo) {
           localStorage.setItem('lawyer-info', data.lawyerInfo);
           setLawyerInfo(JSON.parse(data.lawyerInfo));
@@ -193,7 +211,7 @@ const Settings: React.FC = () => {
           setDisplaySettings(JSON.parse(data.displaySettings));
         }
         
-        toast.success('تم استيراد البيانات بنجاح');
+        toast.success('تم استيراد جميع البيانات والإعدادات بنجاح');
         
         // Reload the page to refresh the application
         setTimeout(() => {
@@ -215,7 +233,13 @@ const Settings: React.FC = () => {
       <div className="container mx-auto p-4 min-h-screen" dir="rtl">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-right">الضبط</CardTitle>
+            <CardTitle className="text-2xl text-right flex items-center gap-2">
+              <span className="text-green-600">🔒</span>
+              الضبط - تطبيق محلي (بدون انترنت)
+            </CardTitle>
+            <p className="text-sm text-muted-foreground text-right">
+              جميع بياناتك محفوظة محلياً على جهازك ولا تحتاج للانترنت
+            </p>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="lawyer-info" className="w-full">
@@ -461,7 +485,13 @@ const Settings: React.FC = () => {
               <TabsContent value="data" className="mt-6 space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg text-right">تصدير/استيراد البيانات</CardTitle>
+                    <CardTitle className="text-lg text-right flex items-center gap-2">
+                      <span className="text-blue-600">💾</span>
+                      النسخ الاحتياطي والاستعادة
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground text-right">
+                      جميع البيانات محفوظة محلياً على جهازك - لا حاجة للانترنت
+                    </p>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -469,7 +499,7 @@ const Settings: React.FC = () => {
                         يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي أو النقل إلى جهاز آخر. سيتم حفظ الملف في مجلد التحميلات الخاص بك.
                       </p>
                       <Button onClick={handleExportData} className="w-full">
-                        تصدير البيانات إلى مجلد التحميلات
+                        📤 تصدير البيانات إلى مجلد التحميلات
                       </Button>
                     </div>
                     <div>
@@ -489,7 +519,7 @@ const Settings: React.FC = () => {
                           className="w-full"
                           onClick={() => document.getElementById('importData')?.click()}
                         >
-                          استيراد البيانات من ملف
+                          📥 استيراد البيانات من ملف
                         </Button>
                       </div>
                     </div>
@@ -498,14 +528,17 @@ const Settings: React.FC = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg text-right">إعادة تعيين البيانات</CardTitle>
+                    <CardTitle className="text-lg text-right flex items-center gap-2">
+                      <span className="text-red-600">⚠️</span>
+                      إعادة تعيين البيانات
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4 text-right">
-                      سيؤدي هذا الإجراء إلى حذف جميع بياناتك بشكل دائم. لا يمكن التراجع عن هذا الإجراء.
+                      سيؤدي هذا الإجراء إلى حذف جميع بياناتك بشكل دائم من جهازك. لا يمكن التراجع عن هذا الإجراء.
                     </p>
                     <Button variant="destructive" onClick={handleResetData} className="w-full">
-                      إعادة تعيين جميع البيانات
+                      🗑️ إعادة تعيين جميع البيانات
                     </Button>
                   </CardContent>
                 </Card>

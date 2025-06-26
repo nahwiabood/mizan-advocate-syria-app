@@ -1,7 +1,10 @@
+
 import { Client, Case, CaseStage, Session, Task, Appointment } from '@/types';
 
 class DataStore {
   private storageKey = 'lawyer-management-data';
+  private cache: any = null;
+  private isInitialized = false;
 
   private defaultData = {
     clients: [] as Client[],
@@ -10,17 +13,38 @@ class DataStore {
     sessions: [] as Session[],
     tasks: [] as Task[],
     appointments: [] as Appointment[],
+    version: '1.0.0', // Added version tracking
   };
 
-  getData() {
-    const stored = localStorage.getItem(this.storageKey);
-    if (stored) {
-      const data = JSON.parse(stored);
-      // Convert date strings back to Date objects
-      this.convertDates(data);
-      return data;
+  // Initialize the store
+  initialize() {
+    if (!this.isInitialized) {
+      this.loadFromStorage();
+      this.isInitialized = true;
     }
-    return this.defaultData;
+  }
+
+  private loadFromStorage() {
+    try {
+      const stored = localStorage.getItem(this.storageKey);
+      if (stored) {
+        const data = JSON.parse(stored);
+        this.convertDates(data);
+        this.cache = { ...this.defaultData, ...data };
+      } else {
+        this.cache = { ...this.defaultData };
+      }
+    } catch (error) {
+      console.error('Error loading data from storage:', error);
+      this.cache = { ...this.defaultData };
+    }
+  }
+
+  getData() {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+    return this.cache;
   }
 
   private convertDates(data: any) {
@@ -120,8 +144,15 @@ class DataStore {
     });
   }
 
-  saveData(data: any) {
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
+  private saveData(data: any) {
+    try {
+      data.lastModified = new Date().toISOString();
+      localStorage.setItem(this.storageKey, JSON.stringify(data));
+      this.cache = data;
+    } catch (error) {
+      console.error('Error saving data to storage:', error);
+      throw new Error('فشل في حفظ البيانات. تأكد من وجود مساحة كافية في التخزين.');
+    }
   }
 
   // Session methods
@@ -418,6 +449,33 @@ class DataStore {
     this.saveData(data);
     return true;
   }
+
+  // Backup and restore methods
+  exportData(): string {
+    const data = this.getData();
+    return JSON.stringify(data, null, 2);
+  }
+
+  importData(jsonData: string): boolean {
+    try {
+      const data = JSON.parse(jsonData);
+      this.convertDates(data);
+      this.saveData(data);
+      return true;
+    } catch (error) {
+      console.error('Error importing data:', error);
+      return false;
+    }
+  }
+
+  // Clear all data
+  clearAllData(): void {
+    localStorage.removeItem(this.storageKey);
+    this.cache = { ...this.defaultData };
+  }
 }
 
 export const dataStore = new DataStore();
+
+// Initialize the store when the module is loaded
+dataStore.initialize();
