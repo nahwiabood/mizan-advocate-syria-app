@@ -49,12 +49,17 @@ export function useCapacitor(): CapacitorInfo {
   return capacitorInfo;
 }
 
-// Add global type for Capacitor
+// Add global type for Capacitor with correct structure
 declare global {
   interface Window {
     Capacitor?: {
       isNativePlatform: () => boolean;
       getPlatform: () => string;
+      Plugins?: {
+        SplashScreen?: {
+          hide: () => Promise<void>;
+        };
+      };
     };
   }
 }
