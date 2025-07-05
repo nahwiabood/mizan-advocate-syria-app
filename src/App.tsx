@@ -1,35 +1,72 @@
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/sonner";
 import Index from "./pages/Index";
 import Clients from "./pages/Clients";
-import Accounting from "./pages/Accounting";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import Layout from "./components/Layout";
+import MobileSplashScreen from "./components/MobileSplashScreen";
+import { useCapacitor } from "./hooks/use-capacitor";
+import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: false, // No retries for offline app
+    },
+  },
+});
 
-function App() {
+const App = () => {
+  const { isNative, platform } = useCapacitor();
+
+  useEffect(() => {
+    // Add platform-specific classes to body
+    if (isNative) {
+      document.body.classList.add('mobile-app', `platform-${platform}`);
+    }
+
+    // Handle safe area insets for mobile
+    if (isNative && platform === 'ios') {
+      document.documentElement.style.setProperty('--safe-area-inset-top', 'env(safe-area-inset-top)');
+      document.documentElement.style.setProperty('--safe-area-inset-bottom', 'env(safe-area-inset-bottom)');
+    }
+
+    // Prevent context menu on long press (mobile)
+    if (isNative) {
+      const preventContextMenu = (e: Event) => {
+        e.preventDefault();
+        return false;
+      };
+      
+      document.addEventListener('contextmenu', preventContextMenu);
+      return () => document.removeEventListener('contextmenu', preventContextMenu);
+    }
+  }, [isNative, platform]);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Index />} />
+    <>
+      <MobileSplashScreen />
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
               <Route path="/clients" element={<Clients />} />
-              <Route path="/accounting" element={<Accounting />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </>
   );
-}
+};
 
 export default App;
