@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -232,161 +233,166 @@ const Index = () => {
   };
 
   return (
-    <Layout onPrintSchedule={handlePrintSchedule}>
-      <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
-        <Card className="p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-            {/* Right column - Calendar */}
-            <div className="lg:col-span-5 xl:col-span-4 space-y-4">
-              <ArabicCalendar
-                sessions={sessions}
-                appointments={appointments}
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-              />
+    <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">أجندة المحامي</h1>
+        <Button onClick={handlePrintSchedule} className="gap-2">
+          طباعة الجدول
+        </Button>
+      </div>
+      
+      <Card className="p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+          {/* Right column - Calendar */}
+          <div className="lg:col-span-5 xl:col-span-4 space-y-4">
+            <ArabicCalendar
+              sessions={sessions}
+              appointments={appointments}
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+            />
 
-              {/* Session Filter Buttons - under calendar for mobile */}
-              <div className="lg:hidden flex gap-2 justify-start flex-wrap">
-                <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(false);
-                    setShowUnTransferred(!showUnTransferred);
-                  }}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  غير مرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
-                  variant={showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(false);
-                    setShowUpcoming(!showUpcoming);
-                  }}
-                  className="gap-2"
-                >
-                  <Clock className="h-4 w-4" />
-                  القادمة ({upcomingSessions.length})
-                </Button>
-              </div>
-
-              {/* Appointments under Calendar for desktop */}
-              <div className="hidden lg:block">
-                <AppointmentsTable
-                  appointments={selectedDateAppointments}
-                  selectedDate={selectedDate}
-                  onAppointmentUpdate={loadData}
-                />
-              </div>
+            {/* Session Filter Buttons - under calendar for mobile */}
+            <div className="lg:hidden flex gap-2 justify-start flex-wrap">
+              <Button
+                variant={showUnTransferred ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setShowUpcoming(false);
+                  setShowUnTransferred(!showUnTransferred);
+                }}
+                className="gap-2"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                غير مرحلة ({unTransferredSessions.length})
+              </Button>
+              <Button
+                variant={showUpcoming ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setShowUnTransferred(false);
+                  setShowUpcoming(!showUpcoming);
+                }}
+                className="gap-2"
+              >
+                <Clock className="h-4 w-4" />
+                القادمة ({upcomingSessions.length})
+              </Button>
             </div>
 
-            {/* Left column - Sessions */}
-            <div className="lg:col-span-7 xl:col-span-8 space-y-4">
-              {/* Session Filter Buttons - for desktop only */}
-              <div className="hidden lg:flex gap-2 justify-start flex-wrap">
-                <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(false);
-                    setShowUnTransferred(!showUnTransferred);
-                  }}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  غير مرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
-                  variant={showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(false);
-                    setShowUpcoming(!showUpcoming);
-                  }}
-                  className="gap-2"
-                >
-                  <Clock className="h-4 w-4" />
-                  القادمة ({upcomingSessions.length})
-                </Button>
-              </div>
-
-              {/* Sessions Table */}
-              <SessionsTable
-                sessions={getDisplaySessions()}
+            {/* Appointments under Calendar for desktop */}
+            <div className="hidden lg:block">
+              <AppointmentsTable
+                appointments={selectedDateAppointments}
                 selectedDate={selectedDate}
-                onSessionUpdate={loadData}
-                showAddButton={false}
-                onWeekendWarning={checkWeekendWarning}
+                onAppointmentUpdate={loadData}
               />
-
-              {/* Tasks under Sessions for desktop */}
-              <div className="hidden lg:block">
-                <Card className="w-full">
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-right">
-                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
-                    </h3>
-                    <Button
-                      variant={showCompletedTasks ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                      className="gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
-                    </Button>
-                  </div>
-                  <div className="p-4">
-                    <TasksTable
-                      tasks={getDisplayTasks()}
-                      onTaskUpdate={loadData}
-                    />
-                  </div>
-                </Card>
-              </div>
-
-              {/* Tasks for mobile - under sessions */}
-              <div className="lg:hidden">
-                <Card className="w-full">
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-right">
-                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
-                    </h3>
-                    <Button
-                      variant={showCompletedTasks ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                      className="gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
-                    </Button>
-                  </div>
-                  <div className="p-4">
-                    <TasksTable
-                      tasks={getDisplayTasks()}
-                      onTaskUpdate={loadData}
-                    />
-                  </div>
-                </Card>
-              </div>
-
-              {/* Appointments for mobile - under tasks */}
-              <div className="lg:hidden">
-                <AppointmentsTable
-                  appointments={selectedDateAppointments}
-                  selectedDate={selectedDate}
-                  onAppointmentUpdate={loadData}
-                />
-              </div>
             </div>
           </div>
-        </Card>
-      </div>
-    </Layout>
+
+          {/* Left column - Sessions */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+            {/* Session Filter Buttons - for desktop only */}
+            <div className="hidden lg:flex gap-2 justify-start flex-wrap">
+              <Button
+                variant={showUnTransferred ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setShowUpcoming(false);
+                  setShowUnTransferred(!showUnTransferred);
+                }}
+                className="gap-2"
+              >
+                <AlertTriangle className="h-4 w-4" />
+                غير مرحلة ({unTransferredSessions.length})
+              </Button>
+              <Button
+                variant={showUpcoming ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setShowUnTransferred(false);
+                  setShowUpcoming(!showUpcoming);
+                }}
+                className="gap-2"
+              >
+                <Clock className="h-4 w-4" />
+                القادمة ({upcomingSessions.length})
+              </Button>
+            </div>
+
+            {/* Sessions Table */}
+            <SessionsTable
+              sessions={getDisplaySessions()}
+              selectedDate={selectedDate}
+              onSessionUpdate={loadData}
+              showAddButton={false}
+              onWeekendWarning={checkWeekendWarning}
+            />
+
+            {/* Tasks under Sessions for desktop */}
+            <div className="hidden lg:block">
+              <Card className="w-full">
+                <div className="p-4 border-b flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-right">
+                    {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
+                  </h3>
+                  <Button
+                    variant={showCompletedTasks ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                    className="gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
+                  </Button>
+                </div>
+                <div className="p-4">
+                  <TasksTable
+                    tasks={getDisplayTasks()}
+                    onTaskUpdate={loadData}
+                  />
+                </div>
+              </Card>
+            </div>
+
+            {/* Tasks for mobile - under sessions */}
+            <div className="lg:hidden">
+              <Card className="w-full">
+                <div className="p-4 border-b flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-right">
+                    {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
+                  </h3>
+                  <Button
+                    variant={showCompletedTasks ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                    className="gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
+                  </Button>
+                </div>
+                <div className="p-4">
+                  <TasksTable
+                    tasks={getDisplayTasks()}
+                    onTaskUpdate={loadData}
+                  />
+                </div>
+              </Card>
+            </div>
+
+            {/* Appointments for mobile - under tasks */}
+            <div className="lg:hidden">
+              <AppointmentsTable
+                appointments={selectedDateAppointments}
+                selectedDate={selectedDate}
+                onAppointmentUpdate={loadData}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 };
 

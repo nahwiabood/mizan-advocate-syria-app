@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import Layout from '@/components/Layout';
 import { dataStore } from '@/store/dataStore';
 
 const Settings: React.FC = () => {
@@ -230,325 +227,323 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto p-4 min-h-screen" dir="rtl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-right flex items-center gap-2">
-              <span className="text-green-600">🔒</span>
-              الضبط - تطبيق محلي (بدون انترنت)
-            </CardTitle>
-            <p className="text-sm text-muted-foreground text-right">
-              جميع بياناتك محفوظة محلياً على جهازك ولا تحتاج للانترنت
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="lawyer-info" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted rounded-lg p-1">
-                <TabsTrigger 
-                  value="lawyer-info" 
-                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  معلومات المحامي
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="print" 
-                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  إعدادات الطباعة
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="display" 
-                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  إعدادات العرض
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="data" 
-                  className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  إدارة البيانات
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="lawyer-info" className="mt-6 space-y-6">
-                <div>
-                  <Label htmlFor="lawyerName" className="block mb-2 text-right">اسم المحامي</Label>
+    <div className="container mx-auto p-4 min-h-screen" dir="rtl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl text-right flex items-center gap-2">
+            <span className="text-green-600">🔒</span>
+            الضبط - تطبيق محلي (بدون انترنت)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground text-right">
+            جميع بياناتك محفوظة محلياً على جهازك ولا تحتاج للانترنت
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="lawyer-info" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted rounded-lg p-1">
+              <TabsTrigger 
+                value="lawyer-info" 
+                className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                معلومات المحامي
+              </TabsTrigger>
+              <TabsTrigger 
+                value="print" 
+                className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                إعدادات الطباعة
+              </TabsTrigger>
+              <TabsTrigger 
+                value="display" 
+                className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                إعدادات العرض
+              </TabsTrigger>
+              <TabsTrigger 
+                value="data" 
+                className="text-sm px-2 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                إدارة البيانات
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="lawyer-info" className="mt-6 space-y-6">
+              <div>
+                <Label htmlFor="lawyerName" className="block mb-2 text-right">اسم المحامي</Label>
+                <Input
+                  id="lawyerName"
+                  value={lawyerInfo.name}
+                  onChange={(e) => setLawyerInfo({ ...lawyerInfo, name: e.target.value })}
+                  placeholder="أدخل اسم المحامي"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lawyerTitle" className="block mb-2 text-right">المسمى الوظيفي</Label>
+                <Input
+                  id="lawyerTitle"
+                  value={lawyerInfo.title}
+                  onChange={(e) => setLawyerInfo({ ...lawyerInfo, title: e.target.value })}
+                  placeholder="مثال: محامي قانوني"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lawyerPhone" className="block mb-2 text-right">رقم الهاتف</Label>
+                <Input
+                  id="lawyerPhone"
+                  value={lawyerInfo.phone}
+                  onChange={(e) => setLawyerInfo({ ...lawyerInfo, phone: e.target.value })}
+                  placeholder="أدخل رقم الهاتف"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lawyerEmail" className="block mb-2 text-right">البريد الإلكتروني</Label>
+                <Input
+                  id="lawyerEmail"
+                  value={lawyerInfo.email}
+                  onChange={(e) => setLawyerInfo({ ...lawyerInfo, email: e.target.value })}
+                  placeholder="أدخل البريد الإلكتروني"
+                  type="email"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lawyerAddress" className="block mb-2 text-right">العنوان</Label>
+                <Input
+                  id="lawyerAddress"
+                  value={lawyerInfo.address}
+                  onChange={(e) => setLawyerInfo({ ...lawyerInfo, address: e.target.value })}
+                  placeholder="أدخل عنوان المكتب"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <Button onClick={handleSaveLawyerInfo} className="w-full">
+                حفظ المعلومات
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="print" className="mt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="includeLogo" className="text-right">إظهار الشعار في الطباعة</Label>
+                <Switch
+                  id="includeLogo"
+                  checked={printSettings.includeLogo}
+                  onCheckedChange={(checked) => setPrintSettings({ ...printSettings, includeLogo: checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="includeHeader" className="text-right">إظهار الترويسة في الطباعة</Label>
+                <Switch
+                  id="includeHeader"
+                  checked={printSettings.includeHeader}
+                  onCheckedChange={(checked) => setPrintSettings({ ...printSettings, includeHeader: checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="includeFooter" className="text-right">إظهار التذييل في الطباعة</Label>
+                <Switch
+                  id="includeFooter"
+                  checked={printSettings.includeFooter}
+                  onCheckedChange={(checked) => setPrintSettings({ ...printSettings, includeFooter: checked })}
+                />
+              </div>
+              <div>
+                <Label className="block mb-3 text-right">حجم الخط في الطباعة</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={printSettings.fontSize === 'small' ? 'default' : 'outline'}
+                    onClick={() => setPrintSettings({ ...printSettings, fontSize: 'small' })}
+                    className="text-sm"
+                  >
+                    صغير
+                  </Button>
+                  <Button
+                    variant={printSettings.fontSize === 'medium' ? 'default' : 'outline'}
+                    onClick={() => setPrintSettings({ ...printSettings, fontSize: 'medium' })}
+                    className="text-sm"
+                  >
+                    متوسط
+                  </Button>
+                  <Button
+                    variant={printSettings.fontSize === 'large' ? 'default' : 'outline'}
+                    onClick={() => setPrintSettings({ ...printSettings, fontSize: 'large' })}
+                    className="text-sm"
+                  >
+                    كبير
+                  </Button>
+                </div>
+              </div>
+              <Button onClick={handleSavePrintSettings} className="w-full">
+                حفظ إعدادات الطباعة
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="display" className="mt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="showPastSessions" className="text-right">إظهار الجلسات السابقة</Label>
+                <Switch
+                  id="showPastSessions"
+                  checked={displaySettings.showPastSessions}
+                  onCheckedChange={(checked) => setDisplaySettings({ ...displaySettings, showPastSessions: checked })}
+                />
+              </div>
+              <div>
+                <Label className="block mb-3 text-right">عرض التقويم الافتراضي</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={displaySettings.defaultCalendarView === 'day' ? 'default' : 'outline'}
+                    onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'day' })}
+                    className="text-sm"
+                  >
+                    يوم
+                  </Button>
+                  <Button
+                    variant={displaySettings.defaultCalendarView === 'week' ? 'default' : 'outline'}
+                    onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'week' })}
+                    className="text-sm"
+                  >
+                    أسبوع
+                  </Button>
+                  <Button
+                    variant={displaySettings.defaultCalendarView === 'month' ? 'default' : 'outline'}
+                    onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'month' })}
+                    className="text-sm"
+                  >
+                    شهر
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="sessionsColor" className="block mb-2 text-right">لون الجلسات</Label>
+                <div className="flex gap-2">
                   <Input
-                    id="lawyerName"
-                    value={lawyerInfo.name}
-                    onChange={(e) => setLawyerInfo({ ...lawyerInfo, name: e.target.value })}
-                    placeholder="أدخل اسم المحامي"
-                    className="text-right"
+                    id="sessionsColor"
+                    type="color"
+                    value={displaySettings.sessionsColor}
+                    onChange={(e) => setDisplaySettings({ ...displaySettings, sessionsColor: e.target.value })}
+                    className="w-12 h-10 p-1 cursor-pointer"
+                  />
+                  <Input
+                    value={displaySettings.sessionsColor}
+                    onChange={(e) => setDisplaySettings({ ...displaySettings, sessionsColor: e.target.value })}
+                    className="flex-1 text-right"
                     dir="rtl"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="lawyerTitle" className="block mb-2 text-right">المسمى الوظيفي</Label>
+              </div>
+              <div>
+                <Label htmlFor="appointmentsColor" className="block mb-2 text-right">لون المواعيد</Label>
+                <div className="flex gap-2">
                   <Input
-                    id="lawyerTitle"
-                    value={lawyerInfo.title}
-                    onChange={(e) => setLawyerInfo({ ...lawyerInfo, title: e.target.value })}
-                    placeholder="مثال: محامي قانوني"
-                    className="text-right"
+                    id="appointmentsColor"
+                    type="color"
+                    value={displaySettings.appointmentsColor}
+                    onChange={(e) => setDisplaySettings({ ...displaySettings, appointmentsColor: e.target.value })}
+                    className="w-12 h-10 p-1 cursor-pointer"
+                  />
+                  <Input
+                    value={displaySettings.appointmentsColor}
+                    onChange={(e) => setDisplaySettings({ ...displaySettings, appointmentsColor: e.target.value })}
+                    className="flex-1 text-right"
                     dir="rtl"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="lawyerPhone" className="block mb-2 text-right">رقم الهاتف</Label>
+              </div>
+              <div>
+                <Label htmlFor="tasksColor" className="block mb-2 text-right">لون المهام</Label>
+                <div className="flex gap-2">
                   <Input
-                    id="lawyerPhone"
-                    value={lawyerInfo.phone}
-                    onChange={(e) => setLawyerInfo({ ...lawyerInfo, phone: e.target.value })}
-                    placeholder="أدخل رقم الهاتف"
-                    className="text-right"
+                    id="tasksColor"
+                    type="color"
+                    value={displaySettings.tasksColor}
+                    onChange={(e) => setDisplaySettings({ ...displaySettings, tasksColor: e.target.value })}
+                    className="w-12 h-10 p-1 cursor-pointer"
+                  />
+                  <Input
+                    value={displaySettings.tasksColor}
+                    onChange={(e) => setDisplaySettings({ ...displaySettings, tasksColor: e.target.value })}
+                    className="flex-1 text-right"
                     dir="rtl"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="lawyerEmail" className="block mb-2 text-right">البريد الإلكتروني</Label>
-                  <Input
-                    id="lawyerEmail"
-                    value={lawyerInfo.email}
-                    onChange={(e) => setLawyerInfo({ ...lawyerInfo, email: e.target.value })}
-                    placeholder="أدخل البريد الإلكتروني"
-                    type="email"
-                    className="text-right"
-                    dir="rtl"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lawyerAddress" className="block mb-2 text-right">العنوان</Label>
-                  <Input
-                    id="lawyerAddress"
-                    value={lawyerInfo.address}
-                    onChange={(e) => setLawyerInfo({ ...lawyerInfo, address: e.target.value })}
-                    placeholder="أدخل عنوان المكتب"
-                    className="text-right"
-                    dir="rtl"
-                  />
-                </div>
-                <Button onClick={handleSaveLawyerInfo} className="w-full">
-                  حفظ المعلومات
-                </Button>
-              </TabsContent>
-              
-              <TabsContent value="print" className="mt-6 space-y-6">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="includeLogo" className="text-right">إظهار الشعار في الطباعة</Label>
-                  <Switch
-                    id="includeLogo"
-                    checked={printSettings.includeLogo}
-                    onCheckedChange={(checked) => setPrintSettings({ ...printSettings, includeLogo: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="includeHeader" className="text-right">إظهار الترويسة في الطباعة</Label>
-                  <Switch
-                    id="includeHeader"
-                    checked={printSettings.includeHeader}
-                    onCheckedChange={(checked) => setPrintSettings({ ...printSettings, includeHeader: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="includeFooter" className="text-right">إظهار التذييل في الطباعة</Label>
-                  <Switch
-                    id="includeFooter"
-                    checked={printSettings.includeFooter}
-                    onCheckedChange={(checked) => setPrintSettings({ ...printSettings, includeFooter: checked })}
-                  />
-                </div>
-                <div>
-                  <Label className="block mb-3 text-right">حجم الخط في الطباعة</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      variant={printSettings.fontSize === 'small' ? 'default' : 'outline'}
-                      onClick={() => setPrintSettings({ ...printSettings, fontSize: 'small' })}
-                      className="text-sm"
-                    >
-                      صغير
-                    </Button>
-                    <Button
-                      variant={printSettings.fontSize === 'medium' ? 'default' : 'outline'}
-                      onClick={() => setPrintSettings({ ...printSettings, fontSize: 'medium' })}
-                      className="text-sm"
-                    >
-                      متوسط
-                    </Button>
-                    <Button
-                      variant={printSettings.fontSize === 'large' ? 'default' : 'outline'}
-                      onClick={() => setPrintSettings({ ...printSettings, fontSize: 'large' })}
-                      className="text-sm"
-                    >
-                      كبير
-                    </Button>
-                  </div>
-                </div>
-                <Button onClick={handleSavePrintSettings} className="w-full">
-                  حفظ إعدادات الطباعة
-                </Button>
-              </TabsContent>
-              
-              <TabsContent value="display" className="mt-6 space-y-6">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="showPastSessions" className="text-right">إظهار الجلسات السابقة</Label>
-                  <Switch
-                    id="showPastSessions"
-                    checked={displaySettings.showPastSessions}
-                    onCheckedChange={(checked) => setDisplaySettings({ ...displaySettings, showPastSessions: checked })}
-                  />
-                </div>
-                <div>
-                  <Label className="block mb-3 text-right">عرض التقويم الافتراضي</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      variant={displaySettings.defaultCalendarView === 'day' ? 'default' : 'outline'}
-                      onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'day' })}
-                      className="text-sm"
-                    >
-                      يوم
-                    </Button>
-                    <Button
-                      variant={displaySettings.defaultCalendarView === 'week' ? 'default' : 'outline'}
-                      onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'week' })}
-                      className="text-sm"
-                    >
-                      أسبوع
-                    </Button>
-                    <Button
-                      variant={displaySettings.defaultCalendarView === 'month' ? 'default' : 'outline'}
-                      onClick={() => setDisplaySettings({ ...displaySettings, defaultCalendarView: 'month' })}
-                      className="text-sm"
-                    >
-                      شهر
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="sessionsColor" className="block mb-2 text-right">لون الجلسات</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="sessionsColor"
-                      type="color"
-                      value={displaySettings.sessionsColor}
-                      onChange={(e) => setDisplaySettings({ ...displaySettings, sessionsColor: e.target.value })}
-                      className="w-12 h-10 p-1 cursor-pointer"
-                    />
-                    <Input
-                      value={displaySettings.sessionsColor}
-                      onChange={(e) => setDisplaySettings({ ...displaySettings, sessionsColor: e.target.value })}
-                      className="flex-1 text-right"
-                      dir="rtl"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="appointmentsColor" className="block mb-2 text-right">لون المواعيد</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="appointmentsColor"
-                      type="color"
-                      value={displaySettings.appointmentsColor}
-                      onChange={(e) => setDisplaySettings({ ...displaySettings, appointmentsColor: e.target.value })}
-                      className="w-12 h-10 p-1 cursor-pointer"
-                    />
-                    <Input
-                      value={displaySettings.appointmentsColor}
-                      onChange={(e) => setDisplaySettings({ ...displaySettings, appointmentsColor: e.target.value })}
-                      className="flex-1 text-right"
-                      dir="rtl"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="tasksColor" className="block mb-2 text-right">لون المهام</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="tasksColor"
-                      type="color"
-                      value={displaySettings.tasksColor}
-                      onChange={(e) => setDisplaySettings({ ...displaySettings, tasksColor: e.target.value })}
-                      className="w-12 h-10 p-1 cursor-pointer"
-                    />
-                    <Input
-                      value={displaySettings.tasksColor}
-                      onChange={(e) => setDisplaySettings({ ...displaySettings, tasksColor: e.target.value })}
-                      className="flex-1 text-right"
-                      dir="rtl"
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleSaveDisplaySettings} className="w-full">
-                  حفظ إعدادات العرض
-                </Button>
-              </TabsContent>
-              
-              <TabsContent value="data" className="mt-6 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg text-right flex items-center gap-2">
-                      <span className="text-blue-600">💾</span>
-                      النسخ الاحتياطي والاستعادة
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground text-right">
-                      جميع البيانات محفوظة محلياً على جهازك - لا حاجة للانترنت
+              </div>
+              <Button onClick={handleSaveDisplaySettings} className="w-full">
+                حفظ إعدادات العرض
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="data" className="mt-6 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg text-right flex items-center gap-2">
+                    <span className="text-blue-600">💾</span>
+                    النسخ الاحتياطي والاستعادة
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground text-right">
+                    جميع البيانات محفوظة محلياً على جهازك - لا حاجة للانترنت
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2 text-right">
+                      يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي أو النقل إلى جهاز آخر. سيتم حفظ الملف في مجلد التحميلات الخاص بك.
                     </p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2 text-right">
-                        يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي أو النقل إلى جهاز آخر. سيتم حفظ الملف في مجلد التحميلات الخاص بك.
-                      </p>
-                      <Button onClick={handleExportData} className="w-full">
-                        📤 تصدير البيانات إلى مجلد التحميلات
+                    <Button onClick={handleExportData} className="w-full">
+                      📤 تصدير البيانات إلى مجلد التحميلات
+                    </Button>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2 text-right">
+                      يمكنك استيراد البيانات من ملف JSON سابق. سيؤدي هذا إلى استبدال جميع بياناتك الحالية.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        id="importData"
+                        accept=".json"
+                        onChange={handleImportData}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => document.getElementById('importData')?.click()}
+                      >
+                        📥 استيراد البيانات من ملف
                       </Button>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2 text-right">
-                        يمكنك استيراد البيانات من ملف JSON سابق. سيؤدي هذا إلى استبدال جميع بياناتك الحالية.
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="file"
-                          id="importData"
-                          accept=".json"
-                          onChange={handleImportData}
-                          className="hidden"
-                        />
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => document.getElementById('importData')?.click()}
-                        >
-                          📥 استيراد البيانات من ملف
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg text-right flex items-center gap-2">
-                      <span className="text-red-600">⚠️</span>
-                      إعادة تعيين البيانات
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4 text-right">
-                      سيؤدي هذا الإجراء إلى حذف جميع بياناتك بشكل دائم من جهازك. لا يمكن التراجع عن هذا الإجراء.
-                    </p>
-                    <Button variant="destructive" onClick={handleResetData} className="w-full">
-                      🗑️ إعادة تعيين جميع البيانات
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </Layout>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg text-right flex items-center gap-2">
+                    <span className="text-red-600">⚠️</span>
+                    إعادة تعيين البيانات
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 text-right">
+                    سيؤدي هذا الإجراء إلى حذف جميع بياناتك بشكل دائم من جهازك. لا يمكن التراجع عن هذا الإجراء.
+                  </p>
+                  <Button variant="destructive" onClick={handleResetData} className="w-full">
+                    🗑️ إعادة تعيين جميع البيانات
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
