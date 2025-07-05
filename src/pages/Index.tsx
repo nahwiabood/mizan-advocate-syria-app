@@ -10,7 +10,7 @@ import { dataStore } from '@/store/dataStore';
 import { Session, Task, Appointment } from '@/types';
 import { isDateToday, formatFullSyrianDate } from '@/utils/dateUtils';
 import { isSameDay, isAfter, isBefore } from 'date-fns';
-import { Layout } from '@/components/Layout';
+import Layout from '@/components/Layout';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
