@@ -1,5 +1,4 @@
-
-import { Client, Case, CaseStage, Session, Task, Appointment } from '@/types';
+import { Client, Case, CaseStage, Session, Task, Appointment, CaseFee, Payment, Expense, CaseAccountSummary, ClientAccountSummary } from '@/types';
 
 class DataStore {
   private storageKey = 'lawyer-management-data';
@@ -13,6 +12,9 @@ class DataStore {
     sessions: [] as Session[],
     tasks: [] as Task[],
     appointments: [] as Appointment[],
+    caseFees: [] as CaseFee[],
+    payments: [] as Payment[],
+    expenses: [] as Expense[],
     version: '1.0.0', // Added version tracking
   };
 
@@ -54,6 +56,52 @@ class DataStore {
       const date = new Date(dateValue);
       return isNaN(date.getTime()) ? null : date;
     };
+
+    // Convert case fee dates
+    data.caseFees?.forEach((fee: any) => {
+      const dateSet = safeConvertDate(fee.dateSet);
+      if (dateSet) fee.dateSet = dateSet;
+      
+      if (fee.paidDate) {
+        const paidDate = safeConvertDate(fee.paidDate);
+        if (paidDate) fee.paidDate = paidDate;
+      }
+      
+      const createdAt = safeConvertDate(fee.createdAt);
+      if (createdAt) fee.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(fee.updatedAt);
+      if (updatedAt) fee.updatedAt = updatedAt;
+    });
+
+    // Convert payment dates
+    data.payments?.forEach((payment: any) => {
+      const paymentDate = safeConvertDate(payment.paymentDate);
+      if (paymentDate) payment.paymentDate = paymentDate;
+      
+      const createdAt = safeConvertDate(payment.createdAt);
+      if (createdAt) payment.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(payment.updatedAt);
+      if (updatedAt) payment.updatedAt = updatedAt;
+    });
+
+    // Convert expense dates
+    data.expenses?.forEach((expense: any) => {
+      const expenseDate = safeConvertDate(expense.expenseDate);
+      if (expenseDate) expense.expenseDate = expenseDate;
+      
+      if (expense.reimbursedDate) {
+        const reimbursedDate = safeConvertDate(expense.reimbursedDate);
+        if (reimbursedDate) expense.reimbursedDate = reimbursedDate;
+      }
+      
+      const createdAt = safeConvertDate(expense.createdAt);
+      if (createdAt) expense.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(expense.updatedAt);
+      if (updatedAt) expense.updatedAt = updatedAt;
+    });
 
     // Convert session dates
     data.sessions?.forEach((session: any) => {
@@ -448,6 +496,177 @@ class DataStore {
     data.stages.splice(stageIndex, 1);
     this.saveData(data);
     return true;
+  }
+
+  // Case Fee methods
+  getCaseFees(): CaseFee[] {
+    return this.getData().caseFees;
+  }
+
+  addCaseFee(fee: Omit<CaseFee, 'id' | 'createdAt' | 'updatedAt'>): CaseFee {
+    const data = this.getData();
+    const newFee: CaseFee = {
+      ...fee,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.caseFees.push(newFee);
+    this.saveData(data);
+    return newFee;
+  }
+
+  updateCaseFee(id: string, updates: Partial<CaseFee>): CaseFee | null {
+    const data = this.getData();
+    const feeIndex = data.caseFees.findIndex(f => f.id === id);
+    if (feeIndex === -1) return null;
+
+    data.caseFees[feeIndex] = {
+      ...data.caseFees[feeIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.caseFees[feeIndex];
+  }
+
+  deleteCaseFee(id: string): boolean {
+    const data = this.getData();
+    const feeIndex = data.caseFees.findIndex(f => f.id === id);
+    if (feeIndex === -1) return false;
+
+    data.caseFees.splice(feeIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Payment methods
+  getPayments(): Payment[] {
+    return this.getData().payments;
+  }
+
+  addPayment(payment: Omit<Payment, 'id' | 'createdAt' | 'updatedAt'>): Payment {
+    const data = this.getData();
+    const newPayment: Payment = {
+      ...payment,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.payments.push(newPayment);
+    this.saveData(data);
+    return newPayment;
+  }
+
+  updatePayment(id: string, updates: Partial<Payment>): Payment | null {
+    const data = this.getData();
+    const paymentIndex = data.payments.findIndex(p => p.id === id);
+    if (paymentIndex === -1) return null;
+
+    data.payments[paymentIndex] = {
+      ...data.payments[paymentIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.payments[paymentIndex];
+  }
+
+  deletePayment(id: string): boolean {
+    const data = this.getData();
+    const paymentIndex = data.payments.findIndex(p => p.id === id);
+    if (paymentIndex === -1) return false;
+
+    data.payments.splice(paymentIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Expense methods
+  getExpenses(): Expense[] {
+    return this.getData().expenses;
+  }
+
+  addExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Expense {
+    const data = this.getData();
+    const newExpense: Expense = {
+      ...expense,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.expenses.push(newExpense);
+    this.saveData(data);
+    return newExpense;
+  }
+
+  updateExpense(id: string, updates: Partial<Expense>): Expense | null {
+    const data = this.getData();
+    const expenseIndex = data.expenses.findIndex(e => e.id === id);
+    if (expenseIndex === -1) return null;
+
+    data.expenses[expenseIndex] = {
+      ...data.expenses[expenseIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.expenses[expenseIndex];
+  }
+
+  deleteExpense(id: string): boolean {
+    const data = this.getData();
+    const expenseIndex = data.expenses.findIndex(e => e.id === id);
+    if (expenseIndex === -1) return false;
+
+    data.expenses.splice(expenseIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Accounting calculation methods
+  getCaseAccountSummary(caseId: string): CaseAccountSummary {
+    const fees = this.getCaseFees().filter(f => f.caseId === caseId);
+    const payments = this.getPayments().filter(p => p.caseId === caseId);
+    const expenses = this.getExpenses().filter(e => e.caseId === caseId);
+
+    const totalFees = fees.reduce((sum, fee) => sum + fee.amount, 0);
+    const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const reimbursableExpenses = expenses
+      .filter(e => e.isReimbursable && !e.isReimbursed)
+      .reduce((sum, expense) => sum + expense.amount, 0);
+    const unreimbursedExpenses = expenses
+      .filter(e => e.isReimbursable && !e.isReimbursed)
+      .reduce((sum, expense) => sum + expense.amount, 0);
+
+    return {
+      caseId,
+      totalFees,
+      totalPayments,
+      totalExpenses,
+      balance: totalPayments - totalFees - totalExpenses,
+      reimbursableExpenses,
+      unreimbursedExpenses,
+    };
+  }
+
+  getClientAccountSummary(clientId: string): ClientAccountSummary {
+    const clientCases = this.getCases().filter(c => c.clientId === clientId);
+    const caseSummaries = clientCases.map(c => this.getCaseAccountSummary(c.id));
+
+    const totalFees = caseSummaries.reduce((sum, cs) => sum + cs.totalFees, 0);
+    const totalPayments = caseSummaries.reduce((sum, cs) => sum + cs.totalPayments, 0);
+    const totalExpenses = caseSummaries.reduce((sum, cs) => sum + cs.totalExpenses, 0);
+
+    return {
+      clientId,
+      totalFees,
+      totalPayments,
+      totalExpenses,
+      balance: totalPayments - totalFees - totalExpenses,
+      caseSummaries,
+    };
   }
 
   // Backup and restore methods
