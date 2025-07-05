@@ -85,6 +85,42 @@ export interface Appointment {
   updatedAt: Date;
 }
 
+// New accounting interfaces
+export interface Payment {
+  id: string;
+  clientId: string;
+  amount: number;
+  date: Date;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Expense {
+  id: string;
+  clientId: string;
+  caseId: string;
+  amount: number;
+  date: Date;
+  description: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Fee {
+  id: string;
+  clientId: string;
+  caseId: string;
+  amount: number;
+  description: string;
+  date: Date;
+  isPaid: boolean;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface DayData {
   date: Date;
   sessions: Session[];
