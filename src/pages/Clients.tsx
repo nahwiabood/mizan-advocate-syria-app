@@ -98,10 +98,7 @@ const Clients = () => {
       toast({ title: 'تم تحديث بيانات الموكل بنجاح' });
     } else {
       addClient({
-        ...newClient,
-        id: crypto.randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        ...newClient
       });
       toast({ title: 'تم إضافة الموكل بنجاح' });
     }
@@ -119,10 +116,7 @@ const Clients = () => {
     } else {
       addCase({
         ...newCase,
-        id: crypto.randomUUID(),
-        clientId: selectedClientId,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        clientId: selectedClientId
       });
       toast({ title: 'تم إضافة القضية بنجاح' });
     }
@@ -135,42 +129,33 @@ const Clients = () => {
     
     if (accountingType === 'fee') {
       addCaseFee({
-        id: crypto.randomUUID(),
         caseId: selectedCaseId,
         amount,
         description: accountingForm.description,
         type: accountingForm.type as any,
         dateSet: new Date(),
-        isPaid: false,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        isPaid: false
       });
       toast({ title: 'تم إضافة الأتعاب بنجاح' });
     } else if (accountingType === 'payment') {
       const selectedCase = cases.find(c => c.id === selectedCaseId);
       addPayment({
-        id: crypto.randomUUID(),
         caseId: selectedCaseId,
         clientId: selectedCase?.clientId || '',
         amount,
         description: accountingForm.description,
         paymentMethod: accountingForm.paymentMethod as any,
-        paymentDate: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        paymentDate: new Date()
       });
       toast({ title: 'تم إضافة الدفعة بنجاح' });
     } else if (accountingType === 'expense') {
       addExpense({
-        id: crypto.randomUUID(),
         caseId: selectedCaseId,
         amount,
         description: accountingForm.description,
         type: accountingForm.type as any,
         expenseDate: new Date(),
-        isReimbursable: accountingForm.isReimbursable,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        isReimbursable: accountingForm.isReimbursable
       });
       toast({ title: 'تم إضافة المصروف بنجاح' });
     }

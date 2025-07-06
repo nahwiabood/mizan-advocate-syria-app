@@ -110,7 +110,7 @@ export const useDataStore = () => {
 
     // Appointment methods
     addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const result = dataStore.addAppointment(apartment);
+      const result = dataStore.addAppointment(appointment);
       refresh();
       return result;
     },
