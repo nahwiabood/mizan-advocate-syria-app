@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Clients from "./pages/Clients";
-import Accounting from "./pages/Accounting";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import MobileSplashScreen from "./components/MobileSplashScreen";
@@ -60,7 +59,6 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/clients" element={<Clients />} />
-              <Route path="/accounting" element={<Accounting />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
