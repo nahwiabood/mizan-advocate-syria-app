@@ -94,3 +94,61 @@ export interface DayData {
 
 // Add the Stage type alias for backward compatibility
 export type Stage = CaseStage;
+
+// New accounting interfaces
+export interface ClientFee {
+  id: string;
+  clientId: string;
+  description: string;
+  amount: number;
+  feeDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ClientPayment {
+  id: string;
+  clientId: string;
+  description: string;
+  amount: number;
+  paymentDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ClientExpense {
+  id: string;
+  clientId: string;
+  description: string;
+  amount: number;
+  expenseDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OfficeIncome {
+  id: string;
+  description: string;
+  amount: number;
+  incomeDate: Date;
+  source: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OfficeExpense {
+  id: string;
+  description: string;
+  amount: number;
+  expenseDate: Date;
+  category: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ClientBalance {
+  totalFees: number;
+  totalPayments: number;
+  totalExpenses: number;
+  balance: number;
+}

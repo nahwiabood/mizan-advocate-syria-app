@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Users, Settings as SettingsIcon, Printer } from 'lucide-react';
+import { Home, Users, Building2, Settings as SettingsIcon, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -27,6 +27,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, onPrintSchedule }) => 
       name: 'الموكلين',
       path: '/clients',
       icon: <Users className="h-4 w-4 sm:h-5 sm:w-5 ml-1 sm:ml-2" />,
+    },
+    {
+      name: 'حسابات المكتب',
+      path: '/accounting',
+      icon: <Building2 className="h-4 w-4 sm:h-5 sm:w-5 ml-1 sm:ml-2" />,
     },
     {
       name: 'الضبط',

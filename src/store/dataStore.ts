@@ -1,5 +1,4 @@
-
-import { Client, Case, CaseStage, Session, Task, Appointment } from '@/types';
+import { Client, Case, CaseStage, Session, Task, Appointment, ClientFee, ClientPayment, ClientExpense, OfficeIncome, OfficeExpense, ClientBalance } from '@/types';
 
 class DataStore {
   private storageKey = 'lawyer-management-data';
@@ -13,7 +12,12 @@ class DataStore {
     sessions: [] as Session[],
     tasks: [] as Task[],
     appointments: [] as Appointment[],
-    version: '1.0.0', // Added version tracking
+    clientFees: [] as ClientFee[],
+    clientPayments: [] as ClientPayment[],
+    clientExpenses: [] as ClientExpense[],
+    officeIncome: [] as OfficeIncome[],
+    officeExpenses: [] as OfficeExpense[],
+    version: '1.0.0',
   };
 
   // Initialize the store
@@ -141,6 +145,62 @@ class DataStore {
       
       const updatedAt = safeConvertDate(stage.updatedAt);
       if (updatedAt) stage.updatedAt = updatedAt;
+    });
+
+    // Convert accounting dates
+    data.clientFees?.forEach((fee: any) => {
+      const feeDate = safeConvertDate(fee.feeDate);
+      if (feeDate) fee.feeDate = feeDate;
+      
+      const createdAt = safeConvertDate(fee.createdAt);
+      if (createdAt) fee.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(fee.updatedAt);
+      if (updatedAt) fee.updatedAt = updatedAt;
+    });
+
+    data.clientPayments?.forEach((payment: any) => {
+      const paymentDate = safeConvertDate(payment.paymentDate);
+      if (paymentDate) payment.paymentDate = paymentDate;
+      
+      const createdAt = safeConvertDate(payment.createdAt);
+      if (createdAt) payment.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(payment.updatedAt);
+      if (updatedAt) payment.updatedAt = updatedAt;
+    });
+
+    data.clientExpenses?.forEach((expense: any) => {
+      const expenseDate = safeConvertDate(expense.expenseDate);
+      if (expenseDate) expense.expenseDate = expenseDate;
+      
+      const createdAt = safeConvertDate(expense.createdAt);
+      if (createdAt) expense.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(expense.updatedAt);
+      if (updatedAt) expense.updatedAt = updatedAt;
+    });
+
+    data.officeIncome?.forEach((income: any) => {
+      const incomeDate = safeConvertDate(income.incomeDate);
+      if (incomeDate) income.incomeDate = incomeDate;
+      
+      const createdAt = safeConvertDate(income.createdAt);
+      if (createdAt) income.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(income.updatedAt);
+      if (updatedAt) income.updatedAt = updatedAt;
+    });
+
+    data.officeExpenses?.forEach((expense: any) => {
+      const expenseDate = safeConvertDate(expense.expenseDate);
+      if (expenseDate) expense.expenseDate = expenseDate;
+      
+      const createdAt = safeConvertDate(expense.createdAt);
+      if (createdAt) expense.createdAt = createdAt;
+      
+      const updatedAt = safeConvertDate(expense.updatedAt);
+      if (updatedAt) expense.updatedAt = updatedAt;
     });
   }
 
@@ -448,6 +508,238 @@ class DataStore {
     data.stages.splice(stageIndex, 1);
     this.saveData(data);
     return true;
+  }
+
+  // Client Fee methods
+  getClientFees(clientId?: string): ClientFee[] {
+    const fees = this.getData().clientFees;
+    return clientId ? fees.filter(fee => fee.clientId === clientId) : fees;
+  }
+
+  addClientFee(fee: Omit<ClientFee, 'id' | 'createdAt' | 'updatedAt'>): ClientFee {
+    const data = this.getData();
+    const newFee: ClientFee = {
+      ...fee,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.clientFees.push(newFee);
+    this.saveData(data);
+    return newFee;
+  }
+
+  updateClientFee(id: string, updates: Partial<ClientFee>): ClientFee | null {
+    const data = this.getData();
+    const feeIndex = data.clientFees.findIndex(f => f.id === id);
+    if (feeIndex === -1) return null;
+
+    data.clientFees[feeIndex] = {
+      ...data.clientFees[feeIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.clientFees[feeIndex];
+  }
+
+  deleteClientFee(id: string): boolean {
+    const data = this.getData();
+    const feeIndex = data.clientFees.findIndex(f => f.id === id);
+    if (feeIndex === -1) return false;
+
+    data.clientFees.splice(feeIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Client Payment methods
+  getClientPayments(clientId?: string): ClientPayment[] {
+    const payments = this.getData().clientPayments;
+    return clientId ? payments.filter(payment => payment.clientId === clientId) : payments;
+  }
+
+  addClientPayment(payment: Omit<ClientPayment, 'id' | 'createdAt' | 'updatedAt'>): ClientPayment {
+    const data = this.getData();
+    const newPayment: ClientPayment = {
+      ...payment,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.clientPayments.push(newPayment);
+    this.saveData(data);
+    return newPayment;
+  }
+
+  updateClientPayment(id: string, updates: Partial<ClientPayment>): ClientPayment | null {
+    const data = this.getData();
+    const paymentIndex = data.clientPayments.findIndex(p => p.id === id);
+    if (paymentIndex === -1) return null;
+
+    data.clientPayments[paymentIndex] = {
+      ...data.clientPayments[paymentIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.clientPayments[paymentIndex];
+  }
+
+  deleteClientPayment(id: string): boolean {
+    const data = this.getData();
+    const paymentIndex = data.clientPayments.findIndex(p => p.id === id);
+    if (paymentIndex === -1) return false;
+
+    data.clientPayments.splice(paymentIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Client Expense methods
+  getClientExpenses(clientId?: string): ClientExpense[] {
+    const expenses = this.getData().clientExpenses;
+    return clientId ? expenses.filter(expense => expense.clientId === clientId) : expenses;
+  }
+
+  addClientExpense(expense: Omit<ClientExpense, 'id' | 'createdAt' | 'updatedAt'>): ClientExpense {
+    const data = this.getData();
+    const newExpense: ClientExpense = {
+      ...expense,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.clientExpenses.push(newExpense);
+    this.saveData(data);
+    return newExpense;
+  }
+
+  updateClientExpense(id: string, updates: Partial<ClientExpense>): ClientExpense | null {
+    const data = this.getData();
+    const expenseIndex = data.clientExpenses.findIndex(e => e.id === id);
+    if (expenseIndex === -1) return null;
+
+    data.clientExpenses[expenseIndex] = {
+      ...data.clientExpenses[expenseIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.clientExpenses[expenseIndex];
+  }
+
+  deleteClientExpense(id: string): boolean {
+    const data = this.getData();
+    const expenseIndex = data.clientExpenses.findIndex(e => e.id === id);
+    if (expenseIndex === -1) return false;
+
+    data.clientExpenses.splice(expenseIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Office Income methods
+  getOfficeIncome(): OfficeIncome[] {
+    return this.getData().officeIncome;
+  }
+
+  addOfficeIncome(income: Omit<OfficeIncome, 'id' | 'createdAt' | 'updatedAt'>): OfficeIncome {
+    const data = this.getData();
+    const newIncome: OfficeIncome = {
+      ...income,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.officeIncome.push(newIncome);
+    this.saveData(data);
+    return newIncome;
+  }
+
+  updateOfficeIncome(id: string, updates: Partial<OfficeIncome>): OfficeIncome | null {
+    const data = this.getData();
+    const incomeIndex = data.officeIncome.findIndex(i => i.id === id);
+    if (incomeIndex === -1) return null;
+
+    data.officeIncome[incomeIndex] = {
+      ...data.officeIncome[incomeIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.officeIncome[incomeIndex];
+  }
+
+  deleteOfficeIncome(id: string): boolean {
+    const data = this.getData();
+    const incomeIndex = data.officeIncome.findIndex(i => i.id === id);
+    if (incomeIndex === -1) return false;
+
+    data.officeIncome.splice(incomeIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Office Expense methods
+  getOfficeExpenses(): OfficeExpense[] {
+    return this.getData().officeExpenses;
+  }
+
+  addOfficeExpense(expense: Omit<OfficeExpense, 'id' | 'createdAt' | 'updatedAt'>): OfficeExpense {
+    const data = this.getData();
+    const newExpense: OfficeExpense = {
+      ...expense,
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    data.officeExpenses.push(newExpense);
+    this.saveData(data);
+    return newExpense;
+  }
+
+  updateOfficeExpense(id: string, updates: Partial<OfficeExpense>): OfficeExpense | null {
+    const data = this.getData();
+    const expenseIndex = data.officeExpenses.findIndex(e => e.id === id);
+    if (expenseIndex === -1) return null;
+
+    data.officeExpenses[expenseIndex] = {
+      ...data.officeExpenses[expenseIndex],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.saveData(data);
+    return data.officeExpenses[expenseIndex];
+  }
+
+  deleteOfficeExpense(id: string): boolean {
+    const data = this.getData();
+    const expenseIndex = data.officeExpenses.findIndex(e => e.id === id);
+    if (expenseIndex === -1) return false;
+
+    data.officeExpenses.splice(expenseIndex, 1);
+    this.saveData(data);
+    return true;
+  }
+
+  // Calculate client balance
+  getClientBalance(clientId: string): ClientBalance {
+    const fees = this.getClientFees(clientId);
+    const payments = this.getClientPayments(clientId);
+    const expenses = this.getClientExpenses(clientId);
+
+    const totalFees = fees.reduce((sum, fee) => sum + fee.amount, 0);
+    const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const balance = totalFees - totalPayments - totalExpenses;
+
+    return {
+      totalFees,
+      totalPayments,
+      totalExpenses,
+      balance
+    };
   }
 
   // Backup and restore methods
