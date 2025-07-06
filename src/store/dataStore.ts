@@ -20,7 +20,6 @@ class DataStore {
     version: '1.0.0',
   };
 
-  // Initialize the store
   initialize() {
     if (!this.isInitialized) {
       this.loadFromStorage();
@@ -52,14 +51,12 @@ class DataStore {
   }
 
   private convertDates(data: any) {
-    // Helper function to safely convert dates
     const safeConvertDate = (dateValue: any): Date | null => {
       if (!dateValue) return null;
       const date = new Date(dateValue);
       return isNaN(date.getTime()) ? null : date;
     };
 
-    // Convert session dates
     data.sessions?.forEach((session: any) => {
       const sessionDate = safeConvertDate(session.sessionDate);
       if (sessionDate) session.sessionDate = sessionDate;
@@ -81,7 +78,6 @@ class DataStore {
       if (updatedAt) session.updatedAt = updatedAt;
     });
 
-    // Convert task dates
     data.tasks?.forEach((task: any) => {
       if (task.dueDate) {
         const dueDate = safeConvertDate(task.dueDate);
@@ -100,7 +96,6 @@ class DataStore {
       }
     });
 
-    // Convert appointment dates
     data.appointments?.forEach((appointment: any) => {
       const appointmentDate = safeConvertDate(appointment.appointmentDate);
       if (appointmentDate) appointment.appointmentDate = appointmentDate;
@@ -112,7 +107,6 @@ class DataStore {
       if (updatedAt) appointment.updatedAt = updatedAt;
     });
 
-    // Convert client dates
     data.clients?.forEach((client: any) => {
       const createdAt = safeConvertDate(client.createdAt);
       if (createdAt) client.createdAt = createdAt;
@@ -121,7 +115,6 @@ class DataStore {
       if (updatedAt) client.updatedAt = updatedAt;
     });
 
-    // Convert case dates
     data.cases?.forEach((case_: any) => {
       const createdAt = safeConvertDate(case_.createdAt);
       if (createdAt) case_.createdAt = createdAt;
@@ -130,7 +123,6 @@ class DataStore {
       if (updatedAt) case_.updatedAt = updatedAt;
     });
 
-    // Convert stage dates
     data.stages?.forEach((stage: any) => {
       const firstSessionDate = safeConvertDate(stage.firstSessionDate);
       if (firstSessionDate) stage.firstSessionDate = firstSessionDate;
@@ -147,7 +139,6 @@ class DataStore {
       if (updatedAt) stage.updatedAt = updatedAt;
     });
 
-    // Convert accounting dates
     data.clientFees?.forEach((fee: any) => {
       const feeDate = safeConvertDate(fee.feeDate);
       if (feeDate) fee.feeDate = feeDate;
@@ -215,7 +206,6 @@ class DataStore {
     }
   }
 
-  // Session methods
   getSessions(): Session[] {
     return this.getData().sessions;
   }
@@ -275,13 +265,11 @@ class DataStore {
     const session = data.sessions.find(s => s.id === sessionId);
     if (!session) return null;
 
-    // Update current session with next session info
     session.nextSessionDate = nextDate;
     session.nextPostponementReason = reason;
     session.isTransferred = true;
     session.updatedAt = new Date();
 
-    // Create new session for the next date
     const newSession: Session = {
       id: crypto.randomUUID(),
       stageId: session.stageId,
@@ -300,7 +288,6 @@ class DataStore {
     return newSession;
   }
 
-  // Task methods
   getTasks(): Task[] {
     return this.getData().tasks;
   }
@@ -342,7 +329,6 @@ class DataStore {
     return true;
   }
 
-  // Appointment methods
   getAppointments(): Appointment[] {
     return this.getData().appointments;
   }
@@ -384,7 +370,6 @@ class DataStore {
     return true;
   }
 
-  // Client methods
   getClients(): Client[] {
     return this.getData().clients;
   }
@@ -426,7 +411,6 @@ class DataStore {
     return true;
   }
 
-  // Case methods
   getCases(): Case[] {
     return this.getData().cases;
   }
@@ -468,7 +452,6 @@ class DataStore {
     return true;
   }
 
-  // Stage methods
   getStages(): CaseStage[] {
     return this.getData().stages;
   }
@@ -510,7 +493,6 @@ class DataStore {
     return true;
   }
 
-  // Client Fee methods
   getClientFees(clientId?: string): ClientFee[] {
     const fees = this.getData().clientFees;
     return clientId ? fees.filter(fee => fee.clientId === clientId) : fees;
@@ -553,7 +535,6 @@ class DataStore {
     return true;
   }
 
-  // Client Payment methods
   getClientPayments(clientId?: string): ClientPayment[] {
     const payments = this.getData().clientPayments;
     return clientId ? payments.filter(payment => payment.clientId === clientId) : payments;
@@ -596,7 +577,6 @@ class DataStore {
     return true;
   }
 
-  // Client Expense methods
   getClientExpenses(clientId?: string): ClientExpense[] {
     const expenses = this.getData().clientExpenses;
     return clientId ? expenses.filter(expense => expense.clientId === clientId) : expenses;
@@ -639,7 +619,6 @@ class DataStore {
     return true;
   }
 
-  // Office Income methods
   getOfficeIncome(): OfficeIncome[] {
     return this.getData().officeIncome;
   }
@@ -681,7 +660,6 @@ class DataStore {
     return true;
   }
 
-  // Office Expense methods
   getOfficeExpenses(): OfficeExpense[] {
     return this.getData().officeExpenses;
   }
@@ -723,7 +701,6 @@ class DataStore {
     return true;
   }
 
-  // Calculate client balance
   getClientBalance(clientId: string): ClientBalance {
     const fees = this.getClientFees(clientId);
     const payments = this.getClientPayments(clientId);
@@ -732,7 +709,8 @@ class DataStore {
     const totalFees = fees.reduce((sum, fee) => sum + fee.amount, 0);
     const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const balance = totalFees - totalPayments - totalExpenses;
+    
+    const balance = totalFees + totalExpenses - totalPayments;
 
     return {
       totalFees,
@@ -742,7 +720,6 @@ class DataStore {
     };
   }
 
-  // Backup and restore methods
   exportData(): string {
     const data = this.getData();
     return JSON.stringify(data, null, 2);
@@ -760,7 +737,6 @@ class DataStore {
     }
   }
 
-  // Clear all data
   clearAllData(): void {
     localStorage.removeItem(this.storageKey);
     this.cache = { ...this.defaultData };
@@ -769,5 +745,4 @@ class DataStore {
 
 export const dataStore = new DataStore();
 
-// Initialize the store when the module is loaded
 dataStore.initialize();
