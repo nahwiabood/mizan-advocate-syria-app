@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Edit, Eye, Calculator, DollarSign } from 'lucide-react';
-import { useDataStore } from '@/store/dataStore';
+import { useDataStore } from '@/hooks/useDataStore';
 import { Client, Case, CaseFee, Payment, Expense } from '@/types';
 
 const Clients = () => {
@@ -49,7 +49,7 @@ const Clients = () => {
     opponent: '',
     subject: '',
     caseType: '',
-    status: 'active' as const
+    status: 'active' as 'active' | 'closed' | 'pending'
   });
 
   // Accounting form states
@@ -655,7 +655,7 @@ const Clients = () => {
               </div>
               <div>
                 <Label htmlFor="status">حالة القضية</Label>
-                <Select value={newCase.status} onValueChange={(value) => setNewCase({ ...newCase, status: value as any })}>
+                <Select value={newCase.status} onValueChange={(value: 'active' | 'closed' | 'pending') => setNewCase({ ...newCase, status: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
