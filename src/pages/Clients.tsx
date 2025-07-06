@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Edit, Eye, Calculator, DollarSign } from 'lucide-react';
-import { useDataStore } from '@/hooks/useDataStore';
+import { useDataStore } from '@/store/dataStore';
 import { Client, Case, CaseFee, Payment, Expense } from '@/types';
 
 const Clients = () => {
@@ -49,7 +49,7 @@ const Clients = () => {
     opponent: '',
     subject: '',
     caseType: '',
-    status: 'active' as 'active' | 'closed' | 'pending'
+    status: 'active' as const
   });
 
   // Accounting form states
@@ -98,7 +98,10 @@ const Clients = () => {
       toast({ title: 'تم تحديث بيانات الموكل بنجاح' });
     } else {
       addClient({
-        ...newClient
+        ...newClient,
+        id: crypto.randomUUID(),
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
       toast({ title: 'تم إضافة الموكل بنجاح' });
     }
@@ -116,7 +119,10 @@ const Clients = () => {
     } else {
       addCase({
         ...newCase,
-        clientId: selectedClientId
+        id: crypto.randomUUID(),
+        clientId: selectedClientId,
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
       toast({ title: 'تم إضافة القضية بنجاح' });
     }
@@ -129,33 +135,42 @@ const Clients = () => {
     
     if (accountingType === 'fee') {
       addCaseFee({
+        id: crypto.randomUUID(),
         caseId: selectedCaseId,
         amount,
         description: accountingForm.description,
         type: accountingForm.type as any,
         dateSet: new Date(),
-        isPaid: false
+        isPaid: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
       toast({ title: 'تم إضافة الأتعاب بنجاح' });
     } else if (accountingType === 'payment') {
       const selectedCase = cases.find(c => c.id === selectedCaseId);
       addPayment({
+        id: crypto.randomUUID(),
         caseId: selectedCaseId,
         clientId: selectedCase?.clientId || '',
         amount,
         description: accountingForm.description,
         paymentMethod: accountingForm.paymentMethod as any,
-        paymentDate: new Date()
+        paymentDate: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
       toast({ title: 'تم إضافة الدفعة بنجاح' });
     } else if (accountingType === 'expense') {
       addExpense({
+        id: crypto.randomUUID(),
         caseId: selectedCaseId,
         amount,
         description: accountingForm.description,
         type: accountingForm.type as any,
         expenseDate: new Date(),
-        isReimbursable: accountingForm.isReimbursable
+        isReimbursable: accountingForm.isReimbursable,
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
       toast({ title: 'تم إضافة المصروف بنجاح' });
     }
@@ -640,7 +655,7 @@ const Clients = () => {
               </div>
               <div>
                 <Label htmlFor="status">حالة القضية</Label>
-                <Select value={newCase.status} onValueChange={(value: 'active' | 'closed' | 'pending') => setNewCase({ ...newCase, status: value })}>
+                <Select value={newCase.status} onValueChange={(value) => setNewCase({ ...newCase, status: value as any })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
