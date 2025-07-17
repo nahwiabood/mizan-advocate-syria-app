@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import { Plus, Users, User, Phone, Mail, MapPin, FileText, Eye, Edit, Trash2, Ca
 import { Client, Case, ClientBalance } from '@/types';
 import { dataStore } from '@/store/dataStore';
 import { toast } from "sonner";
-import Layout from '@/components/Layout';
+import { Layout } from '@/components/Layout';
 import CaseAccountingDialog from '@/components/CaseAccountingDialog';
 import ClientStatementDialog from '@/components/ClientStatementDialog';
 
@@ -47,7 +46,7 @@ const Clients = () => {
     opponent: '',
     subject: '',
     caseType: '',
-    status: 'active' as const
+    status: 'active' as 'active' | 'closed' | 'pending'
   });
 
   useEffect(() => {
@@ -467,7 +466,7 @@ const Clients = () => {
                                 <select
                                   id="case-status"
                                   value={caseForm.status}
-                                  onChange={(e) => setCaseForm({ ...caseForm, status: e.target.value as any })}
+                                  onChange={(e) => setCaseForm({ ...caseForm, status: e.target.value as 'active' | 'closed' | 'pending' })}
                                   className="w-full p-2 border border-gray-300 rounded-md"
                                 >
                                   <option value="active">نشطة</option>
