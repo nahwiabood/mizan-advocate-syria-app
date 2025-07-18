@@ -1,8 +1,4 @@
-import { 
-  Client, Case, CaseStage, Session, Task, Appointment, 
-  ClientFee, ClientPayment, ClientExpense, OfficeIncome, OfficeExpense, ClientBalance,
-  CaseFee, CasePayment, CaseExpense, CaseBalance, ClientCaseStatement, ClientStatement
-} from '@/types';
+import { Client, Case, CaseStage, Session, Task, Appointment, ClientFee, ClientPayment, ClientExpense, OfficeIncome, OfficeExpense, ClientBalance } from '@/types';
 
 class DataStore {
   private storageKey = 'lawyer-management-data';
@@ -19,9 +15,6 @@ class DataStore {
     clientFees: [] as ClientFee[],
     clientPayments: [] as ClientPayment[],
     clientExpenses: [] as ClientExpense[],
-    caseFees: [] as CaseFee[],
-    casePayments: [] as CasePayment[],
-    caseExpenses: [] as CaseExpense[],
     officeIncome: [] as OfficeIncome[],
     officeExpenses: [] as OfficeExpense[],
     version: '1.0.0',
@@ -169,39 +162,6 @@ class DataStore {
     });
 
     data.clientExpenses?.forEach((expense: any) => {
-      const expenseDate = safeConvertDate(expense.expenseDate);
-      if (expenseDate) expense.expenseDate = expenseDate;
-      
-      const createdAt = safeConvertDate(expense.createdAt);
-      if (createdAt) expense.createdAt = createdAt;
-      
-      const updatedAt = safeConvertDate(expense.updatedAt);
-      if (updatedAt) expense.updatedAt = updatedAt;
-    });
-
-    data.caseFees?.forEach((fee: any) => {
-      const feeDate = safeConvertDate(fee.feeDate);
-      if (feeDate) fee.feeDate = feeDate;
-      
-      const createdAt = safeConvertDate(fee.createdAt);
-      if (createdAt) fee.createdAt = createdAt;
-      
-      const updatedAt = safeConvertDate(fee.updatedAt);
-      if (updatedAt) fee.updatedAt = updatedAt;
-    });
-
-    data.casePayments?.forEach((payment: any) => {
-      const paymentDate = safeConvertDate(payment.paymentDate);
-      if (paymentDate) payment.paymentDate = paymentDate;
-      
-      const createdAt = safeConvertDate(payment.createdAt);
-      if (createdAt) payment.createdAt = createdAt;
-      
-      const updatedAt = safeConvertDate(payment.updatedAt);
-      if (updatedAt) payment.updatedAt = updatedAt;
-    });
-
-    data.caseExpenses?.forEach((expense: any) => {
       const expenseDate = safeConvertDate(expense.expenseDate);
       if (expenseDate) expense.expenseDate = expenseDate;
       
@@ -531,185 +491,6 @@ class DataStore {
     data.stages.splice(stageIndex, 1);
     this.saveData(data);
     return true;
-  }
-
-  getCaseFees(caseId?: string): CaseFee[] {
-    const fees = this.getData().caseFees;
-    return caseId ? fees.filter(fee => fee.caseId === caseId) : fees;
-  }
-
-  addCaseFee(fee: Omit<CaseFee, 'id' | 'createdAt' | 'updatedAt'>): CaseFee {
-    const data = this.getData();
-    const newFee: CaseFee = {
-      ...fee,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.caseFees.push(newFee);
-    this.saveData(data);
-    return newFee;
-  }
-
-  updateCaseFee(id: string, updates: Partial<CaseFee>): CaseFee | null {
-    const data = this.getData();
-    const feeIndex = data.caseFees.findIndex(f => f.id === id);
-    if (feeIndex === -1) return null;
-
-    data.caseFees[feeIndex] = {
-      ...data.caseFees[feeIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.caseFees[feeIndex];
-  }
-
-  deleteCaseFee(id: string): boolean {
-    const data = this.getData();
-    const feeIndex = data.caseFees.findIndex(f => f.id === id);
-    if (feeIndex === -1) return false;
-
-    data.caseFees.splice(feeIndex, 1);
-    this.saveData(data);
-    return true;
-  }
-
-  getCasePayments(caseId?: string): CasePayment[] {
-    const payments = this.getData().casePayments;
-    return caseId ? payments.filter(payment => payment.caseId === caseId) : payments;
-  }
-
-  addCasePayment(payment: Omit<CasePayment, 'id' | 'createdAt' | 'updatedAt'>): CasePayment {
-    const data = this.getData();
-    const newPayment: CasePayment = {
-      ...payment,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.casePayments.push(newPayment);
-    this.saveData(data);
-    return newPayment;
-  }
-
-  updateCasePayment(id: string, updates: Partial<CasePayment>): CasePayment | null {
-    const data = this.getData();
-    const paymentIndex = data.casePayments.findIndex(p => p.id === id);
-    if (paymentIndex === -1) return null;
-
-    data.casePayments[paymentIndex] = {
-      ...data.casePayments[paymentIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.casePayments[paymentIndex];
-  }
-
-  deleteCasePayment(id: string): boolean {
-    const data = this.getData();
-    const paymentIndex = data.casePayments.findIndex(p => p.id === id);
-    if (paymentIndex === -1) return false;
-
-    data.casePayments.splice(paymentIndex, 1);
-    this.saveData(data);
-    return true;
-  }
-
-  getCaseExpenses(caseId?: string): CaseExpense[] {
-    const expenses = this.getData().caseExpenses;
-    return caseId ? expenses.filter(expense => expense.caseId === caseId) : expenses;
-  }
-
-  addCaseExpense(expense: Omit<CaseExpense, 'id' | 'createdAt' | 'updatedAt'>): CaseExpense {
-    const data = this.getData();
-    const newExpense: CaseExpense = {
-      ...expense,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.caseExpenses.push(newExpense);
-    this.saveData(data);
-    return newExpense;
-  }
-
-  updateCaseExpense(id: string, updates: Partial<CaseExpense>): CaseExpense | null {
-    const data = this.getData();
-    const expenseIndex = data.caseExpenses.findIndex(e => e.id === id);
-    if (expenseIndex === -1) return null;
-
-    data.caseExpenses[expenseIndex] = {
-      ...data.caseExpenses[expenseIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.caseExpenses[expenseIndex];
-  }
-
-  deleteCaseExpense(id: string): boolean {
-    const data = this.getData();
-    const expenseIndex = data.caseExpenses.findIndex(e => e.id === id);
-    if (expenseIndex === -1) return false;
-
-    data.caseExpenses.splice(expenseIndex, 1);
-    this.saveData(data);
-    return true;
-  }
-
-  getCaseBalance(caseId: string): CaseBalance {
-    const fees = this.getCaseFees(caseId);
-    const payments = this.getCasePayments(caseId);
-    const expenses = this.getCaseExpenses(caseId);
-
-    const totalFees = fees.reduce((sum, fee) => sum + fee.amount, 0);
-    const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
-    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    
-    const balance = totalFees + totalExpenses - totalPayments;
-
-    return {
-      totalFees,
-      totalPayments,
-      totalExpenses,
-      balance
-    };
-  }
-
-  getClientStatement(clientId: string): ClientStatement {
-    const client = this.getClients().find(c => c.id === clientId);
-    if (!client) {
-      throw new Error('Client not found');
-    }
-
-    const clientCases = this.getCases().filter(c => c.clientId === clientId);
-    const caseStatements: ClientCaseStatement[] = clientCases.map(case_ => ({
-      case: case_,
-      balance: this.getCaseBalance(case_.id),
-      fees: this.getCaseFees(case_.id),
-      payments: this.getCasePayments(case_.id),
-      expenses: this.getCaseExpenses(case_.id)
-    }));
-
-    const totalBalance = caseStatements.reduce((total, caseStatement) => ({
-      totalFees: total.totalFees + caseStatement.balance.totalFees,
-      totalPayments: total.totalPayments + caseStatement.balance.totalPayments,
-      totalExpenses: total.totalExpenses + caseStatement.balance.totalExpenses,
-      balance: total.balance + caseStatement.balance.balance
-    }), {
-      totalFees: 0,
-      totalPayments: 0,
-      totalExpenses: 0,
-      balance: 0
-    });
-
-    return {
-      client,
-      totalBalance,
-      cases: caseStatements
-    };
   }
 
   getClientFees(clientId?: string): ClientFee[] {
