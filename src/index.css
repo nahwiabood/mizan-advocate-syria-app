@@ -100,6 +100,20 @@
     user-select: text;
   }
 
+  /* Allow interaction with buttons and checkboxes */
+  button,
+  [role="button"],
+  [role="checkbox"],
+  [data-radix-collection-item],
+  .checkbox {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    pointer-events: auto;
+  }
+
   body {
     @apply bg-background text-foreground font-arabic;
     direction: rtl;
