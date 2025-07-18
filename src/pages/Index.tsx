@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Calendar, Clock, CheckSquare, Users, FileText, Plus } from "lucide-react";
-import Layout from "@/components/Layout";
+import { Layout } from "@/components/Layout";
 import { ArabicCalendar } from "@/components/ArabicCalendar";
 import { SessionsTable } from "@/components/SessionsTable";
 import { TasksTable } from "@/components/TasksTable";
