@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarIcon, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
 import { formatSyrianDate } from '@/utils/dateUtils';
 import { Task } from '@/types';
-import { dataStore } from '@/store/dataStore';
-import { format } from 'date-fns';
+import { supabaseStore } from '@/store/supabaseStore';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 
 interface TasksTableProps {
   tasks: Task[];
@@ -27,6 +26,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({
   tasks,
   onTaskUpdate
 }) => {
+  const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -38,65 +38,121 @@ export const TasksTable: React.FC<TasksTableProps> = ({
     priority: 'medium' as 'low' | 'medium' | 'high',
   });
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!newTask.title) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال عنوان المهمة",
+        variant: "destructive"
+      });
       return;
     }
 
-    dataStore.addTask({
-      title: newTask.title,
-      description: newTask.description,
-      dueDate: newTask.dueDate,
-      priority: newTask.priority,
-      isCompleted: false,
-    });
+    try {
+      await supabaseStore.addTask({
+        title: newTask.title,
+        description: newTask.description,
+        dueDate: newTask.dueDate,
+        priority: newTask.priority,
+        isCompleted: false,
+      });
 
-    setNewTask({
-      title: '',
-      description: '',
-      dueDate: undefined,
-      priority: 'medium',
-    });
-    setIsAddDialogOpen(false);
-    onTaskUpdate();
+      setNewTask({
+        title: '',
+        description: '',
+        dueDate: undefined,
+        priority: 'medium',
+      });
+      setIsAddDialogOpen(false);
+      onTaskUpdate();
+      
+      toast({
+        title: "تم إضافة المهمة",
+        description: "تم إضافة المهمة بنجاح"
+      });
+    } catch (error) {
+      console.error('Error adding task:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة المهمة",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditTask = () => {
+  const handleEditTask = async () => {
     if (!selectedTask) return;
     
-    dataStore.updateTask(selectedTask.id, {
-      title: newTask.title || selectedTask.title,
-      description: newTask.description || selectedTask.description,
-      dueDate: newTask.dueDate || selectedTask.dueDate,
-      priority: newTask.priority || selectedTask.priority,
-    });
-    
-    setIsEditDialogOpen(false);
-    setSelectedTask(null);
-    setNewTask({
-      title: '',
-      description: '',
-      dueDate: undefined,
-      priority: 'medium',
-    });
-    onTaskUpdate();
+    try {
+      await supabaseStore.updateTask(selectedTask.id, {
+        title: newTask.title || selectedTask.title,
+        description: newTask.description || selectedTask.description,
+        dueDate: newTask.dueDate || selectedTask.dueDate,
+        priority: newTask.priority || selectedTask.priority,
+      });
+      
+      setIsEditDialogOpen(false);
+      setSelectedTask(null);
+      setNewTask({
+        title: '',
+        description: '',
+        dueDate: undefined,
+        priority: 'medium',
+      });
+      onTaskUpdate();
+      
+      toast({
+        title: "تم تعديل المهمة",
+        description: "تم تعديل المهمة بنجاح"
+      });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تعديل المهمة",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleToggleComplete = (taskId: string) => {
+  const handleToggleComplete = async (taskId: string) => {
     const task = tasks.find(task => task.id === taskId);
     if (!task) return;
     
-    dataStore.updateTask(taskId, { isCompleted: !task.isCompleted });
-    onTaskUpdate();
+    try {
+      await supabaseStore.updateTask(taskId, { isCompleted: !task.isCompleted });
+      onTaskUpdate();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث المهمة",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteTask = () => {
+  const handleDeleteTask = async () => {
     if (!selectedTask) return;
     
-    dataStore.deleteTask(selectedTask.id);
-    setIsDeleteDialogOpen(false);
-    setSelectedTask(null);
-    onTaskUpdate();
+    try {
+      await supabaseStore.deleteTask(selectedTask.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedTask(null);
+      onTaskUpdate();
+      
+      toast({
+        title: "تم حذف المهمة",
+        description: "تم حذف المهمة بنجاح"
+      });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف المهمة",
+        variant: "destructive"
+      });
+    }
   };
 
   const openEditDialog = (task: Task) => {
@@ -113,14 +169,6 @@ export const TasksTable: React.FC<TasksTableProps> = ({
   const openDeleteDialog = (task: Task) => {
     setSelectedTask(task);
     setIsDeleteDialogOpen(true);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: string) => {
-    setNewTask({ ...newTask, [field]: e.target.value });
-  };
-
-  const handleSelectChange = (value: 'low' | 'medium' | 'high') => {
-    setNewTask({ ...newTask, priority: value });
   };
 
   const getPriorityColor = (priority: string) => {
