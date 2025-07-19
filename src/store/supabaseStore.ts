@@ -78,7 +78,7 @@ export const supabaseStore = {
       .from('cases')
       .insert([{
         client_id: case_.clientId,
-        case_number: case_.caseNumber || `CASE-${Date.now()}`,
+        case_number: `CASE-${Date.now()}`,
         title: case_.title,
         description: case_.description,
         status: case_.status || 'active'
@@ -127,7 +127,6 @@ export const supabaseStore = {
         court_name: stage.courtName,
         first_session_date: stage.firstSessionDate,
         resolution_date: stage.resolutionDate,
-        resolution_details: stage.resolutionDetails,
         is_resolved: stage.isResolved || false
       }])
       .select()
@@ -145,7 +144,6 @@ export const supabaseStore = {
         court_name: updates.courtName,
         first_session_date: updates.firstSessionDate,
         resolution_date: updates.resolutionDate,
-        resolution_details: updates.resolutionDetails,
         is_resolved: updates.isResolved,
         updated_at: new Date().toISOString()
       })
@@ -241,6 +239,15 @@ export const supabaseStore = {
     return data;
   },
 
+  async deleteTask(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+
   // Appointment operations
   async getAppointments(): Promise<Appointment[]> {
     const { data, error } = await supabase
@@ -283,7 +290,7 @@ export const supabaseStore = {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
@@ -371,13 +378,34 @@ export const supabaseStore = {
   },
 
   // Calculate client balance
-  getClientBalance(clientId: string) {
-    return {
-      totalFees: 0,
-      totalPayments: 0,
-      totalExpenses: 0,
-      balance: 0
-    };
+  async getClientBalance(clientId: string) {
+    try {
+      const [fees, payments, expenses] = await Promise.all([
+        this.getClientFees(clientId),
+        this.getClientPayments(clientId),
+        this.getClientExpenses(clientId)
+      ]);
+
+      const totalFees = fees.reduce((sum, fee) => sum + Number(fee.amount), 0);
+      const totalPayments = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+      const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+      const balance = totalFees - totalPayments + totalExpenses;
+
+      return {
+        totalFees,
+        totalPayments,
+        totalExpenses,
+        balance
+      };
+    } catch (error) {
+      console.error('Error calculating client balance:', error);
+      return {
+        totalFees: 0,
+        totalPayments: 0,
+        totalExpenses: 0,
+        balance: 0
+      };
+    }
   },
 
   // Office accounting operations
