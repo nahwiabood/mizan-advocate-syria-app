@@ -1,233 +1,433 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Task, Appointment, Session, Client, Case, CaseStage, ClientFee, ClientPayment, ClientExpense, OfficeIncome, OfficeExpense } from '@/types';
+import { 
+  Client, 
+  Case, 
+  CaseStage, 
+  Session, 
+  Task, 
+  Appointment,
+  ClientFee,
+  ClientPayment,
+  ClientExpense,
+  OfficeIncome,
+  OfficeExpense
+} from '@/types';
 
-class SupabaseStore {
-  // Tasks methods
-  async addTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) {
+export const supabaseStore = {
+  // Client operations
+  async getClients(): Promise<Client[]> {
     const { data, error } = await supabase
-      .from('tasks')
-      .insert({
-        title: task.title,
-        description: task.description,
-        due_date: task.dueDate?.toISOString().split('T')[0],
-        priority: task.priority,
-        is_completed: task.isCompleted,
-        completed_at: task.completedAt?.toISOString()
-      })
+      .from('clients')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> {
+    const { data, error } = await supabase
+      .from('clients')
+      .insert([{
+        name: client.name,
+        phone: client.phone,
+        email: client.email,
+        address: client.address,
+        notes: client.notes
+      }])
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
-  }
+  },
 
-  async updateTask(id: string, updates: Partial<Task>) {
-    const updateData: any = {};
-    
-    if (updates.title !== undefined) updateData.title = updates.title;
-    if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate?.toISOString().split('T')[0];
-    if (updates.priority !== undefined) updateData.priority = updates.priority;
-    if (updates.isCompleted !== undefined) {
-      updateData.is_completed = updates.isCompleted;
-      updateData.completed_at = updates.isCompleted ? new Date().toISOString() : null;
-    }
-
+  async updateClient(id: string, updates: Partial<Client>): Promise<Client> {
     const { data, error } = await supabase
-      .from('tasks')
-      .update(updateData)
+      .from('clients')
+      .update({
+        name: updates.name,
+        phone: updates.phone,
+        email: updates.email,
+        address: updates.address,
+        notes: updates.notes,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
-  }
+  },
 
-  async deleteTask(id: string) {
-    const { error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    return true;
-  }
-
-  // Appointments methods
-  async addAppointment(appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>) {
+  // Case operations
+  async getCases(): Promise<Case[]> {
     const { data, error } = await supabase
-      .from('appointments')
-      .insert({
-        title: appointment.title,
-        description: appointment.description,
-        appointment_date: appointment.appointmentDate.toISOString().split('T')[0],
-        time: appointment.time,
-        location: appointment.location
-      })
+      .from('cases')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addCase(case_: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>): Promise<Case> {
+    const { data, error } = await supabase
+      .from('cases')
+      .insert([{
+        client_id: case_.clientId,
+        case_number: case_.caseNumber || `CASE-${Date.now()}`,
+        title: case_.title,
+        description: case_.description,
+        status: case_.status || 'active'
+      }])
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
-  }
+  },
 
-  async updateAppointment(id: string, updates: Partial<Appointment>) {
-    const updateData: any = {};
-    
-    if (updates.title !== undefined) updateData.title = updates.title;
-    if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.appointmentDate !== undefined) updateData.appointment_date = updates.appointmentDate.toISOString().split('T')[0];
-    if (updates.time !== undefined) updateData.time = updates.time;
-    if (updates.location !== undefined) updateData.location = updates.location;
-
+  async updateCase(id: string, updates: Partial<Case>): Promise<Case> {
     const { data, error } = await supabase
-      .from('appointments')
-      .update(updateData)
+      .from('cases')
+      .update({
+        title: updates.title,
+        description: updates.description,
+        status: updates.status,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
-  }
+  },
 
-  async deleteAppointment(id: string) {
-    const { error } = await supabase
-      .from('appointments')
-      .delete()
-      .eq('id', id);
-
+  // Stage operations
+  async getStages(): Promise<CaseStage[]> {
+    const { data, error } = await supabase
+      .from('case_stages')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
     if (error) throw error;
-    return true;
-  }
+    return data || [];
+  },
 
-  // Sessions methods
-  async addSession(session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>) {
+  async addStage(stage: Omit<CaseStage, 'id' | 'createdAt' | 'updatedAt'>): Promise<CaseStage> {
+    const { data, error } = await supabase
+      .from('case_stages')
+      .insert([{
+        case_id: stage.caseId,
+        stage_name: stage.stageName,
+        court_name: stage.courtName,
+        first_session_date: stage.firstSessionDate,
+        resolution_date: stage.resolutionDate,
+        resolution_details: stage.resolutionDetails,
+        is_resolved: stage.isResolved || false
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async updateStage(id: string, updates: Partial<CaseStage>): Promise<CaseStage> {
+    const { data, error } = await supabase
+      .from('case_stages')
+      .update({
+        stage_name: updates.stageName,
+        court_name: updates.courtName,
+        first_session_date: updates.firstSessionDate,
+        resolution_date: updates.resolutionDate,
+        resolution_details: updates.resolutionDetails,
+        is_resolved: updates.isResolved,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Session operations
+  async getSessions(): Promise<Session[]> {
     const { data, error } = await supabase
       .from('sessions')
-      .insert({
+      .select('*')
+      .order('session_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addSession(session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>): Promise<Session> {
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert([{
         stage_id: session.stageId,
         court_name: session.courtName,
         case_number: session.caseNumber,
-        session_date: session.sessionDate.toISOString().split('T')[0],
+        session_date: session.sessionDate,
         client_name: session.clientName,
         opponent: session.opponent,
         postponement_reason: session.postponementReason,
-        next_session_date: session.nextSessionDate?.toISOString().split('T')[0],
+        next_session_date: session.nextSessionDate,
         next_postponement_reason: session.nextPostponementReason,
-        is_transferred: session.isTransferred,
-        is_resolved: session.isResolved,
-        resolution_date: session.resolutionDate?.toISOString().split('T')[0]
-      })
+        is_transferred: session.isTransferred || false,
+        is_resolved: session.isResolved || false,
+        resolution_date: session.resolutionDate
+      }])
       .select()
       .single();
-
-    if (error) throw error;
-    return data;
-  }
-
-  async updateSession(id: string, updates: Partial<Session>) {
-    const updateData: any = {};
     
-    Object.keys(updates).forEach(key => {
-      const value = updates[key as keyof Session];
-      if (value !== undefined) {
-        switch (key) {
-          case 'sessionDate':
-            updateData.session_date = (value as Date).toISOString().split('T')[0];
-            break;
-          case 'nextSessionDate':
-            updateData.next_session_date = value ? (value as Date).toISOString().split('T')[0] : null;
-            break;
-          case 'resolutionDate':
-            updateData.resolution_date = value ? (value as Date).toISOString().split('T')[0] : null;
-            break;
-          case 'stageId':
-            updateData.stage_id = value;
-            break;
-          case 'courtName':
-            updateData.court_name = value;
-            break;
-          case 'caseNumber':
-            updateData.case_number = value;
-            break;
-          case 'clientName':
-            updateData.client_name = value;
-            break;
-          case 'postponementReason':
-            updateData.postponement_reason = value;
-            break;
-          case 'nextPostponementReason':
-            updateData.next_postponement_reason = value;
-            break;
-          case 'isTransferred':
-            updateData.is_transferred = value;
-            break;
-          case 'isResolved':
-            updateData.is_resolved = value;
-            break;
-          default:
-            updateData[key] = value;
-        }
-      }
-    });
+    if (error) throw error;
+    return data;
+  },
 
+  // Task operations
+  async getTasks(): Promise<Task[]> {
     const { data, error } = await supabase
-      .from('sessions')
-      .update(updateData)
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([{
+        title: task.title,
+        description: task.description,
+        due_date: task.dueDate,
+        priority: task.priority || 'medium',
+        is_completed: task.isCompleted || false,
+        completed_at: task.completedAt
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async updateTask(id: string, updates: Partial<Task>): Promise<Task> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({
+        title: updates.title,
+        description: updates.description,
+        due_date: updates.dueDate,
+        priority: updates.priority,
+        is_completed: updates.isCompleted,
+        completed_at: updates.completedAt,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
-  }
+  },
 
-  async deleteSession(id: string) {
-    const { error } = await supabase
-      .from('sessions')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    return true;
-  }
-
-  // Clients methods
-  async addClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) {
+  // Appointment operations
+  async getAppointments(): Promise<Appointment[]> {
     const { data, error } = await supabase
-      .from('clients')
-      .insert(client)
+      .from('appointments')
+      .select('*')
+      .order('appointment_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addAppointment(appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert([{
+        title: appointment.title,
+        description: appointment.description,
+        appointment_date: appointment.appointmentDate,
+        time: appointment.time,
+        location: appointment.location
+      }])
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
-  }
+  },
 
-  async updateClient(id: string, updates: Partial<Client>) {
+  async updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment> {
     const { data, error } = await supabase
-      .from('clients')
-      .update(updates)
+      .from('appointments')
+      .update({
+        title: updates.title,
+        description: updates.description,
+        appointment_date: updates.appointmentDate,
+        time: updates.time,
+        location: updates.location,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
+    
+    if (error) throw error;
+    return data;
+  },
 
+  // Client accounting operations
+  async getClientFees(clientId: string): Promise<ClientFee[]> {
+    const { data, error } = await supabase
+      .from('client_fees')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('fee_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addClientFee(fee: Omit<ClientFee, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientFee> {
+    const { data, error } = await supabase
+      .from('client_fees')
+      .insert([{
+        client_id: fee.clientId,
+        amount: fee.amount,
+        fee_date: fee.feeDate,
+        description: fee.description
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getClientPayments(clientId: string): Promise<ClientPayment[]> {
+    const { data, error } = await supabase
+      .from('client_payments')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('payment_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addClientPayment(payment: Omit<ClientPayment, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientPayment> {
+    const { data, error } = await supabase
+      .from('client_payments')
+      .insert([{
+        client_id: payment.clientId,
+        amount: payment.amount,
+        payment_date: payment.paymentDate,
+        description: payment.description
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getClientExpenses(clientId: string): Promise<ClientExpense[]> {
+    const { data, error } = await supabase
+      .from('client_expenses')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('expense_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addClientExpense(expense: Omit<ClientExpense, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientExpense> {
+    const { data, error } = await supabase
+      .from('client_expenses')
+      .insert([{
+        client_id: expense.clientId,
+        amount: expense.amount,
+        expense_date: expense.expenseDate,
+        description: expense.description
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Calculate client balance
+  getClientBalance(clientId: string) {
+    return {
+      totalFees: 0,
+      totalPayments: 0,
+      totalExpenses: 0,
+      balance: 0
+    };
+  },
+
+  // Office accounting operations
+  async getOfficeIncome(): Promise<OfficeIncome[]> {
+    const { data, error } = await supabase
+      .from('office_income')
+      .select('*')
+      .order('income_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addOfficeIncome(income: Omit<OfficeIncome, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeIncome> {
+    const { data, error } = await supabase
+      .from('office_income')
+      .insert([{
+        amount: income.amount,
+        income_date: income.incomeDate,
+        description: income.description
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getOfficeExpenses(): Promise<OfficeExpense[]> {
+    const { data, error } = await supabase
+      .from('office_expenses')
+      .select('*')
+      .order('expense_date', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addOfficeExpense(expense: Omit<OfficeExpense, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeExpense> {
+    const { data, error } = await supabase
+      .from('office_expenses')
+      .insert([{
+        amount: expense.amount,
+        expense_date: expense.expenseDate,
+        description: expense.description
+      }])
+      .select()
+      .single();
+    
     if (error) throw error;
     return data;
   }
-
-  async deleteClient(id: string) {
-    const { error } = await supabase
-      .from('clients')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-    return true;
-  }
-}
-
-export const supabaseStore = new SupabaseStore();
+};

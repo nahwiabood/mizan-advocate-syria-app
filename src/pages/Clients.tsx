@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, ChevronDown, ChevronRight, User, FileText, Calendar as CalendarIcon, Users, Search, DollarSign, Receipt, CreditCard, Wallet } from 'lucide-react';
-import { dataStore } from '@/store/dataStore';
+import { supabaseStore } from '@/store/supabaseStore';
 import { Client, Case, CaseStage, Session, ClientFee, ClientPayment, ClientExpense } from '@/types';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
 import { format } from 'date-fns';
@@ -93,11 +93,22 @@ const Clients = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setClients(dataStore.getClients());
-    setCases(dataStore.getCases());
-    setStages(dataStore.getStages());
-    setSessions(dataStore.getSessions());
+  const loadData = async () => {
+    try {
+      const [clientsData, casesData, stagesData, sessionsData] = await Promise.all([
+        supabaseStore.getClients(),
+        supabaseStore.getCases(),
+        supabaseStore.getStages(),
+        supabaseStore.getSessions()
+      ]);
+      
+      setClients(clientsData);
+      setCases(casesData);
+      setStages(stagesData);
+      setSessions(sessionsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
   };
 
   // Filter clients based on search term
@@ -142,109 +153,133 @@ const Clients = () => {
   };
 
   // CRUD operations
-  const handleAddClient = () => {
+  const handleAddClient = async () => {
     if (!clientForm.name) return;
 
-    dataStore.addClient({
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
-    });
+    try {
+      await supabaseStore.addClient({
+        name: clientForm.name,
+        email: clientForm.email,
+        phone: clientForm.phone,
+        address: clientForm.address,
+        notes: clientForm.notes
+      });
 
-    resetClientForm();
-    setIsClientDialogOpen(false);
-    loadData();
+      resetClientForm();
+      setIsClientDialogOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Error adding client:', error);
+    }
   };
 
-  const handleEditClient = () => {
+  const handleEditClient = async () => {
     if (!editingClient || !clientForm.name) return;
 
-    dataStore.updateClient(editingClient.id, {
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
-    });
+    try {
+      await supabaseStore.updateClient(editingClient.id, {
+        name: clientForm.name,
+        email: clientForm.email,
+        phone: clientForm.phone,
+        address: clientForm.address,
+        notes: clientForm.notes
+      });
 
-    resetClientForm();
-    setIsClientDialogOpen(false);
-    setEditingClient(null);
-    loadData();
+      resetClientForm();
+      setIsClientDialogOpen(false);
+      setEditingClient(null);
+      loadData();
+    } catch (error) {
+      console.error('Error updating client:', error);
+    }
   };
 
-  const handleAddCase = () => {
+  const handleAddCase = async () => {
     if (!caseForm.opponent || !caseForm.subject || !selectedClientId) return;
 
-    dataStore.addCase({
-      clientId: selectedClientId,
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description || '',
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType || 'عام',
-      status: 'active'
-    });
+    try {
+      await supabaseStore.addCase({
+        clientId: selectedClientId,
+        title: caseForm.title || caseForm.subject,
+        description: caseForm.description || '',
+        opponent: caseForm.opponent,
+        subject: caseForm.subject,
+        caseType: caseForm.caseType || 'عام',
+        status: 'active'
+      });
 
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
-    loadData();
+      resetCaseForm();
+      setIsCaseDialogOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Error adding case:', error);
+    }
   };
 
-  const handleEditCase = () => {
+  const handleEditCase = async () => {
     if (!editingCase || !caseForm.opponent || !caseForm.subject) return;
 
-    dataStore.updateCase(editingCase.id, {
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description,
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType
-    });
+    try {
+      await supabaseStore.updateCase(editingCase.id, {
+        title: caseForm.title || caseForm.subject,
+        description: caseForm.description,
+        opponent: caseForm.opponent,
+        subject: caseForm.subject,
+        caseType: caseForm.caseType
+      });
 
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
-    setEditingCase(null);
-    loadData();
+      resetCaseForm();
+      setIsCaseDialogOpen(false);
+      setEditingCase(null);
+      loadData();
+    } catch (error) {
+      console.error('Error updating case:', error);
+    }
   };
 
-  const handleAddStage = () => {
+  const handleAddStage = async () => {
     if (!stageForm.courtName || !stageForm.caseNumber || !selectedCaseId) return;
 
-    dataStore.addStage({
-      caseId: selectedCaseId,
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes,
-      firstSessionDate: null,
-      status: 'active'
-    });
+    try {
+      await supabaseStore.addStage({
+        caseId: selectedCaseId,
+        courtName: stageForm.courtName,
+        caseNumber: stageForm.caseNumber,
+        stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
+        notes: stageForm.notes,
+        firstSessionDate: null,
+        status: 'active'
+      });
 
-    resetStageForm();
-    setIsStageDialogOpen(false);
-    loadData();
+      resetStageForm();
+      setIsStageDialogOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Error adding stage:', error);
+    }
   };
 
-  const handleEditStage = () => {
+  const handleEditStage = async () => {
     if (!editingStage || !stageForm.courtName || !stageForm.caseNumber) return;
 
-    dataStore.updateStage(editingStage.id, {
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes
-    });
+    try {
+      await supabaseStore.updateStage(editingStage.id, {
+        courtName: stageForm.courtName,
+        caseNumber: stageForm.caseNumber,
+        stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
+        notes: stageForm.notes
+      });
 
-    resetStageForm();
-    setIsStageDialogOpen(false);
-    setEditingStage(null);
-    loadData();
+      resetStageForm();
+      setIsStageDialogOpen(false);
+      setEditingStage(null);
+      loadData();
+    } catch (error) {
+      console.error('Error updating stage:', error);
+    }
   };
 
-  const handleAddSession = () => {
+  const handleAddSession = async () => {
     if (!sessionForm.firstSessionDate || !selectedStageId) return;
 
     const stage = stages.find(s => s.id === selectedStageId);
@@ -256,71 +291,87 @@ const Clients = () => {
     const client = clients.find(c => c.id === case_.clientId);
     if (!client) return;
 
-    dataStore.addSession({
-      stageId: selectedStageId,
-      courtName: stage.courtName,
-      caseNumber: stage.caseNumber,
-      sessionDate: sessionForm.firstSessionDate,
-      clientName: client.name,
-      opponent: case_.opponent,
-      postponementReason: sessionForm.postponementReason,
-      isTransferred: false
-    });
+    try {
+      await supabaseStore.addSession({
+        stageId: selectedStageId,
+        courtName: stage.courtName,
+        caseNumber: stage.caseNumber,
+        sessionDate: sessionForm.firstSessionDate,
+        clientName: client.name,
+        opponent: case_.opponent,
+        postponementReason: sessionForm.postponementReason,
+        isTransferred: false
+      });
 
-    // Update stage with first session date
-    dataStore.updateStage(selectedStageId, {
-      firstSessionDate: sessionForm.firstSessionDate
-    });
+      // Update stage with first session date
+      await supabaseStore.updateStage(selectedStageId, {
+        firstSessionDate: sessionForm.firstSessionDate
+      });
 
-    resetSessionForm();
-    setIsSessionDialogOpen(false);
-    loadData();
+      resetSessionForm();
+      setIsSessionDialogOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Error adding session:', error);
+    }
   };
 
   // Accounting CRUD operations
-  const handleAddFee = () => {
+  const handleAddFee = async () => {
     if (!feeForm.description || !feeForm.amount || !selectedClientId) return;
 
-    dataStore.addClientFee({
-      clientId: selectedClientId,
-      description: feeForm.description,
-      amount: parseFloat(feeForm.amount),
-      feeDate: feeForm.feeDate
-    });
+    try {
+      await supabaseStore.addClientFee({
+        clientId: selectedClientId,
+        description: feeForm.description,
+        amount: parseFloat(feeForm.amount),
+        feeDate: feeForm.feeDate
+      });
 
-    resetFeeForm();
-    setIsFeeDialogOpen(false);
-    loadData();
+      resetFeeForm();
+      setIsFeeDialogOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Error adding fee:', error);
+    }
   };
 
-  const handleAddPayment = () => {
+  const handleAddPayment = async () => {
     if (!paymentForm.description || !paymentForm.amount || !selectedClientId) return;
 
-    dataStore.addClientPayment({
-      clientId: selectedClientId,
-      description: paymentForm.description,
-      amount: parseFloat(paymentForm.amount),
-      paymentDate: paymentForm.paymentDate
-    });
+    try {
+      await supabaseStore.addClientPayment({
+        clientId: selectedClientId,
+        description: paymentForm.description,
+        amount: parseFloat(paymentForm.amount),
+        paymentDate: paymentForm.paymentDate
+      });
 
-    resetPaymentForm();
-    setIsPaymentDialogOpen(false);
-    loadData();
+      resetPaymentForm();
+      setIsPaymentDialogOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Error adding payment:', error);
+    }
   };
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     if (!expenseForm.description || !expenseForm.amount || !selectedClientId) return;
 
-    dataStore.addClientExpense({
-      clientId: selectedClientId,
-      description: expenseForm.description,
-      amount: parseFloat(expenseForm.amount),
-      expenseDate: expenseForm.expenseDate
-    });
+    try {
+      await supabaseStore.addClientExpense({
+        clientId: selectedClientId,
+        description: expenseForm.description,
+        amount: parseFloat(expenseForm.amount),
+        expenseDate: expenseForm.expenseDate
+      });
 
-    resetExpenseForm();
-    setIsExpenseDialogOpen(false);
-    loadData();
+      resetExpenseForm();
+      setIsExpenseDialogOpen(false);
+      loadData();
+    } catch (error) {
+      console.error('Error adding expense:', error);
+    }
   };
 
   // Reset form functions
@@ -474,13 +525,44 @@ const Clients = () => {
     return sessions.filter(session => session.stageId === stageId);
   };
 
-  const getClientAccountingData = (clientId: string) => {
-    const fees = dataStore.getClientFees(clientId);
-    const payments = dataStore.getClientPayments(clientId);
-    const expenses = dataStore.getClientExpenses(clientId);
-    const balance = dataStore.getClientBalance(clientId);
-    
-    return { fees, payments, expenses, balance };
+  const getClientAccountingData = async (clientId: string) => {
+    try {
+      const [fees, payments, expenses] = await Promise.all([
+        supabaseStore.getClientFees(clientId),
+        supabaseStore.getClientPayments(clientId),
+        supabaseStore.getClientExpenses(clientId)
+      ]);
+      
+      const totalFees = fees.reduce((sum, fee) => sum + Number(fee.amount), 0);
+      const totalPayments = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+      const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+      const balance = totalFees - totalPayments - totalExpenses;
+      
+      return { 
+        fees, 
+        payments, 
+        expenses, 
+        balance: {
+          totalFees,
+          totalPayments,
+          totalExpenses,
+          balance
+        }
+      };
+    } catch (error) {
+      console.error('Error loading accounting data:', error);
+      return { 
+        fees: [], 
+        payments: [], 
+        expenses: [], 
+        balance: {
+          totalFees: 0,
+          totalPayments: 0,
+          totalExpenses: 0,
+          balance: 0
+        }
+      };
+    }
   };
 
   return (
@@ -514,7 +596,21 @@ const Clients = () => {
           <CardContent className="px-2 sm:px-6">
             <div className="space-y-3 sm:space-y-4">
               {filteredClients.map((client) => {
-                const accountingData = getClientAccountingData(client.id);
+                const [accountingData, setAccountingData] = useState<{
+                  fees: ClientFee[];
+                  payments: ClientPayment[];
+                  expenses: ClientExpense[];
+                  balance: {
+                    totalFees: number;
+                    totalPayments: number;
+                    totalExpenses: number;
+                    balance: number;
+                  };
+                } | null>(null);
+                
+                useEffect(() => {
+                  getClientAccountingData(client.id).then(setAccountingData);
+                }, [client.id]);
                 
                 return (
                   <div key={client.id} className="border-2 border-blue-200 rounded-lg bg-blue-50">
@@ -561,7 +657,7 @@ const Clients = () => {
                                 </div>
                               )}
                               <div className="text-xs sm:text-sm text-green-600 font-medium">
-                                الرصيد: {accountingData.balance.toLocaleString()} ل.س
+                                الرصيد: {accountingData ? accountingData.balance.balance.toLocaleString() : '0'} ل.س
                               </div>
                             </div>
                             <User className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
@@ -744,7 +840,7 @@ const Clients = () => {
                                       <DollarSign className="h-4 w-4 text-green-600" />
                                       <div className="text-right">
                                         <p className="text-xs text-muted-foreground">إجمالي الأتعاب</p>
-                                        <p className="font-medium text-green-600">{accountingData.balance.totalFees.toLocaleString()} ل.س</p>
+                                        <p className="font-medium text-green-600">{accountingData ? accountingData.balance.totalFees.toLocaleString() : '0'} ل.س</p>
                                       </div>
                                     </div>
                                   </CardContent>
@@ -756,7 +852,7 @@ const Clients = () => {
                                       <CreditCard className="h-4 w-4 text-blue-600" />
                                       <div className="text-right">
                                         <p className="text-xs text-muted-foreground">إجمالي المدفوعات</p>
-                                        <p className="font-medium text-blue-600">{accountingData.balance.totalPayments.toLocaleString()} ل.س</p>
+                                        <p className="font-medium text-blue-600">{accountingData ? accountingData.balance.totalPayments.toLocaleString() : '0'} ل.س</p>
                                       </div>
                                     </div>
                                   </CardContent>
@@ -768,20 +864,20 @@ const Clients = () => {
                                       <Receipt className="h-4 w-4 text-orange-600" />
                                       <div className="text-right">
                                         <p className="text-xs text-muted-foreground">إجمالي المصاريف</p>
-                                        <p className="font-medium text-orange-600">{accountingData.balance.totalExpenses.toLocaleString()} ل.س</p>
+                                        <p className="font-medium text-orange-600">{accountingData ? accountingData.balance.totalExpenses.toLocaleString() : '0'} ل.س</p>
                                       </div>
                                     </div>
                                   </CardContent>
                                 </Card>
                                 
-                                <Card className={`${accountingData.balance.balance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                                <Card className={`${accountingData && accountingData.balance.balance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                                   <CardContent className="p-3">
                                     <div className="flex items-center gap-2">
-                                      <Wallet className={`h-4 w-4 ${accountingData.balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                                      <Wallet className={`h-4 w-4 ${accountingData && accountingData.balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
                                       <div className="text-right">
                                         <p className="text-xs text-muted-foreground">الرصيد</p>
-                                        <p className={`font-medium ${accountingData.balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                          {accountingData.balance.balance.toLocaleString()} ل.س
+                                        <p className={`font-medium ${accountingData && accountingData.balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                          {accountingData ? accountingData.balance.balance.toLocaleString() : '0'} ل.س
                                         </p>
                                       </div>
                                     </div>
@@ -836,7 +932,7 @@ const Clients = () => {
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        {accountingData.fees.map((fee) => (
+                                        {accountingData && accountingData.fees.map((fee) => (
                                           <TableRow key={fee.id}>
                                             <TableCell className="text-right">{formatSyrianDate(fee.feeDate)}</TableCell>
                                             <TableCell className="text-right">{fee.description}</TableCell>
@@ -845,7 +941,7 @@ const Clients = () => {
                                             </TableCell>
                                           </TableRow>
                                         ))}
-                                        {accountingData.fees.length === 0 && (
+                                        {(!accountingData || accountingData.fees.length === 0) && (
                                           <TableRow>
                                             <TableCell colSpan={3} className="text-center text-muted-foreground">
                                               لا توجد أتعاب مسجلة
@@ -868,7 +964,7 @@ const Clients = () => {
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        {accountingData.payments.map((payment) => (
+                                        {accountingData && accountingData.payments.map((payment) => (
                                           <TableRow key={payment.id}>
                                             <TableCell className="text-right">{formatSyrianDate(payment.paymentDate)}</TableCell>
                                             <TableCell className="text-right">{payment.description}</TableCell>
@@ -877,7 +973,7 @@ const Clients = () => {
                                             </TableCell>
                                           </TableRow>
                                         ))}
-                                        {accountingData.payments.length === 0 && (
+                                        {(!accountingData || accountingData.payments.length === 0) && (
                                           <TableRow>
                                             <TableCell colSpan={3} className="text-center text-muted-foreground">
                                               لا توجد مدفوعات مسجلة
@@ -900,7 +996,7 @@ const Clients = () => {
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        {accountingData.expenses.map((expense) => (
+                                        {accountingData && accountingData.expenses.map((expense) => (
                                           <TableRow key={expense.id}>
                                             <TableCell className="text-right">{formatSyrianDate(expense.expenseDate)}</TableCell>
                                             <TableCell className="text-right">{expense.description}</TableCell>
@@ -909,7 +1005,7 @@ const Clients = () => {
                                             </TableCell>
                                           </TableRow>
                                         ))}
-                                        {accountingData.expenses.length === 0 && (
+                                        {(!accountingData || accountingData.expenses.length === 0) && (
                                           <TableRow>
                                             <TableCell colSpan={3} className="text-center text-muted-foreground">
                                               لا توجد مصاريف مسجلة
