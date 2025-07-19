@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIconLucide } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,14 @@ interface ArabicCalendarProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
 }
+
+// Helper function to ensure we have a valid Date object
+const ensureDate = (date: Date | string): Date => {
+  if (typeof date === 'string') {
+    return new Date(date);
+  }
+  return date;
+};
 
 export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   sessions,
@@ -31,13 +40,13 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
 
   const getSessionsForDate = (date: Date) => {
     return sessions.filter(session => 
-      isSameDay(session.sessionDate, date)
+      isSameDay(ensureDate(session.sessionDate), date)
     );
   };
 
   const getAppointmentsForDate = (date: Date) => {
     return appointments.filter(appointment => 
-      isSameDay(appointment.appointmentDate, date)
+      isSameDay(ensureDate(appointment.appointmentDate), date)
     );
   };
 
