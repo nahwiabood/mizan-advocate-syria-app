@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, TrendingUp, TrendingDown, Calculator } from "lucide-react";
 import { supabaseStore } from "@/store/supabaseStore";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { formatSyrianDate } from "@/utils/dateUtils";
 
 const OfficeAccounting = () => {
@@ -25,17 +25,19 @@ const OfficeAccounting = () => {
   const [newIncome, setNewIncome] = useState({
     amount: "",
     description: "",
-    incomeDate: new Date()
+    incomeDate: new Date(),
+    source: ""
   });
   
   const [newExpense, setNewExpense] = useState({
     amount: "",
     description: "",
-    expenseDate: new Date()
+    expenseDate: new Date(),
+    category: ""
   });
 
   const handleAddIncome = async () => {
-    if (!newIncome.amount || !newIncome.description) {
+    if (!newIncome.amount || !newIncome.description || !newIncome.source) {
       toast({
         title: "خطأ",
         description: "يرجى إدخال جميع البيانات المطلوبة",
@@ -48,10 +50,11 @@ const OfficeAccounting = () => {
       await supabaseStore.addOfficeIncome({
         amount: Number(newIncome.amount),
         description: newIncome.description,
-        incomeDate: newIncome.incomeDate
+        incomeDate: newIncome.incomeDate,
+        source: newIncome.source
       });
       
-      setNewIncome({ amount: "", description: "", incomeDate: new Date() });
+      setNewIncome({ amount: "", description: "", incomeDate: new Date(), source: "" });
       setIsIncomeDialogOpen(false);
       await refetch();
       
@@ -70,7 +73,7 @@ const OfficeAccounting = () => {
   };
 
   const handleAddExpense = async () => {
-    if (!newExpense.amount || !newExpense.description) {
+    if (!newExpense.amount || !newExpense.description || !newExpense.category) {
       toast({
         title: "خطأ",
         description: "يرجى إدخال جميع البيانات المطلوبة",
@@ -83,10 +86,11 @@ const OfficeAccounting = () => {
       await supabaseStore.addOfficeExpense({
         amount: Number(newExpense.amount),
         description: newExpense.description,
-        expenseDate: newExpense.expenseDate
+        expenseDate: newExpense.expenseDate,
+        category: newExpense.category
       });
       
-      setNewExpense({ amount: "", description: "", expenseDate: new Date() });
+      setNewExpense({ amount: "", description: "", expenseDate: new Date(), category: "" });
       setIsExpenseDialogOpen(false);
       await refetch();
       
@@ -138,6 +142,17 @@ const OfficeAccounting = () => {
                     />
                   </div>
                   <div className="text-right">
+                    <Label htmlFor="income-source" className="text-right">المصدر</Label>
+                    <Input
+                      id="income-source"
+                      value={newIncome.source}
+                      onChange={(e) => setNewIncome({ ...newIncome, source: e.target.value })}
+                      className="text-right"
+                      dir="rtl"
+                      placeholder="مثال: أتعاب قضية، استشارة قانونية"
+                    />
+                  </div>
+                  <div className="text-right">
                     <Label htmlFor="income-description" className="text-right">الوصف</Label>
                     <Textarea
                       id="income-description"
@@ -175,6 +190,17 @@ const OfficeAccounting = () => {
                       onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
                       className="text-right"
                       dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="expense-category" className="text-right">الفئة</Label>
+                    <Input
+                      id="expense-category"
+                      value={newExpense.category}
+                      onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
+                      className="text-right"
+                      dir="rtl"
+                      placeholder="مثال: مصاريف إدارية، رسوم محكمة، مواصلات"
                     />
                   </div>
                   <div className="text-right">
@@ -258,6 +284,7 @@ const OfficeAccounting = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">التاريخ</TableHead>
+                      <TableHead className="text-right">المصدر</TableHead>
                       <TableHead className="text-right">الوصف</TableHead>
                       <TableHead className="text-right">المبلغ</TableHead>
                     </TableRow>
@@ -268,6 +295,7 @@ const OfficeAccounting = () => {
                         <TableCell className="text-right">
                           {formatSyrianDate(income.incomeDate)}
                         </TableCell>
+                        <TableCell className="text-right">{income.source}</TableCell>
                         <TableCell className="text-right">{income.description}</TableCell>
                         <TableCell className="text-right text-green-600 font-semibold">
                           {Number(income.amount).toLocaleString()} ل.س
@@ -295,6 +323,7 @@ const OfficeAccounting = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-right">التاريخ</TableHead>
+                      <TableHead className="text-right">الفئة</TableHead>
                       <TableHead className="text-right">الوصف</TableHead>
                       <TableHead className="text-right">المبلغ</TableHead>
                     </TableRow>
@@ -305,6 +334,7 @@ const OfficeAccounting = () => {
                         <TableCell className="text-right">
                           {formatSyrianDate(expense.expenseDate)}
                         </TableCell>
+                        <TableCell className="text-right">{expense.category}</TableCell>
                         <TableCell className="text-right">{expense.description}</TableCell>
                         <TableCell className="text-right text-red-600 font-semibold">
                           {Number(expense.amount).toLocaleString()} ل.س

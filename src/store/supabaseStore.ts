@@ -425,7 +425,8 @@ export const supabaseStore = {
       .insert([{
         amount: income.amount,
         income_date: income.incomeDate,
-        description: income.description
+        description: income.description,
+        source: income.source
       }])
       .select()
       .single();
@@ -450,7 +451,8 @@ export const supabaseStore = {
       .insert([{
         amount: expense.amount,
         expense_date: expense.expenseDate,
-        description: expense.description
+        description: expense.description,
+        category: expense.category
       }])
       .select()
       .single();
