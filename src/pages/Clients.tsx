@@ -1,1367 +1,539 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, ChevronDown, ChevronRight, User, FileText, Calendar as CalendarIcon, Users, Search, DollarSign, Receipt, CreditCard, Wallet } from 'lucide-react';
-import { dataStore } from '@/store/dataStore';
-import { Client, Case, CaseStage, Session, ClientFee, ClientPayment, ClientExpense } from '@/types';
-import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Layout } from '@/components/Layout';
+import { Plus, Edit, Trash2, Phone, Mail, MapPin, Calculator } from 'lucide-react';
+import { formatSyrianDate } from '@/utils/dateUtils';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { supabaseStore } from '@/store/supabaseStore';
+import { Client, ClientBalance } from '@/types';
+import { toast } from '@/hooks/use-toast';
 
 const Clients = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [cases, setCases] = useState<Case[]>([]);
-  const [stages, setStages] = useState<CaseStage[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
-  const [expandedCases, setExpandedCases] = useState<Set<string>>(new Set());
-  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Dialog states
-  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
-  const [isCaseDialogOpen, setIsCaseDialogOpen] = useState(false);
-  const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
-  const [isSessionDialogOpen, setIsSessionDialogOpen] = useState(false);
-  const [isFeeDialogOpen, setIsFeeDialogOpen] = useState(false);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [editingCase, setEditingCase] = useState<Case | null>(null);
-  const [editingStage, setEditingStage] = useState<CaseStage | null>(null);
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
-  const [selectedCaseId, setSelectedCaseId] = useState<string>('');
-  const [selectedStageId, setSelectedStageId] = useState<string>('');
-
-  // Form states
-  const [clientForm, setClientForm] = useState({
+  const { clients, cases, loading, refetch } = useSupabaseData();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientBalances, setClientBalances] = useState<Record<string, ClientBalance>>({});
+  const [newClient, setNewClient] = useState({
     name: '',
-    email: '',
     phone: '',
+    email: '',
     address: '',
     notes: ''
   });
 
-  const [caseForm, setCaseForm] = useState({
-    title: '',
-    description: '',
-    opponent: '',
-    subject: '',
-    caseType: ''
-  });
-
-  const [stageForm, setStageForm] = useState({
-    courtName: '',
-    caseNumber: '',
-    notes: ''
-  });
-
-  const [sessionForm, setSessionForm] = useState({
-    firstSessionDate: undefined as Date | undefined,
-    postponementReason: ''
-  });
-
-  const [feeForm, setFeeForm] = useState({
-    description: '',
-    amount: '',
-    feeDate: new Date()
-  });
-
-  const [paymentForm, setPaymentForm] = useState({
-    description: '',
-    amount: '',
-    paymentDate: new Date()
-  });
-
-  const [expenseForm, setExpenseForm] = useState({
-    description: '',
-    amount: '',
-    expenseDate: new Date()
-  });
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = () => {
-    setClients(dataStore.getClients());
-    setCases(dataStore.getCases());
-    setStages(dataStore.getStages());
-    setSessions(dataStore.getSessions());
-  };
-
-  // Filter clients based on search term
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const toggleClient = (clientId: string) => {
-    const newExpanded = new Set(expandedClients);
-    if (newExpanded.has(clientId)) {
-      newExpanded.delete(clientId);
-      setExpandedCases(new Set());
-      setExpandedStages(new Set());
-    } else {
-      newExpanded.clear();
-      newExpanded.add(clientId);
-      setExpandedCases(new Set());
-      setExpandedStages(new Set());
+  const handleAddClient = async () => {
+    if (!newClient.name.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال اسم العميل",
+        variant: "destructive"
+      });
+      return;
     }
-    setExpandedClients(newExpanded);
-  };
 
-  const toggleCase = (caseId: string) => {
-    const newExpanded = new Set(expandedCases);
-    if (newExpanded.has(caseId)) {
-      newExpanded.delete(caseId);
-    } else {
-      newExpanded.add(caseId);
+    try {
+      await supabaseStore.addClient({
+        name: newClient.name.trim(),
+        phone: newClient.phone.trim() || undefined,
+        email: newClient.email.trim() || undefined,
+        address: newClient.address.trim() || undefined,
+        notes: newClient.notes.trim() || undefined
+      });
+
+      setNewClient({
+        name: '',
+        phone: '',
+        email: '',
+        address: '',
+        notes: ''
+      });
+      setIsAddDialogOpen(false);
+      await refetch();
+      
+      toast({
+        title: "تم الحفظ",
+        description: "تم إضافة العميل بنجاح"
+      });
+    } catch (error) {
+      console.error('Error adding client:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة العميل",
+        variant: "destructive"
+      });
     }
-    setExpandedCases(newExpanded);
-    setExpandedStages(new Set());
   };
 
-  const toggleStage = (stageId: string) => {
-    const newExpanded = new Set(expandedStages);
-    if (newExpanded.has(stageId)) {
-      newExpanded.delete(stageId);
-    } else {
-      newExpanded.add(stageId);
+  const handleEditClient = async () => {
+    if (!selectedClient || !newClient.name.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال اسم العميل",
+        variant: "destructive"
+      });
+      return;
     }
-    setExpandedStages(newExpanded);
+    
+    try {
+      await supabaseStore.updateClient(selectedClient.id, {
+        name: newClient.name.trim(),
+        phone: newClient.phone.trim() || undefined,
+        email: newClient.email.trim() || undefined,
+        address: newClient.address.trim() || undefined,
+        notes: newClient.notes.trim() || undefined
+      });
+      
+      setIsEditDialogOpen(false);
+      setSelectedClient(null);
+      setNewClient({
+        name: '',
+        phone: '',
+        email: '',
+        address: '',
+        notes: ''
+      });
+      await refetch();
+      
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث بيانات العميل بنجاح"
+      });
+    } catch (error) {
+      console.error('Error updating client:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث العميل",
+        variant: "destructive"
+      });
+    }
   };
 
-  // CRUD operations
-  const handleAddClient = () => {
-    if (!clientForm.name) return;
-
-    dataStore.addClient({
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
-    });
-
-    resetClientForm();
-    setIsClientDialogOpen(false);
-    loadData();
+  const handleDeleteClient = async () => {
+    if (!selectedClient) return;
+    
+    try {
+      await supabaseStore.deleteClient(selectedClient.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedClient(null);
+      await refetch();
+      
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف العميل بنجاح"
+      });
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف العميل",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditClient = () => {
-    if (!editingClient || !clientForm.name) return;
-
-    dataStore.updateClient(editingClient.id, {
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
-    });
-
-    resetClientForm();
-    setIsClientDialogOpen(false);
-    setEditingClient(null);
-    loadData();
-  };
-
-  const handleAddCase = () => {
-    if (!caseForm.opponent || !caseForm.subject || !selectedClientId) return;
-
-    dataStore.addCase({
-      clientId: selectedClientId,
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description || '',
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType || 'عام',
-      status: 'active'
-    });
-
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
-    loadData();
-  };
-
-  const handleEditCase = () => {
-    if (!editingCase || !caseForm.opponent || !caseForm.subject) return;
-
-    dataStore.updateCase(editingCase.id, {
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description,
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType
-    });
-
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
-    setEditingCase(null);
-    loadData();
-  };
-
-  const handleAddStage = () => {
-    if (!stageForm.courtName || !stageForm.caseNumber || !selectedCaseId) return;
-
-    dataStore.addStage({
-      caseId: selectedCaseId,
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes,
-      firstSessionDate: null,
-      status: 'active'
-    });
-
-    resetStageForm();
-    setIsStageDialogOpen(false);
-    loadData();
-  };
-
-  const handleEditStage = () => {
-    if (!editingStage || !stageForm.courtName || !stageForm.caseNumber) return;
-
-    dataStore.updateStage(editingStage.id, {
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes
-    });
-
-    resetStageForm();
-    setIsStageDialogOpen(false);
-    setEditingStage(null);
-    loadData();
-  };
-
-  const handleAddSession = () => {
-    if (!sessionForm.firstSessionDate || !selectedStageId) return;
-
-    const stage = stages.find(s => s.id === selectedStageId);
-    if (!stage) return;
-
-    const case_ = cases.find(c => c.id === stage.caseId);
-    if (!case_) return;
-
-    const client = clients.find(c => c.id === case_.clientId);
-    if (!client) return;
-
-    dataStore.addSession({
-      stageId: selectedStageId,
-      courtName: stage.courtName,
-      caseNumber: stage.caseNumber,
-      sessionDate: sessionForm.firstSessionDate,
-      clientName: client.name,
-      opponent: case_.opponent,
-      postponementReason: sessionForm.postponementReason,
-      isTransferred: false
-    });
-
-    // Update stage with first session date
-    dataStore.updateStage(selectedStageId, {
-      firstSessionDate: sessionForm.firstSessionDate
-    });
-
-    resetSessionForm();
-    setIsSessionDialogOpen(false);
-    loadData();
-  };
-
-  // Accounting CRUD operations
-  const handleAddFee = () => {
-    if (!feeForm.description || !feeForm.amount || !selectedClientId) return;
-
-    dataStore.addClientFee({
-      clientId: selectedClientId,
-      description: feeForm.description,
-      amount: parseFloat(feeForm.amount),
-      feeDate: feeForm.feeDate
-    });
-
-    resetFeeForm();
-    setIsFeeDialogOpen(false);
-    loadData();
-  };
-
-  const handleAddPayment = () => {
-    if (!paymentForm.description || !paymentForm.amount || !selectedClientId) return;
-
-    dataStore.addClientPayment({
-      clientId: selectedClientId,
-      description: paymentForm.description,
-      amount: parseFloat(paymentForm.amount),
-      paymentDate: paymentForm.paymentDate
-    });
-
-    resetPaymentForm();
-    setIsPaymentDialogOpen(false);
-    loadData();
-  };
-
-  const handleAddExpense = () => {
-    if (!expenseForm.description || !expenseForm.amount || !selectedClientId) return;
-
-    dataStore.addClientExpense({
-      clientId: selectedClientId,
-      description: expenseForm.description,
-      amount: parseFloat(expenseForm.amount),
-      expenseDate: expenseForm.expenseDate
-    });
-
-    resetExpenseForm();
-    setIsExpenseDialogOpen(false);
-    loadData();
-  };
-
-  // Reset form functions
-  const resetClientForm = () => {
-    setClientForm({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      notes: ''
-    });
-  };
-
-  const resetCaseForm = () => {
-    setCaseForm({
-      title: '',
-      description: '',
-      opponent: '',
-      subject: '',
-      caseType: ''
-    });
-  };
-
-  const resetStageForm = () => {
-    setStageForm({
-      courtName: '',
-      caseNumber: '',
-      notes: ''
-    });
-  };
-
-  const resetSessionForm = () => {
-    setSessionForm({
-      firstSessionDate: undefined,
-      postponementReason: ''
-    });
-  };
-
-  const resetFeeForm = () => {
-    setFeeForm({
-      description: '',
-      amount: '',
-      feeDate: new Date()
-    });
-  };
-
-  const resetPaymentForm = () => {
-    setPaymentForm({
-      description: '',
-      amount: '',
-      paymentDate: new Date()
-    });
-  };
-
-  const resetExpenseForm = () => {
-    setExpenseForm({
-      description: '',
-      amount: '',
-      expenseDate: new Date()
-    });
-  };
-
-  // Open dialog functions
-  const openAddClientDialog = () => {
-    resetClientForm();
-    setEditingClient(null);
-    setIsClientDialogOpen(true);
-  };
-
-  const openEditClientDialog = (client: Client) => {
-    setClientForm({
+  const openEditDialog = (client: Client) => {
+    setSelectedClient(client);
+    setNewClient({
       name: client.name,
-      email: client.email || '',
       phone: client.phone || '',
+      email: client.email || '',
       address: client.address || '',
       notes: client.notes || ''
     });
-    setEditingClient(client);
-    setIsClientDialogOpen(true);
+    setIsEditDialogOpen(true);
   };
 
-  const openAddCaseDialog = (clientId: string) => {
-    resetCaseForm();
-    setSelectedClientId(clientId);
-    setEditingCase(null);
-    setIsCaseDialogOpen(true);
+  const openDeleteDialog = (client: Client) => {
+    setSelectedClient(client);
+    setIsDeleteDialogOpen(true);
   };
 
-  const openEditCaseDialog = (case_: Case) => {
-    setCaseForm({
-      title: case_.title,
-      description: case_.description,
-      opponent: case_.opponent,
-      subject: case_.subject,
-      caseType: case_.caseType
-    });
-    setEditingCase(case_);
-    setIsCaseDialogOpen(true);
-  };
-
-  const openAddStageDialog = (caseId: string) => {
-    resetStageForm();
-    setSelectedCaseId(caseId);
-    setEditingStage(null);
-    setIsStageDialogOpen(true);
-  };
-
-  const openEditStageDialog = (stage: CaseStage) => {
-    setStageForm({
-      courtName: stage.courtName,
-      caseNumber: stage.caseNumber,
-      notes: stage.notes || ''
-    });
-    setEditingStage(stage);
-    setIsStageDialogOpen(true);
-  };
-
-  const openAddSessionDialog = (stageId: string) => {
-    resetSessionForm();
-    setSelectedStageId(stageId);
-    setIsSessionDialogOpen(true);
-  };
-
-  const openAddFeeDialog = (clientId: string) => {
-    resetFeeForm();
-    setSelectedClientId(clientId);
-    setIsFeeDialogOpen(true);
-  };
-
-  const openAddPaymentDialog = (clientId: string) => {
-    resetPaymentForm();
-    setSelectedClientId(clientId);
-    setIsPaymentDialogOpen(true);
-  };
-
-  const openAddExpenseDialog = (clientId: string) => {
-    resetExpenseForm();
-    setSelectedClientId(clientId);
-    setIsExpenseDialogOpen(true);
+  const fetchClientBalance = async (clientId: string) => {
+    try {
+      const balance = await supabaseStore.getClientBalance(clientId);
+      setClientBalances(prev => ({
+        ...prev,
+        [clientId]: balance
+      }));
+    } catch (error) {
+      console.error('Error fetching client balance:', error);
+    }
   };
 
   const getClientCases = (clientId: string) => {
     return cases.filter(case_ => case_.clientId === clientId);
   };
 
-  const getCaseStages = (caseId: string) => {
-    return stages.filter(stage => stage.caseId === caseId);
-  };
-
-  const getStageSessions = (stageId: string) => {
-    return sessions.filter(session => session.stageId === stageId);
-  };
-
-  const getClientAccountingData = (clientId: string) => {
-    const fees = dataStore.getClientFees(clientId);
-    const payments = dataStore.getClientPayments(clientId);
-    const expenses = dataStore.getClientExpenses(clientId);
-    const balance = dataStore.getClientBalance(clientId);
-    
-    return { fees, payments, expenses, balance };
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Layout>
-      <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-full" dir="rtl">
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <CardTitle className="text-right flex items-center gap-2 text-lg sm:text-xl">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                إدارة الموكلين
-              </CardTitle>
-              <Button onClick={openAddClientDialog} className="gap-2 bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-5 w-5" />
-                إضافة موكل
+    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">إدارة العملاء</h1>
+            <p className="text-gray-600 mt-2">إدارة بيانات العملاء وقضاياهم</p>
+          </div>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                إضافة عميل جديد
               </Button>
-            </div>
+            </DialogTrigger>
+            <DialogContent className="max-w-md" dir="rtl">
+              <DialogHeader>
+                <DialogTitle className="text-right">إضافة عميل جديد</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="text-right">
+                  <Label htmlFor="name" className="text-right">اسم العميل *</Label>
+                  <Input
+                    id="name"
+                    value={newClient.name}
+                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                    placeholder="اسم العميل"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="text-right">
+                  <Label htmlFor="phone" className="text-right">رقم الهاتف</Label>
+                  <Input
+                    id="phone"
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    placeholder="رقم الهاتف"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="text-right">
+                  <Label htmlFor="email" className="text-right">البريد الإلكتروني</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                    placeholder="البريد الإلكتروني"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="text-right">
+                  <Label htmlFor="address" className="text-right">العنوان</Label>
+                  <Input
+                    id="address"
+                    value={newClient.address}
+                    onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                    placeholder="العنوان"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="text-right">
+                  <Label htmlFor="notes" className="text-right">ملاحظات</Label>
+                  <Textarea
+                    id="notes"
+                    value={newClient.notes}
+                    onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
+                    placeholder="ملاحظات إضافية"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <Button onClick={handleAddClient} className="w-full">
+                  إضافة العميل
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Clients Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {clients.map((client) => {
+            const clientCases = getClientCases(client.id);
+            const balance = clientBalances[client.id];
             
-            {/* Search input */}
-            <div className="relative w-full max-w-md mx-auto">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="البحث عن موكل..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="text-right pr-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="px-2 sm:px-6">
-            <div className="space-y-3 sm:space-y-4">
-              {filteredClients.map((client) => {
-                const accountingData = getClientAccountingData(client.id);
-                
-                return (
-                  <div key={client.id} className="border-2 border-blue-200 rounded-lg bg-blue-50">
-                    <Collapsible 
-                      open={expandedClients.has(client.id)} 
-                      onOpenChange={() => toggleClient(client.id)}
-                    >
-                      <CollapsibleTrigger className="w-full p-3 sm:p-4 text-right hover:bg-blue-100 transition-colors rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditClientDialog(client);
-                              }}
-                              className="p-2"
-                              title="تعديل الموكل"
-                            >
-                              <Edit className="h-5 w-5 text-blue-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openAddCaseDialog(client.id);
-                              }}
-                              className="p-2"
-                              title="إضافة قضية"
-                            >
-                              <Plus className="h-5 w-5 text-green-600" />
-                            </Button>
+            return (
+              <Card key={client.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl font-bold text-gray-900 mb-2">
+                        {client.name}
+                      </CardTitle>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        {client.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            <span>{client.phone}</span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <span className="font-medium text-sm sm:text-base">{client.name}</span>
-                              {(client.phone || client.email) && (
-                                <div className="text-xs sm:text-sm text-muted-foreground">
-                                  {client.phone && <span>{client.phone}</span>}
-                                  {client.phone && client.email && <span> • </span>}
-                                  {client.email && <span>{client.email}</span>}
-                                </div>
-                              )}
-                              <div className="text-xs sm:text-sm text-green-600 font-medium">
-                                الرصيد: {accountingData.balance.toLocaleString()} ل.س
-                              </div>
+                        )}
+                        {client.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            <span>{client.email}</span>
+                          </div>
+                        )}
+                        {client.address && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>{client.address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(client)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openDeleteDialog(client)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <Tabs defaultValue="cases" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="cases">القضايا ({clientCases.length})</TabsTrigger>
+                      <TabsTrigger 
+                        value="balance"
+                        onClick={() => !balance && fetchClientBalance(client.id)}
+                      >
+                        الرصيد
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="cases" className="mt-4">
+                      {clientCases.length > 0 ? (
+                        <div className="space-y-2">
+                          {clientCases.slice(0, 3).map((case_) => (
+                            <div key={case_.id} className="p-2 bg-gray-50 rounded text-sm">
+                              <div className="font-medium">{case_.title}</div>
+                              <div className="text-gray-600">{case_.status}</div>
                             </div>
-                            <User className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                            {expandedClients.has(client.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
+                          ))}
+                          {clientCases.length > 3 && (
+                            <div className="text-sm text-gray-500 text-center">
+                              و {clientCases.length - 3} قضايا أخرى
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500 text-sm">
+                          لا توجد قضايا مسجلة
+                        </div>
+                      )}
+                    </TabsContent>
+                    
+                    <TabsContent value="balance" className="mt-4">
+                      {balance ? (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>إجمالي الأتعاب:</span>
+                            <span className="font-medium text-green-600">
+                              {balance.totalFees.toLocaleString()} ل.س
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>إجمالي المدفوعات:</span>
+                            <span className="font-medium text-blue-600">
+                              {balance.totalPayments.toLocaleString()} ل.س
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>إجمالي المصروفات:</span>
+                            <span className="font-medium text-orange-600">
+                              {balance.totalExpenses.toLocaleString()} ل.س
+                            </span>
+                          </div>
+                          <hr />
+                          <div className="flex justify-between font-bold">
+                            <span>الرصيد النهائي:</span>
+                            <span className={balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {balance.balance.toLocaleString()} ل.س
+                            </span>
                           </div>
                         </div>
-                      </CollapsibleTrigger>
-                      
-                      <CollapsibleContent className="px-3 sm:px-4 pb-3 sm:pb-4">
-                        <Tabs defaultValue="cases" className="w-full">
-                          <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="cases">القضايا</TabsTrigger>
-                            <TabsTrigger value="accounting">المحاسبة</TabsTrigger>
-                          </TabsList>
-                          
-                          <TabsContent value="cases" className="mt-4">
-                            <div className="mr-4 sm:mr-6 space-y-3">
-                              {getClientCases(client.id).map((case_) => (
-                                <div key={case_.id} className="border-2 border-green-200 rounded-md bg-green-50">
-                                  <Collapsible
-                                    open={expandedCases.has(case_.id)}
-                                    onOpenChange={() => toggleCase(case_.id)}
-                                  >
-                                    <CollapsibleTrigger className="w-full p-3 text-right hover:bg-green-100 transition-colors rounded-md">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex gap-2">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openEditCaseDialog(case_);
-                                            }}
-                                            className="p-2"
-                                            title="تعديل القضية"
-                                          >
-                                            <Edit className="h-5 w-5 text-green-600" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openAddStageDialog(case_.id);
-                                            }}
-                                            className="p-2"
-                                            title="إضافة مرحلة"
-                                          >
-                                            <Plus className="h-5 w-5 text-yellow-600" />
-                                          </Button>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                          <div className="text-right">
-                                            <span className="font-medium text-sm sm:text-base">{case_.subject}</span>
-                                            <div className="text-xs sm:text-sm text-muted-foreground">
-                                              ضد: {case_.opponent}
-                                            </div>
-                                          </div>
-                                          <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-                                          {expandedCases.has(case_.id) ? (
-                                            <ChevronDown className="h-4 w-4" />
-                                          ) : (
-                                            <ChevronRight className="h-4 w-4" />
-                                          )}
-                                        </div>
-                                      </div>
-                                    </CollapsibleTrigger>
-                                    
-                                    <CollapsibleContent className="px-3 pb-3">
-                                      <div className="mr-4 sm:mr-6 space-y-3">
-                                        {getCaseStages(case_.id).map((stage) => (
-                                          <div key={stage.id} className="border-2 border-yellow-200 rounded-md bg-yellow-50">
-                                            <Collapsible
-                                              open={expandedStages.has(stage.id)}
-                                              onOpenChange={() => toggleStage(stage.id)}
-                                            >
-                                              <CollapsibleTrigger className="w-full p-3 text-right hover:bg-yellow-100 transition-colors rounded-md">
-                                                <div className="flex items-center justify-between">
-                                                  <div className="flex gap-2">
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        openEditStageDialog(stage);
-                                                      }}
-                                                      className="p-2"
-                                                      title="تعديل المرحلة"
-                                                    >
-                                                      <Edit className="h-5 w-5 text-yellow-600" />
-                                                    </Button>
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        openAddSessionDialog(stage.id);
-                                                      }}
-                                                      className="p-2"
-                                                      title="إضافة جلسة"
-                                                    >
-                                                      <Plus className="h-5 w-5 text-purple-600" />
-                                                    </Button>
-                                                  </div>
-                                                  <div className="flex items-center gap-3">
-                                                    <div className="text-right">
-                                                      <span className="font-medium text-sm sm:text-base">{stage.courtName}</span>
-                                                      <div className="text-xs sm:text-sm text-muted-foreground">
-                                                        رقم الأساس: {stage.caseNumber}
-                                                      </div>
-                                                    </div>
-                                                    <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
-                                                    {expandedStages.has(stage.id) ? (
-                                                      <ChevronDown className="h-4 w-4" />
-                                                    ) : (
-                                                      <ChevronRight className="h-4 w-4" />
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </CollapsibleTrigger>
-                                              
-                                              <CollapsibleContent className="px-3 pb-3">
-                                                <div className="mr-4 sm:mr-6">
-                                                  {getStageSessions(stage.id).length > 0 ? (
-                                                    <div className="overflow-x-auto">
-                                                      <Table>
-                                                        <TableHeader>
-                                                          <TableRow className="bg-purple-50">
-                                                            <TableHead className="text-right text-purple-700 text-xs sm:text-sm">تاريخ الجلسة</TableHead>
-                                                            <TableHead className="text-right text-purple-700 text-xs sm:text-sm">الجلسة القادمة</TableHead>
-                                                            <TableHead className="text-right text-purple-700 text-xs sm:text-sm">سبب التأجيل</TableHead>
-                                                          </TableRow>
-                                                        </TableHeader>
-                                                        <TableBody>
-                                                          {getStageSessions(stage.id).map((session) => (
-                                                            <TableRow key={session.id} className="bg-purple-25">
-                                                              <TableCell className="text-right text-xs sm:text-sm">
-                                                                {formatSyrianDate(session.sessionDate)}
-                                                              </TableCell>
-                                                              <TableCell className="text-right text-xs sm:text-sm">
-                                                                {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
-                                                              </TableCell>
-                                                              <TableCell className="text-right text-xs sm:text-sm">
-                                                                {session.postponementReason || '-'}
-                                                              </TableCell>
-                                                            </TableRow>
-                                                          ))}
-                                                        </TableBody>
-                                                      </Table>
-                                                    </div>
-                                                  ) : (
-                                                    <div className="text-center py-4 text-muted-foreground text-xs sm:text-sm">
-                                                      لا توجد جلسات حتى الآن
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </CollapsibleContent>
-                                            </Collapsible>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </CollapsibleContent>
-                                  </Collapsible>
-                                </div>
-                              ))}
-                            </div>
-                          </TabsContent>
-                          
-                          <TabsContent value="accounting" className="mt-4">
-                            <div className="space-y-4">
-                              {/* Balance Summary */}
-                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                                <Card className="bg-green-50 border-green-200">
-                                  <CardContent className="p-3">
-                                    <div className="flex items-center gap-2">
-                                      <DollarSign className="h-4 w-4 text-green-600" />
-                                      <div className="text-right">
-                                        <p className="text-xs text-muted-foreground">إجمالي الأتعاب</p>
-                                        <p className="font-medium text-green-600">{accountingData.balance.totalFees.toLocaleString()} ل.س</p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                                
-                                <Card className="bg-blue-50 border-blue-200">
-                                  <CardContent className="p-3">
-                                    <div className="flex items-center gap-2">
-                                      <CreditCard className="h-4 w-4 text-blue-600" />
-                                      <div className="text-right">
-                                        <p className="text-xs text-muted-foreground">إجمالي المدفوعات</p>
-                                        <p className="font-medium text-blue-600">{accountingData.balance.totalPayments.toLocaleString()} ل.س</p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                                
-                                <Card className="bg-orange-50 border-orange-200">
-                                  <CardContent className="p-3">
-                                    <div className="flex items-center gap-2">
-                                      <Receipt className="h-4 w-4 text-orange-600" />
-                                      <div className="text-right">
-                                        <p className="text-xs text-muted-foreground">إجمالي المصاريف</p>
-                                        <p className="font-medium text-orange-600">{accountingData.balance.totalExpenses.toLocaleString()} ل.س</p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                                
-                                <Card className={`${accountingData.balance.balance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                                  <CardContent className="p-3">
-                                    <div className="flex items-center gap-2">
-                                      <Wallet className={`h-4 w-4 ${accountingData.balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-                                      <div className="text-right">
-                                        <p className="text-xs text-muted-foreground">الرصيد</p>
-                                        <p className={`font-medium ${accountingData.balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                          {accountingData.balance.balance.toLocaleString()} ل.س
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </div>
-
-                              {/* Action Buttons */}
-                              <div className="flex gap-2 flex-wrap">
-                                <Button 
-                                  onClick={() => openAddFeeDialog(client.id)}
-                                  className="gap-1 bg-green-600 hover:bg-green-700"
-                                  size="sm"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                  إضافة أتعاب
-                                </Button>
-                                <Button 
-                                  onClick={() => openAddPaymentDialog(client.id)}
-                                  className="gap-1 bg-blue-600 hover:bg-blue-700"
-                                  size="sm"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                  إضافة دفعة
-                                </Button>
-                                <Button 
-                                  onClick={() => openAddExpenseDialog(client.id)}
-                                  className="gap-1 bg-orange-600 hover:bg-orange-700"
-                                  size="sm"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                  إضافة مصروف
-                                </Button>
-                              </div>
-
-                              {/* Accounting Tables */}
-                              <Tabs defaultValue="fees" className="w-full">
-                                <TabsList className="grid w-full grid-cols-3">
-                                  <TabsTrigger value="fees">الأتعاب</TabsTrigger>
-                                  <TabsTrigger value="payments">المدفوعات</TabsTrigger>
-                                  <TabsTrigger value="expenses">المصاريف</TabsTrigger>
-                                </TabsList>
-                                
-                                <TabsContent value="fees">
-                                  <div className="overflow-x-auto">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead className="text-right">التاريخ</TableHead>
-                                          <TableHead className="text-right">الوصف</TableHead>
-                                          <TableHead className="text-right">المبلغ</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {accountingData.fees.map((fee) => (
-                                          <TableRow key={fee.id}>
-                                            <TableCell className="text-right">{formatSyrianDate(fee.feeDate)}</TableCell>
-                                            <TableCell className="text-right">{fee.description}</TableCell>
-                                            <TableCell className="text-right text-green-600 font-medium">
-                                              {fee.amount.toLocaleString()} ل.س
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                        {accountingData.fees.length === 0 && (
-                                          <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                              لا توجد أتعاب مسجلة
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </TabsContent>
-                                
-                                <TabsContent value="payments">
-                                  <div className="overflow-x-auto">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead className="text-right">التاريخ</TableHead>
-                                          <TableHead className="text-right">الوصف</TableHead>
-                                          <TableHead className="text-right">المبلغ</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {accountingData.payments.map((payment) => (
-                                          <TableRow key={payment.id}>
-                                            <TableCell className="text-right">{formatSyrianDate(payment.paymentDate)}</TableCell>
-                                            <TableCell className="text-right">{payment.description}</TableCell>
-                                            <TableCell className="text-right text-blue-600 font-medium">
-                                              {payment.amount.toLocaleString()} ل.س
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                        {accountingData.payments.length === 0 && (
-                                          <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                              لا توجد مدفوعات مسجلة
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </TabsContent>
-                                
-                                <TabsContent value="expenses">
-                                  <div className="overflow-x-auto">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead className="text-right">التاريخ</TableHead>
-                                          <TableHead className="text-right">الوصف</TableHead>
-                                          <TableHead className="text-right">المبلغ</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {accountingData.expenses.map((expense) => (
-                                          <TableRow key={expense.id}>
-                                            <TableCell className="text-right">{formatSyrianDate(expense.expenseDate)}</TableCell>
-                                            <TableCell className="text-right">{expense.description}</TableCell>
-                                            <TableCell className="text-right text-orange-600 font-medium">
-                                              {expense.amount.toLocaleString()} ل.س
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                        {accountingData.expenses.length === 0 && (
-                                          <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                              لا توجد مصاريف مسجلة
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </TabsContent>
-                              </Tabs>
-                            </div>
-                          </TabsContent>
-                        </Tabs>
-                      </CollapsibleContent>
-                    </Collapsible>
+                      ) : (
+                        <div className="text-center py-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchClientBalance(client.id)}
+                            className="gap-2"
+                          >
+                            <Calculator className="h-4 w-4" />
+                            حساب الرصيد
+                          </Button>
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                  
+                  {client.notes && (
+                    <div className="mt-4 p-2 bg-yellow-50 rounded text-sm">
+                      <div className="font-medium text-yellow-800 mb-1">ملاحظات:</div>
+                      <div className="text-yellow-700">{client.notes}</div>
+                    </div>
+                  )}
+                  
+                  <div className="mt-4 text-xs text-gray-500">
+                    تاريخ الإضافة: {formatSyrianDate(client.createdAt)}
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-        {/* Client Dialog */}
-        <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
-          <DialogContent className="max-w-md">
+        {clients.length === 0 && (
+          <Card className="bg-white shadow-lg">
+            <CardContent className="text-center py-12">
+              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">لا يوجد عملاء</h3>
+              <p className="text-gray-600 mb-4">ابدأ بإضافة عميل جديد لإدارة قضاياه وحساباته</p>
+              <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                إضافة أول عميل
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right">{editingClient ? 'تعديل موكل' : 'إضافة موكل جديد'}</DialogTitle>
+              <DialogTitle className="text-right">تعديل بيانات العميل</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="clientName">الاسم</Label>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="edit-name" className="text-right">اسم العميل *</Label>
                 <Input
-                  id="clientName"
-                  value={clientForm.name}
-                  onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
-                  placeholder="اسم الموكل"
+                  id="edit-name"
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                  placeholder="اسم العميل"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="clientEmail">البريد الإلكتروني</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-phone" className="text-right">رقم الهاتف</Label>
                 <Input
-                  id="clientEmail"
-                  type="email"
-                  value={clientForm.email}
-                  onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
-                  placeholder="البريد الإلكتروني"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientPhone">رقم الهاتف</Label>
-                <Input
-                  id="clientPhone"
-                  value={clientForm.phone}
-                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
+                  id="edit-phone"
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
                   placeholder="رقم الهاتف"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="clientAddress">العنوان</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-email" className="text-right">البريد الإلكتروني</Label>
                 <Input
-                  id="clientAddress"
-                  value={clientForm.address}
-                  onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })}
+                  id="edit-email"
+                  type="email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  placeholder="البريد الإلكتروني"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-address" className="text-right">العنوان</Label>
+                <Input
+                  id="edit-address"
+                  value={newClient.address}
+                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
                   placeholder="العنوان"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <div>
-                <Label htmlFor="clientNotes">ملاحظات</Label>
+              <div className="text-right">
+                <Label htmlFor="edit-notes" className="text-right">ملاحظات</Label>
                 <Textarea
-                  id="clientNotes"
-                  value={clientForm.notes}
-                  onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })}
+                  id="edit-notes"
+                  value={newClient.notes}
+                  onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
                   placeholder="ملاحظات إضافية"
                   className="text-right"
+                  dir="rtl"
                 />
               </div>
-              <Button 
-                onClick={editingClient ? handleEditClient : handleAddClient} 
-                className="w-full"
-              >
-                {editingClient ? 'تحديث الموكل' : 'إضافة موكل'}
+              <Button onClick={handleEditClient} className="w-full">
+                حفظ التعديلات
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Case Dialog */}
-        <Dialog open={isCaseDialogOpen} onOpenChange={setIsCaseDialogOpen}>
-          <DialogContent className="max-w-md">
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-right">{editingCase ? 'تعديل قضية' : 'إضافة قضية جديدة'}</DialogTitle>
+              <DialogTitle className="text-right">تأكيد الحذف</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="caseTitle">عنوان القضية</Label>
-                <Input
-                  id="caseTitle"
-                  value={caseForm.title}
-                  onChange={(e) => setCaseForm({ ...caseForm, title: e.target.value })}
-                  placeholder="عنوان القضية"
-                  className="text-right"
-                />
+            <div className="space-y-4 text-right">
+              <p>هل أنت متأكد من رغبتك في حذف العميل "{selectedClient?.name}"؟</p>
+              <p className="text-sm text-red-600">
+                سيتم حذف جميع البيانات المرتبطة بهذا العميل بما في ذلك القضايا والحسابات.
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteClient}
+                  className="flex-1"
+                >
+                  حذف
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  className="flex-1"
+                >
+                  إلغاء
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="caseSubject">موضوع القضية</Label>
-                <Input
-                  id="caseSubject"
-                  value={caseForm.subject}
-                  onChange={(e) => setCaseForm({ ...caseForm, subject: e.target.value })}
-                  placeholder="موضوع القضية"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="caseOpponent">الخصم</Label>
-                <Input
-                  id="caseOpponent"
-                  value={caseForm.opponent}
-                  onChange={(e) => setCaseForm({ ...caseForm, opponent: e.target.value })}
-                  placeholder="اسم الخصم"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="caseType">نوع القضية</Label>
-                <Input
-                  id="caseType"
-                  value={caseForm.caseType}
-                  onChange={(e) => setCaseForm({ ...caseForm, caseType: e.target.value })}
-                  placeholder="نوع القضية"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="caseDescription">وصف القضية</Label>
-                <Textarea
-                  id="caseDescription"
-                  value={caseForm.description}
-                  onChange={(e) => setCaseForm({ ...caseForm, description: e.target.value })}
-                  placeholder="وصف تفصيلي للقضية"
-                  className="text-right"
-                />
-              </div>
-              <Button 
-                onClick={editingCase ? handleEditCase : handleAddCase} 
-                className="w-full"
-              >
-                {editingCase ? 'تحديث القضية' : 'إضافة قضية'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Stage Dialog */}
-        <Dialog open={isStageDialogOpen} onOpenChange={setIsStageDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-right">{editingStage ? 'تعديل مرحلة' : 'إضافة مرحلة جديدة'}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="stageCourt">المحكمة</Label>
-                <Input
-                  id="stageCourt"
-                  value={stageForm.courtName}
-                  onChange={(e) => setStageForm({ ...stageForm, courtName: e.target.value })}
-                  placeholder="اسم المحكمة"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="stageCaseNumber">رقم الأساس</Label>
-                <Input
-                  id="stageCaseNumber"
-                  value={stageForm.caseNumber}
-                  onChange={(e) => setStageForm({ ...stageForm, caseNumber: e.target.value })}
-                  placeholder="رقم الأساس"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="stageNotes">ملاحظات (اختياري)</Label>
-                <Textarea
-                  id="stageNotes"
-                  value={stageForm.notes}
-                  onChange={(e) => setStageForm({ ...stageForm, notes: e.target.value })}
-                  placeholder="ملاحظات إضافية"
-                  className="text-right"
-                />
-              </div>
-              <Button 
-                onClick={editingStage ? handleEditStage : handleAddStage} 
-                className="w-full"
-              >
-                {editingStage ? 'تحديث المرحلة' : 'إضافة مرحلة'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Session Dialog */}
-        <Dialog open={isSessionDialogOpen} onOpenChange={setIsSessionDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-right">إضافة جلسة</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label>تاريخ الجلسة الأولى</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-end text-right font-normal",
-                        !sessionForm.firstSessionDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="ml-2 h-4 w-4" />
-                      {sessionForm.firstSessionDate ? (
-                        formatFullSyrianDate(sessionForm.firstSessionDate)
-                      ) : (
-                        <span>اختر تاريخاً</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={sessionForm.firstSessionDate}
-                      onSelect={(date) => setSessionForm({ ...sessionForm, firstSessionDate: date })}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label htmlFor="sessionReason">سبب التأجيل</Label>
-                <Textarea
-                  id="sessionReason"
-                  value={sessionForm.postponementReason}
-                  onChange={(e) => setSessionForm({ ...sessionForm, postponementReason: e.target.value })}
-                  placeholder="سبب التأجيل"
-                  className="text-right"
-                />
-              </div>
-              <Button onClick={handleAddSession} className="w-full">
-                إضافة جلسة
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Fee Dialog */}
-        <Dialog open={isFeeDialogOpen} onOpenChange={setIsFeeDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-right">إضافة أتعاب</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="feeDescription">الوصف</Label>
-                <Input
-                  id="feeDescription"
-                  value={feeForm.description}
-                  onChange={(e) => setFeeForm({ ...feeForm, description: e.target.value })}
-                  placeholder="وصف الأتعاب"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="feeAmount">المبلغ</Label>
-                <Input
-                  id="feeAmount"
-                  type="number"
-                  value={feeForm.amount}
-                  onChange={(e) => setFeeForm({ ...feeForm, amount: e.target.value })}
-                  placeholder="المبلغ"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label>التاريخ</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-end text-right font-normal",
-                        !feeForm.feeDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="ml-2 h-4 w-4" />
-                      {feeForm.feeDate ? (
-                        formatFullSyrianDate(feeForm.feeDate)
-                      ) : (
-                        <span>اختر تاريخاً</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={feeForm.feeDate}
-                      onSelect={(date) => setFeeForm({ ...feeForm, feeDate: date || new Date() })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <Button onClick={handleAddFee} className="w-full">
-                إضافة أتعاب
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Payment Dialog */}
-        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-right">إضافة دفعة</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="paymentDescription">الوصف</Label>
-                <Input
-                  id="paymentDescription"
-                  value={paymentForm.description}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, description: e.target.value })}
-                  placeholder="وصف الدفعة"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="paymentAmount">المبلغ</Label>
-                <Input
-                  id="paymentAmount"
-                  type="number"
-                  value={paymentForm.amount}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                  placeholder="المبلغ"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label>التاريخ</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-end text-right font-normal",
-                        !paymentForm.paymentDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="ml-2 h-4 w-4" />
-                      {paymentForm.paymentDate ? (
-                        formatFullSyrianDate(paymentForm.paymentDate)
-                      ) : (
-                        <span>اختر تاريخاً</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={paymentForm.paymentDate}
-                      onSelect={(date) => setPaymentForm({ ...paymentForm, paymentDate: date || new Date() })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <Button onClick={handleAddPayment} className="w-full">
-                إضافة دفعة
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Expense Dialog */}
-        <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-right">إضافة مصروف</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4" dir="rtl">
-              <div>
-                <Label htmlFor="expenseDescription">الوصف</Label>
-                <Input
-                  id="expenseDescription"
-                  value={expenseForm.description}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
-                  placeholder="وصف المصروف"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label htmlFor="expenseAmount">المبلغ</Label>
-                <Input
-                  id="expenseAmount"
-                  type="number"
-                  value={expenseForm.amount}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
-                  placeholder="المبلغ"
-                  className="text-right"
-                />
-              </div>
-              <div>
-                <Label>التاريخ</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-end text-right font-normal",
-                        !expenseForm.expenseDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="ml-2 h-4 w-4" />
-                      {expenseForm.expenseDate ? (
-                        formatFullSyrianDate(expenseForm.expenseDate)
-                      ) : (
-                        <span>اختر تاريخاً</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={expenseForm.expenseDate}
-                      onSelect={(date) => setExpenseForm({ ...expenseForm, expenseDate: date || new Date() })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <Button onClick={handleAddExpense} className="w-full">
-                إضافة مصروف
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </div>
   );
 };
 

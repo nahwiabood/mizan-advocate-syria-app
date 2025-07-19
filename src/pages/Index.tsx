@@ -1,392 +1,231 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Calendar as CalendarIcon, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
-import { ArabicCalendar } from '@/components/ArabicCalendar';
-import { SessionsTable } from '@/components/SessionsTable';
-import { TasksTable } from '@/components/TasksTable';
-import { AppointmentsTable } from '@/components/AppointmentsTable';
-import { dataStore } from '@/store/dataStore';
-import { Session, Task, Appointment } from '@/types';
-import { isDateToday, formatFullSyrianDate } from '@/utils/dateUtils';
-import { isSameDay, isAfter, isBefore } from 'date-fns';
-import { Layout } from '@/components/Layout';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, CheckSquare, Users, FileText, CalendarDays, TrendingUp } from 'lucide-react';
+import { formatSyrianDate } from '@/utils/dateUtils';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 
 const Index = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedDateSessions, setSelectedDateSessions] = useState<Session[]>([]);
-  const [selectedDateAppointments, setSelectedDateAppointments] = useState<Appointment[]>([]);
-  const [unTransferredSessions, setUnTransferredSessions] = useState<Session[]>([]);
-  const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
-  const [showUnTransferred, setShowUnTransferred] = useState(false);
-  const [showUpcoming, setShowUpcoming] = useState(false);
-  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
-  const printContentRef = useRef<HTMLDivElement>(null);
+  const { 
+    sessions, 
+    tasks, 
+    clients, 
+    cases, 
+    appointments, 
+    loading 
+  } = useSupabaseData();
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const today = new Date();
+  const todaySessions = sessions.filter(session => 
+    session.sessionDate.toDateString() === today.toDateString()
+  );
+  
+  const todayAppointments = appointments.filter(appointment => 
+    appointment.appointmentDate.toDateString() === today.toDateString()
+  );
+  
+  const pendingTasks = tasks.filter(task => !task.isCompleted);
+  const activeCases = cases.filter(case_ => case_.status === 'active');
 
-  useEffect(() => {
-    // Filter sessions for selected date
-    const filteredSessions = sessions.filter(session => 
-      isSameDay(session.sessionDate, selectedDate)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
+        </div>
+      </div>
     );
-    setSelectedDateSessions(filteredSessions);
-
-    // Filter appointments for selected date
-    const filteredAppointments = appointments.filter(appointment => 
-      isSameDay(appointment.appointmentDate, selectedDate)
-    );
-    setSelectedDateAppointments(filteredAppointments);
-
-    // Filter untransferred sessions - sessions before today with no next session date and not resolved
-    const today = new Date();
-    const untransferred = sessions.filter(session => 
-      isBefore(session.sessionDate, today) && 
-      !session.nextSessionDate && 
-      !session.isResolved
-    );
-    setUnTransferredSessions(untransferred);
-
-    // Filter upcoming sessions (after selected date)
-    const upcoming = sessions.filter(session => 
-      isAfter(session.sessionDate, selectedDate)
-    );
-    setUpcomingSessions(upcoming);
-  }, [selectedDate, sessions, appointments]);
-
-  const loadData = () => {
-    setSessions(dataStore.getSessions());
-    setTasks(dataStore.getTasks());
-    setAppointments(dataStore.getAppointments());
-  };
-
-  const getDisplaySessions = () => {
-    if (showUnTransferred) return unTransferredSessions;
-    if (showUpcoming) return upcomingSessions;
-    return selectedDateSessions;
-  };
-
-  const getDisplayTasks = () => {
-    return showCompletedTasks 
-      ? tasks.filter(task => task.isCompleted)
-      : tasks.filter(task => !task.isCompleted);
-  };
-
-  const isWeekend = (date: Date) => {
-    const day = date.getDay();
-    return day === 5 || day === 6; // Friday (5) and Saturday (6)
-  };
-
-  const checkWeekendWarning = (date: Date) => {
-    if (isWeekend(date)) {
-      alert('تحذير: التاريخ المحدد يوافق يوم عطلة رسمية (جمعة أو سبت)');
-    }
-  };
-
-  const handlePrintSchedule = () => {
-    const printWindow = window.open('', '_blank');
-    
-    if (printWindow) {
-      printWindow.document.write(`
-        <html dir="rtl">
-          <head>
-            <title>أجندة - جدول الأعمال ${formatFullSyrianDate(selectedDate)}</title>
-            <style>
-              body { 
-                font-family: Arial, sans-serif; 
-                padding: 20px; 
-                direction: rtl;
-                text-align: right;
-              }
-              h1, h2, h3 { 
-                text-align: center; 
-                margin-bottom: 20px;
-              }
-              .page-break { 
-                page-break-after: always; 
-              }
-              table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 30px;
-                direction: rtl;
-              }
-              th, td {
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: right;
-              }
-              th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-              }
-              .section-title {
-                font-size: 18px;
-                font-weight: bold;
-                margin: 20px 0 10px 0;
-                color: #333;
-              }
-              .no-data {
-                text-align: center;
-                color: #666;
-                font-style: italic;
-              }
-            </style>
-          </head>
-          <body>
-            <h1>أجندة - جدول الأعمال</h1>
-            <h2>${formatFullSyrianDate(selectedDate)}</h2>
-            
-            <div class="section-title">سجل الجلسات</div>
-            ${selectedDateSessions.length > 0 ? `
-              <table>
-                <thead>
-                  <tr>
-                    <th>تاريخ الجلسة</th>
-                    <th>المحكمة ورقم الأساس</th>
-                    <th>الموكل</th>
-                    <th>الخصم</th>
-                    <th>سبب التأجيل</th>
-                    <th>الجلسة القادمة</th>
-                    <th>سبب التأجيل القادم</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${selectedDateSessions.map(session => `
-                    <tr>
-                      <td>${formatFullSyrianDate(session.sessionDate)}</td>
-                      <td>${session.courtName} - ${session.caseNumber}</td>
-                      <td>${session.clientName}</td>
-                      <td>${session.opponent}</td>
-                      <td>${session.postponementReason || '-'}</td>
-                      <td>${session.nextSessionDate ? formatFullSyrianDate(session.nextSessionDate) : '-'}</td>
-                      <td>${session.nextPostponementReason || '-'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            ` : '<p class="no-data">لا توجد جلسات في هذا التاريخ</p>'}
-            
-            <div class="section-title">المهام الإدارية</div>
-            ${tasks.filter(task => !task.isCompleted).length > 0 ? `
-              <table>
-                <thead>
-                  <tr>
-                    <th>المهمة</th>
-                    <th>الوصف</th>
-                    <th>تاريخ الاستحقاق</th>
-                    <th>درجة الأهمية</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${tasks.filter(task => !task.isCompleted).map(task => `
-                    <tr>
-                      <td>${task.title}</td>
-                      <td>${task.description || '-'}</td>
-                      <td>${task.dueDate ? formatFullSyrianDate(task.dueDate) : '-'}</td>
-                      <td>${task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            ` : '<p class="no-data">لا توجد مهام غير مكتملة</p>'}
-            
-            <div class="section-title">المواعيد</div>
-            ${selectedDateAppointments.length > 0 ? `
-              <table>
-                <thead>
-                  <tr>
-                    <th>العنوان</th>
-                    <th>الوصف</th>
-                    <th>تاريخ الموعد</th>
-                    <th>الوقت</th>
-                    <th>المكان</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${selectedDateAppointments.map(appointment => `
-                    <tr>
-                      <td>${appointment.title}</td>
-                      <td>${appointment.description || '-'}</td>
-                      <td>${formatFullSyrianDate(appointment.appointmentDate)}</td>
-                      <td>${appointment.time || '-'}</td>
-                      <td>${appointment.location || '-'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            ` : '<p class="no-data">لا توجد مواعيد في هذا التاريخ</p>'}
-          </body>
-        </html>
-      `);
-      
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-  };
+  }
 
   return (
-    <Layout onPrintSchedule={handlePrintSchedule}>
-      <div className="container mx-auto p-2 sm:p-4 min-h-screen space-y-4" dir="rtl">
-        <Card className="p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-            {/* Right column - Calendar */}
-            <div className="lg:col-span-5 xl:col-span-4 space-y-4">
-              <ArabicCalendar
-                sessions={sessions}
-                appointments={appointments}
-                selectedDate={selectedDate}
-                onDateSelect={setSelectedDate}
-              />
+    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            نظام إدارة مكتب المحاماة
+          </h1>
+          <p className="text-gray-600 text-lg">
+            مرحباً بك في نظام إدارة شؤون المكتب - {formatSyrianDate(today)}
+          </p>
+        </div>
 
-              {/* Session Filter Buttons - under calendar for mobile */}
-              <div className="lg:hidden flex gap-2 justify-start flex-wrap">
-                <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(false);
-                    setShowUnTransferred(!showUnTransferred);
-                  }}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  غير مرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
-                  variant={showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(false);
-                    setShowUpcoming(!showUpcoming);
-                  }}
-                  className="gap-2"
-                >
-                  <Clock className="h-4 w-4" />
-                  القادمة ({upcomingSessions.length})
-                </Button>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2" dir="rtl">
+              <CardTitle className="text-sm font-medium text-gray-600">إجمالي العملاء</CardTitle>
+              <Users className="h-5 w-5 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{clients.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2" dir="rtl">
+              <CardTitle className="text-sm font-medium text-gray-600">القضايا النشطة</CardTitle>
+              <FileText className="h-5 w-5 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{activeCases.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2" dir="rtl">
+              <CardTitle className="text-sm font-medium text-gray-600">جلسات اليوم</CardTitle>
+              <Calendar className="h-5 w-5 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-600">{todaySessions.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2" dir="rtl">
+              <CardTitle className="text-sm font-medium text-gray-600">المهام المعلقة</CardTitle>
+              <CheckSquare className="h-5 w-5 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-red-600">{pendingTasks.length}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Today's Activities */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Today's Sessions */}
+          <Card className="bg-white shadow-lg">
+            <CardHeader dir="rtl">
+              <CardTitle className="flex items-center gap-2 text-orange-600">
+                <Calendar className="h-5 w-5" />
+                جلسات اليوم
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {todaySessions.length > 0 ? (
+                <div className="space-y-3">
+                  {todaySessions.slice(0, 5).map((session) => (
+                    <div key={session.id} className="border-r-4 border-orange-500 pr-4 py-2">
+                      <div className="font-semibold text-gray-900">{session.clientName}</div>
+                      <div className="text-sm text-gray-600">{session.courtName}</div>
+                      <div className="text-xs text-gray-500">رقم القضية: {session.caseNumber}</div>
+                    </div>
+                  ))}
+                  {todaySessions.length > 5 && (
+                    <div className="text-sm text-gray-500 text-center">
+                      و {todaySessions.length - 5} جلسات أخرى...
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  لا توجد جلسات اليوم
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Today's Appointments */}
+          <Card className="bg-white shadow-lg">
+            <CardHeader dir="rtl">
+              <CardTitle className="flex items-center gap-2 text-blue-600">
+                <CalendarDays className="h-5 w-5" />
+                مواعيد اليوم
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {todayAppointments.length > 0 ? (
+                <div className="space-y-3">
+                  {todayAppointments.slice(0, 5).map((appointment) => (
+                    <div key={appointment.id} className="border-r-4 border-blue-500 pr-4 py-2">
+                      <div className="font-semibold text-gray-900">{appointment.title}</div>
+                      {appointment.time && (
+                        <div className="text-sm text-gray-600">الوقت: {appointment.time}</div>
+                      )}
+                      {appointment.location && (
+                        <div className="text-xs text-gray-500">المكان: {appointment.location}</div>
+                      )}
+                    </div>
+                  ))}
+                  {todayAppointments.length > 5 && (
+                    <div className="text-sm text-gray-500 text-center">
+                      و {todayAppointments.length - 5} مواعيد أخرى...
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  لا توجد مواعيد اليوم
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Pending Tasks */}
+        {pendingTasks.length > 0 && (
+          <Card className="bg-white shadow-lg mt-6">
+            <CardHeader dir="rtl">
+              <CardTitle className="flex items-center gap-2 text-red-600">
+                <CheckSquare className="h-5 w-5" />
+                المهام المعلقة المهمة
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {pendingTasks
+                  .filter(task => task.priority === 'high')
+                  .slice(0, 3)
+                  .map((task) => (
+                    <div key={task.id} className="border-r-4 border-red-500 pr-4 py-2">
+                      <div className="font-semibold text-gray-900">{task.title}</div>
+                      {task.dueDate && (
+                        <div className="text-sm text-gray-600">
+                          موعد الاستحقاق: {formatSyrianDate(task.dueDate)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              {/* Appointments under Calendar for desktop */}
-              <div className="hidden lg:block">
-                <AppointmentsTable
-                  appointments={selectedDateAppointments}
-                  selectedDate={selectedDate}
-                  onAppointmentUpdate={loadData}
-                />
-              </div>
-            </div>
-
-            {/* Left column - Sessions */}
-            <div className="lg:col-span-7 xl:col-span-8 space-y-4">
-              {/* Session Filter Buttons - for desktop only */}
-              <div className="hidden lg:flex gap-2 justify-start flex-wrap">
-                <Button
-                  variant={showUnTransferred ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUpcoming(false);
-                    setShowUnTransferred(!showUnTransferred);
-                  }}
-                  className="gap-2"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  غير مرحلة ({unTransferredSessions.length})
-                </Button>
-                <Button
-                  variant={showUpcoming ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setShowUnTransferred(false);
-                    setShowUpcoming(!showUpcoming);
-                  }}
-                  className="gap-2"
-                >
-                  <Clock className="h-4 w-4" />
-                  القادمة ({upcomingSessions.length})
-                </Button>
-              </div>
-
-              {/* Sessions Table */}
-              <SessionsTable
-                sessions={getDisplaySessions()}
-                selectedDate={selectedDate}
-                onSessionUpdate={loadData}
-                showAddButton={false}
-                onWeekendWarning={checkWeekendWarning}
-              />
-
-              {/* Tasks under Sessions for desktop */}
-              <div className="hidden lg:block">
-                <Card className="w-full">
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-right">
-                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
-                    </h3>
-                    <Button
-                      variant={showCompletedTasks ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                      className="gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
-                    </Button>
-                  </div>
-                  <div className="p-4">
-                    <TasksTable
-                      tasks={getDisplayTasks()}
-                      onTaskUpdate={loadData}
-                    />
-                  </div>
-                </Card>
-              </div>
-
-              {/* Tasks for mobile - under sessions */}
-              <div className="lg:hidden">
-                <Card className="w-full">
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-right">
-                      {showCompletedTasks ? 'المهام المنجزة' : 'المهام المعلقة'}
-                    </h3>
-                    <Button
-                      variant={showCompletedTasks ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-                      className="gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {showCompletedTasks ? 'المهام المعلقة' : 'المهام المنجزة'}
-                    </Button>
-                  </div>
-                  <div className="p-4">
-                    <TasksTable
-                      tasks={getDisplayTasks()}
-                      onTaskUpdate={loadData}
-                    />
-                  </div>
-                </Card>
-              </div>
-
-              {/* Appointments for mobile - under tasks */}
-              <div className="lg:hidden">
-                <AppointmentsTable
-                  appointments={selectedDateAppointments}
-                  selectedDate={selectedDate}
-                  onAppointmentUpdate={loadData}
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
+        {/* Quick Navigation */}
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <a
+            href="/clients"
+            className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-lg text-center transition-colors"
+          >
+            <Users className="h-8 w-8 mx-auto mb-2" />
+            <div className="font-semibold">العملاء</div>
+          </a>
+          <a
+            href="/sessions"
+            className="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg text-center transition-colors"
+          >
+            <Calendar className="h-8 w-8 mx-auto mb-2" />
+            <div className="font-semibold">الجلسات</div>
+          </a>
+          <a
+            href="/tasks"
+            className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg text-center transition-colors"
+          >
+            <CheckSquare className="h-8 w-8 mx-auto mb-2" />
+            <div className="font-semibold">المهام</div>
+          </a>
+          <a
+            href="/office-accounting"
+            className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg text-center transition-colors"
+          >
+            <TrendingUp className="h-8 w-8 mx-auto mb-2" />
+            <div className="font-semibold">المحاسبة</div>
+          </a>
+        </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 
