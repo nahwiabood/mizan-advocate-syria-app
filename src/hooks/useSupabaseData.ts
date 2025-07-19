@@ -95,43 +95,12 @@ export const useSupabaseData = () => {
     if (converted.postponement_reason) converted.postponementReason = converted.postponement_reason;
     if (converted.next_postponement_reason) converted.nextPostponementReason = converted.next_postponement_reason;
     if (converted.stage_name) converted.stageName = converted.stage_name;
-    if (converted.resolution_details) converted.resolutionDetails = converted.resolution_details;
 
     return converted;
   };
 
   useEffect(() => {
     fetchData();
-
-    // إعداد التحديثات الفورية للمهام
-    const tasksChannel = supabase
-      .channel('tasks-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    // إعداد التحديثات الفورية للمواعيد
-    const appointmentsChannel = supabase
-      .channel('appointments-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    // إعداد التحديثات الفورية للجلسات
-    const sessionsChannel = supabase
-      .channel('sessions-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
-        fetchData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(tasksChannel);
-      supabase.removeChannel(appointmentsChannel);
-      supabase.removeChannel(sessionsChannel);
-    };
   }, []);
 
   return {
