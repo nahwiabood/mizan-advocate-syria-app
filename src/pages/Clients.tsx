@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Phone, Mail, MapPin, Calculator } from 'lucide-react';
+import { Plus, Edit, Trash2, Phone, Mail, MapPin, Calculator, Users } from 'lucide-react';
 import { formatSyrianDate } from '@/utils/dateUtils';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { supabaseStore } from '@/store/supabaseStore';
