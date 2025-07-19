@@ -1,482 +1,635 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, TrendingUp, TrendingDown, DollarSign, Edit, Trash2 } from 'lucide-react';
-import { formatSyrianDate } from '@/utils/dateUtils';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { supabaseStore } from '@/store/supabaseStore';
-import { OfficeIncome, OfficeExpense } from '@/types';
-import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { dataStore } from '@/store/dataStore';
+import { OfficeIncome, OfficeExpense, ClientBalance } from '@/types';
+import { toast } from 'sonner';
 
 const OfficeAccounting = () => {
-  const { officeIncome, officeExpenses, loading, refetch } = useSupabaseData();
+  const [incomes, setIncomes] = useState<OfficeIncome[]>(dataStore.getOfficeIncome());
+  const [expenses, setExpenses] = useState<OfficeExpense[]>(dataStore.getOfficeExpenses());
+  const [clients] = useState(dataStore.getClients());
+  
+  const [incomeForm, setIncomeForm] = useState({
+    description: '',
+    amount: '',
+    incomeDate: new Date().toISOString().split('T')[0],
+    source: 'أخرى'
+  });
+  
+  const [expenseForm, setExpenseForm] = useState({
+    description: '',
+    amount: '',
+    expenseDate: new Date().toISOString().split('T')[0],
+    category: 'أخرى'
+  });
+
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
-  const [selectedIncome, setSelectedIncome] = useState<OfficeIncome | null>(null);
-  const [selectedExpense, setSelectedExpense] = useState<OfficeExpense | null>(null);
-  const [newIncome, setNewIncome] = useState({
-    description: '',
-    amount: '',
-    source: '',
-    incomeDate: new Date()
-  });
-  const [newExpense, setNewExpense] = useState({
-    description: '',
-    amount: '',
-    category: '',
-    expenseDate: new Date()
+  const [editingIncome, setEditingIncome] = useState<OfficeIncome | null>(null);
+  const [editingExpense, setEditingExpense] = useState<OfficeExpense | null>(null);
+
+  // Calculate totals
+  const totalOfficeIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalOfficeExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
+  // Calculate client balances - Updated logic: positive balance means client owes money
+  const clientBalances: (ClientBalance & { clientName: string; clientId: string })[] = clients.map(client => {
+    const balance = dataStore.getClientBalance(client.id);
+    return {
+      ...balance,
+      clientName: client.name,
+      clientId: client.id
+    };
   });
 
-  const totalIncome = officeIncome.reduce((sum, income) => sum + income.amount, 0);
-  const totalExpenses = officeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const netProfit = totalIncome - totalExpenses;
+  const totalClientFees = clientBalances.reduce((sum, cb) => sum + cb.totalFees, 0);
+  const totalClientPayments = clientBalances.reduce((sum, cb) => sum + cb.totalPayments, 0);
+  const totalClientExpenses = clientBalances.reduce((sum, cb) => sum + cb.totalExpenses, 0);
+  const totalClientBalances = clientBalances.reduce((sum, cb) => sum + cb.balance, 0);
 
-  const handleAddIncome = async () => {
-    if (!newIncome.description.trim() || !newIncome.amount || !newIncome.source.trim()) {
-      toast({
-        title: "خطأ",
-        description: "يرجى ملء جميع الحقول المطلوبة",
-        variant: "destructive"
-      });
+  // Net office balance: office income - office expenses + client payments - client expenses
+  const netOfficeBalance = totalOfficeIncome - totalOfficeExpenses + totalClientPayments - totalClientExpenses;
+
+  const handleAddIncome = () => {
+    if (!incomeForm.description || !incomeForm.amount) {
+      toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
     try {
-      await supabaseStore.addOfficeIncome({
-        description: newIncome.description.trim(),
-        amount: parseFloat(newIncome.amount),
-        source: newIncome.source.trim(),
-        incomeDate: newIncome.incomeDate
+      const newIncome = dataStore.addOfficeIncome({
+        description: incomeForm.description,
+        amount: parseFloat(incomeForm.amount),
+        incomeDate: new Date(incomeForm.incomeDate),
+        source: incomeForm.source
       });
 
-      setNewIncome({
-        description: '',
-        amount: '',
-        source: '',
-        incomeDate: new Date()
-      });
+      setIncomes([...incomes, newIncome]);
+      setIncomeForm({ description: '', amount: '', incomeDate: new Date().toISOString().split('T')[0], source: 'أخرى' });
       setIsIncomeDialogOpen(false);
-      await refetch();
-      
-      toast({
-        title: "تم الحفظ",
-        description: "تم إضافة الإيراد بنجاح"
-      });
+      toast.success('تم إضافة الإيراد بنجاح');
     } catch (error) {
-      console.error('Error adding income:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إضافة الإيراد",
-        variant: "destructive"
-      });
+      toast.error('فشل في إضافة الإيراد');
     }
   };
 
-  const handleAddExpense = async () => {
-    if (!newExpense.description.trim() || !newExpense.amount || !newExpense.category.trim()) {
-      toast({
-        title: "خطأ",
-        description: "يرجى ملء جميع الحقول المطلوبة",
-        variant: "destructive"
-      });
+  const handleEditIncome = (income: OfficeIncome) => {
+    setEditingIncome(income);
+    setIncomeForm({
+      description: income.description,
+      amount: income.amount.toString(),
+      incomeDate: income.incomeDate.toISOString().split('T')[0],
+      source: income.source
+    });
+    setIsIncomeDialogOpen(true);
+  };
+
+  const handleUpdateIncome = () => {
+    if (!editingIncome || !incomeForm.description || !incomeForm.amount) {
+      toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
     try {
-      await supabaseStore.addOfficeExpense({
-        description: newExpense.description.trim(),
-        amount: parseFloat(newExpense.amount),
-        category: newExpense.category.trim(),
-        expenseDate: newExpense.expenseDate
+      const updatedIncome = dataStore.updateOfficeIncome(editingIncome.id, {
+        description: incomeForm.description,
+        amount: parseFloat(incomeForm.amount),
+        incomeDate: new Date(incomeForm.incomeDate),
+        source: incomeForm.source
       });
 
-      setNewExpense({
-        description: '',
-        amount: '',
-        category: '',
-        expenseDate: new Date()
+      if (updatedIncome) {
+        setIncomes(incomes.map(i => i.id === updatedIncome.id ? updatedIncome : i));
+        setIncomeForm({ description: '', amount: '', incomeDate: new Date().toISOString().split('T')[0], source: 'أخرى' });
+        setEditingIncome(null);
+        setIsIncomeDialogOpen(false);
+        toast.success('تم تحديث الإيراد بنجاح');
+      }
+    } catch (error) {
+      toast.error('فشل في تحديث الإيراد');
+    }
+  };
+
+  const handleDeleteIncome = (id: string) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا الإيراد؟')) {
+      try {
+        dataStore.deleteOfficeIncome(id);
+        setIncomes(incomes.filter(i => i.id !== id));
+        toast.success('تم حذف الإيراد بنجاح');
+      } catch (error) {
+        toast.error('فشل في حذف الإيراد');
+      }
+    }
+  };
+
+  const handleAddExpense = () => {
+    if (!expenseForm.description || !expenseForm.amount) {
+      toast.error('يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+
+    try {
+      const newExpense = dataStore.addOfficeExpense({
+        description: expenseForm.description,
+        amount: parseFloat(expenseForm.amount),
+        expenseDate: new Date(expenseForm.expenseDate),
+        category: expenseForm.category
       });
+
+      setExpenses([...expenses, newExpense]);
+      setExpenseForm({ description: '', amount: '', expenseDate: new Date().toISOString().split('T')[0], category: 'أخرى' });
       setIsExpenseDialogOpen(false);
-      await refetch();
-      
-      toast({
-        title: "تم الحفظ",
-        description: "تم إضافة المصروف بنجاح"
-      });
+      toast.success('تم إضافة المصروف بنجاح');
     } catch (error) {
-      console.error('Error adding expense:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إضافة المصروف",
-        variant: "destructive"
-      });
+      toast.error('فشل في إضافة المصروف');
     }
   };
 
-  const handleDeleteIncome = async (id: string) => {
+  const handleEditExpense = (expense: OfficeExpense) => {
+    setEditingExpense(expense);
+    setExpenseForm({
+      description: expense.description,
+      amount: expense.amount.toString(),
+      expenseDate: expense.expenseDate.toISOString().split('T')[0],
+      category: expense.category
+    });
+    setIsExpenseDialogOpen(true);
+  };
+
+  const handleUpdateExpense = () => {
+    if (!editingExpense || !expenseForm.description || !expenseForm.amount) {
+      toast.error('يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+
     try {
-      await supabaseStore.deleteOfficeIncome(id);
-      await refetch();
-      toast({
-        title: "تم الحذف",
-        description: "تم حذف الإيراد بنجاح"
+      const updatedExpense = dataStore.updateOfficeExpense(editingExpense.id, {
+        description: expenseForm.description,
+        amount: parseFloat(expenseForm.amount),
+        expenseDate: new Date(expenseForm.expenseDate),
+        category: expenseForm.category
       });
+
+      if (updatedExpense) {
+        setExpenses(expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e));
+        setExpenseForm({ description: '', amount: '', expenseDate: new Date().toISOString().split('T')[0], category: 'أخرى' });
+        setEditingExpense(null);
+        setIsExpenseDialogOpen(false);
+        toast.success('تم تحديث المصروف بنجاح');
+      }
     } catch (error) {
-      console.error('Error deleting income:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء حذف الإيراد",
-        variant: "destructive"
-      });
+      toast.error('فشل في تحديث المصروف');
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
-    try {
-      await supabaseStore.deleteOfficeExpense(id);
-      await refetch();
-      toast({
-        title: "تم الحذف",
-        description: "تم حذف المصروف بنجاح"
-      });
-    } catch (error) {
-      console.error('Error deleting expense:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء حذف المصروف",
-        variant: "destructive"
-      });
+  const handleDeleteExpense = (id: string) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
+      try {
+        dataStore.deleteOfficeExpense(id);
+        setExpenses(expenses.filter(e => e.id !== id));
+        toast.success('تم حذف المصروف بنجاح');
+      } catch (error) {
+        toast.error('فشل في حذف المصروف');
+      }
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري تحميل البيانات...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">محاسبة المكتب</h1>
-          <p className="text-gray-600">إدارة الإيرادات والمصروفات العامة للمكتب</p>
+    <Layout>
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">حسابات المكتب</h1>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-green-50 border-green-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-800">إجمالي الإيرادات</CardTitle>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">إجمالي إيرادات المكتب</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="flex items-center">
-                <TrendingUp className="h-6 w-6 text-green-600 ml-2" />
-                <div className="text-2xl font-bold text-green-600">
-                  {totalIncome.toLocaleString()} ل.س
-                </div>
+              <div className="text-2xl font-bold text-green-600">
+                {totalOfficeIncome.toLocaleString()} ل.س
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-red-50 border-red-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-red-800">إجمالي المصروفات</CardTitle>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">إجمالي مصروفات المكتب</CardTitle>
+              <TrendingDown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="flex items-center">
-                <TrendingDown className="h-6 w-6 text-red-600 ml-2" />
-                <div className="text-2xl font-bold text-red-600">
-                  {totalExpenses.toLocaleString()} ل.س
-                </div>
+              <div className="text-2xl font-bold text-red-600">
+                {totalOfficeExpenses.toLocaleString()} ل.س
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`${netProfit >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'}`}>
-            <CardHeader className="pb-2">
-              <CardTitle className={`text-sm font-medium ${netProfit >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
-                صافي الربح/الخسارة
-              </CardTitle>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">مديونية الموكلين</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="flex items-center">
-                <DollarSign className={`h-6 w-6 ml-2 ${netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
-                <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                  {netProfit.toLocaleString()} ل.س
-                </div>
+              <div className={`text-2xl font-bold ${totalClientBalances >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {totalClientBalances.toLocaleString()} ل.س
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-50 border-gray-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-800">عدد العمليات</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-600">
-                {officeIncome.length + officeExpenses.length}
-              </div>
-              <p className="text-xs text-gray-500">
-                {officeIncome.length} إيراد، {officeExpenses.length} مصروف
+              <p className="text-xs text-muted-foreground mt-1">
+                {totalClientBalances >= 0 ? 'مستحق للمكتب' : 'مستحق للموكلين'}
               </p>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Income Section */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-green-600">الإيرادات</CardTitle>
-                <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2 bg-green-600 hover:bg-green-700">
-                      <Plus className="h-4 w-4" />
-                      إضافة إيراد
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md" dir="rtl">
-                    <DialogHeader>
-                      <DialogTitle className="text-right">إضافة إيراد جديد</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="text-right">
-                        <Label htmlFor="income-description" className="text-right">وصف الإيراد *</Label>
-                        <Input
-                          id="income-description"
-                          value={newIncome.description}
-                          onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
-                          placeholder="وصف الإيراد"
-                          className="text-right"
-                          dir="rtl"
-                        />
-                      </div>
-                      <div className="text-right">
-                        <Label htmlFor="income-amount" className="text-right">المبلغ *</Label>
-                        <Input
-                          id="income-amount"
-                          type="number"
-                          value={newIncome.amount}
-                          onChange={(e) => setNewIncome({ ...newIncome, amount: e.target.value })}
-                          placeholder="المبلغ بالليرة السورية"
-                          className="text-right"
-                          dir="rtl"
-                        />
-                      </div>
-                      <div className="text-right">
-                        <Label htmlFor="income-source" className="text-right">مصدر الإيراد *</Label>
-                        <Input
-                          id="income-source"
-                          value={newIncome.source}
-                          onChange={(e) => setNewIncome({ ...newIncome, source: e.target.value })}
-                          placeholder="مصدر الإيراد"
-                          className="text-right"
-                          dir="rtl"
-                        />
-                      </div>
-                      <div className="text-right">
-                        <Label className="text-right">تاريخ الإيراد *</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-right font-normal",
-                                !newIncome.incomeDate && "text-muted-foreground"
-                              )}
-                              dir="rtl"
-                            >
-                              <CalendarIcon className="ml-2 h-4 w-4" />
-                              {formatSyrianDate(newIncome.incomeDate)}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={newIncome.incomeDate}
-                              onSelect={(date) => date && setNewIncome({ ...newIncome, incomeDate: date })}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <Button onClick={handleAddIncome} className="w-full">
-                        إضافة الإيراد
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">صافي رصيد المكتب</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              {officeIncome.length > 0 ? (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {officeIncome.map((income) => (
-                    <div key={`income-${income.id}`} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-semibold text-green-800">{income.description}</div>
-                        <div className="text-sm text-green-600">المصدر: {income.source}</div>
-                        <div className="text-xs text-gray-500">التاريخ: {formatSyrianDate(income.incomeDate)}</div>
-                      </div>
-                      <div className="text-left">
-                        <div className="font-bold text-green-600 text-lg">
+              <div className={`text-2xl font-bold ${netOfficeBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {netOfficeBalance.toLocaleString()} ل.س
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="office-income" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="office-income">إيرادات المكتب</TabsTrigger>
+            <TabsTrigger value="office-expenses">مصروفات المكتب</TabsTrigger>
+            <TabsTrigger value="client-balances">أرصدة الموكلين</TabsTrigger>
+            <TabsTrigger value="summary">الملخص المالي</TabsTrigger>
+          </TabsList>
+
+          {/* Office Income Tab */}
+          <TabsContent value="office-income" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">إيرادات المكتب</h2>
+              <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => { setEditingIncome(null); setIncomeForm({ description: '', amount: '', incomeDate: new Date().toISOString().split('T')[0], source: 'أخرى' }); }}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة إيراد
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingIncome ? 'تعديل الإيراد' : 'إضافة إيراد جديد'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="income-description">الوصف</Label>
+                      <Textarea
+                        id="income-description"
+                        value={incomeForm.description}
+                        onChange={(e) => setIncomeForm({ ...incomeForm, description: e.target.value })}
+                        placeholder="وصف الإيراد"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="income-amount">المبلغ (ل.س)</Label>
+                      <Input
+                        id="income-amount"
+                        type="number"
+                        value={incomeForm.amount}
+                        onChange={(e) => setIncomeForm({ ...incomeForm, amount: e.target.value })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="income-date">التاريخ</Label>
+                      <Input
+                        id="income-date"
+                        type="date"
+                        value={incomeForm.incomeDate}
+                        onChange={(e) => setIncomeForm({ ...incomeForm, incomeDate: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="income-source">المصدر</Label>
+                      <Select value={incomeForm.source} onValueChange={(value) => setIncomeForm({ ...incomeForm, source: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="أتعاب">أتعاب</SelectItem>
+                          <SelectItem value="استشارات">استشارات</SelectItem>
+                          <SelectItem value="خدمات أخرى">خدمات أخرى</SelectItem>
+                          <SelectItem value="أخرى">أخرى</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => setIsIncomeDialogOpen(false)}>
+                        إلغاء
+                      </Button>
+                      <Button onClick={editingIncome ? handleUpdateIncome : handleAddIncome}>
+                        {editingIncome ? 'تحديث' : 'إضافة'}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Card>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الوصف</TableHead>
+                      <TableHead>المبلغ</TableHead>
+                      <TableHead>التاريخ</TableHead>
+                      <TableHead>المصدر</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {incomes.map((income) => (
+                      <TableRow key={income.id}>
+                        <TableCell>{income.description}</TableCell>
+                        <TableCell className="font-mono text-green-600">
                           {income.amount.toLocaleString()} ل.س
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteIncome(income.id)}
-                          className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  لا توجد إيرادات مسجلة
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Expenses Section */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-red-600">المصروفات</CardTitle>
-                <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2 bg-red-600 hover:bg-red-700">
-                      <Plus className="h-4 w-4" />
-                      إضافة مصروف
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md" dir="rtl">
-                    <DialogHeader>
-                      <DialogTitle className="text-right">إضافة مصروف جديد</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="text-right">
-                        <Label htmlFor="expense-description" className="text-right">وصف المصروف *</Label>
-                        <Input
-                          id="expense-description"
-                          value={newExpense.description}
-                          onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
-                          placeholder="وصف المصروف"
-                          className="text-right"
-                          dir="rtl"
-                        />
-                      </div>
-                      <div className="text-right">
-                        <Label htmlFor="expense-amount" className="text-right">المبلغ *</Label>
-                        <Input
-                          id="expense-amount"
-                          type="number"
-                          value={newExpense.amount}
-                          onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                          placeholder="المبلغ بالليرة السورية"
-                          className="text-right"
-                          dir="rtl"
-                        />
-                      </div>
-                      <div className="text-right">
-                        <Label htmlFor="expense-category" className="text-right">فئة المصروف *</Label>
-                        <Input
-                          id="expense-category"
-                          value={newExpense.category}
-                          onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-                          placeholder="فئة المصروف"
-                          className="text-right"
-                          dir="rtl"
-                        />
-                      </div>
-                      <div className="text-right">
-                        <Label className="text-right">تاريخ المصروف *</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
+                        </TableCell>
+                        <TableCell>{income.incomeDate.toLocaleDateString('ar-SY')}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{income.source}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
                             <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-right font-normal",
-                                !newExpense.expenseDate && "text-muted-foreground"
-                              )}
-                              dir="rtl"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditIncome(income)}
                             >
-                              <CalendarIcon className="ml-2 h-4 w-4" />
-                              {formatSyrianDate(newExpense.expenseDate)}
+                              <Edit className="h-4 w-4" />
                             </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={newExpense.expenseDate}
-                              onSelect={(date) => date && setNewExpense({ ...newExpense, expenseDate: date })}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <Button onClick={handleAddExpense} className="w-full">
-                        إضافة المصروف
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteIncome(income.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Office Expenses Tab */}
+          <TabsContent value="office-expenses" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">مصروفات المكتب</h2>
+              <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => { setEditingExpense(null); setExpenseForm({ description: '', amount: '', expenseDate: new Date().toISOString().split('T')[0], category: 'أخرى' }); }}>
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة مصروف
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingExpense ? 'تعديل المصروف' : 'إضافة مصروف جديد'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="expense-description">الوصف</Label>
+                      <Textarea
+                        id="expense-description"
+                        value={expenseForm.description}
+                        onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                        placeholder="وصف المصروف"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="expense-amount">المبلغ (ل.س)</Label>
+                      <Input
+                        id="expense-amount"
+                        type="number"
+                        value={expenseForm.amount}
+                        onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="expense-date">التاريخ</Label>
+                      <Input
+                        id="expense-date"
+                        type="date"
+                        value={expenseForm.expenseDate}
+                        onChange={(e) => setExpenseForm({ ...expenseForm, expenseDate: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="expense-category">الفئة</Label>
+                      <Select value={expenseForm.category} onValueChange={(value) => setExpenseForm({ ...expenseForm, category: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="إيجار">إيجار</SelectItem>
+                          <SelectItem value="مواصلات">مواصلات</SelectItem>
+                          <SelectItem value="اتصالات">اتصالات</SelectItem>
+                          <SelectItem value="كهرباء">كهرباء</SelectItem>
+                          <SelectItem value="قرطاسية">قرطاسية</SelectItem>
+                          <SelectItem value="أخرى">أخرى</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => setIsExpenseDialogOpen(false)}>
+                        إلغاء
+                      </Button>
+                      <Button onClick={editingExpense ? handleUpdateExpense : handleAddExpense}>
+                        {editingExpense ? 'تحديث' : 'إضافة'}
                       </Button>
                     </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {officeExpenses.length > 0 ? (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {officeExpenses.map((expense) => (
-                    <div key={`expense-${expense.id}`} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-semibold text-red-800">{expense.description}</div>
-                        <div className="text-sm text-red-600">الفئة: {expense.category}</div>
-                        <div className="text-xs text-gray-500">التاريخ: {formatSyrianDate(expense.expenseDate)}</div>
-                      </div>
-                      <div className="text-left">
-                        <div className="font-bold text-red-600 text-lg">
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Card>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الوصف</TableHead>
+                      <TableHead>المبلغ</TableHead>
+                      <TableHead>التاريخ</TableHead>
+                      <TableHead>الفئة</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {expenses.map((expense) => (
+                      <TableRow key={expense.id}>
+                        <TableCell>{expense.description}</TableCell>
+                        <TableCell className="font-mono text-red-600">
                           {expense.amount.toLocaleString()} ل.س
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteExpense(expense.id)}
-                          className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                        </TableCell>
+                        <TableCell>{expense.expenseDate.toLocaleDateString('ar-SY')}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{expense.category}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditExpense(expense)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteExpense(expense.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Client Balances Tab */}
+          <TabsContent value="client-balances" className="space-y-4">
+            <h2 className="text-xl font-semibold">أرصدة الموكلين</h2>
+            <Card>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>اسم الموكل</TableHead>
+                      <TableHead>إجمالي الأتعاب</TableHead>
+                      <TableHead>إجمالي المصاريف</TableHead>
+                      <TableHead>إجمالي الدفعات</TableHead>
+                      <TableHead>الرصيد</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {clientBalances.map((balance) => (
+                      <TableRow key={balance.clientId}>
+                        <TableCell className="font-medium">{balance.clientName}</TableCell>
+                        <TableCell className="font-mono text-blue-600">
+                          {balance.totalFees.toLocaleString()} ل.س
+                        </TableCell>
+                        <TableCell className="font-mono text-orange-600">
+                          {balance.totalExpenses.toLocaleString()} ل.س
+                        </TableCell>
+                        <TableCell className="font-mono text-green-600">
+                          {balance.totalPayments.toLocaleString()} ل.س
+                        </TableCell>
+                        <TableCell className={`font-mono font-bold ${balance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {balance.balance.toLocaleString()} ل.س
+                          {balance.balance >= 0 ? ' (مستحق للمكتب)' : ' (مستحق للموكل)'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Summary Tab */}
+          <TabsContent value="summary" className="space-y-4">
+            <h2 className="text-xl font-semibold">الملخص المالي</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>إيرادات المكتب</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>إيرادات مباشرة:</span>
+                    <span className="font-mono text-green-600">{totalOfficeIncome.toLocaleString()} ل.س</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>دفعات الموكلين:</span>
+                    <span className="font-mono text-green-600">{totalClientPayments.toLocaleString()} ل.س</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>إجمالي الإيرادات:</span>
+                    <span className="font-mono text-green-600">{(totalOfficeIncome + totalClientPayments).toLocaleString()} ل.س</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>مصروفات المكتب</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>مصروفات مباشرة:</span>
+                    <span className="font-mono text-red-600">{totalOfficeExpenses.toLocaleString()} ل.س</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>مصاريف الموكلين:</span>
+                    <span className="font-mono text-red-600">{totalClientExpenses.toLocaleString()} ل.س</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>إجمالي المصروفات:</span>
+                    <span className="font-mono text-red-600">{(totalOfficeExpenses + totalClientExpenses).toLocaleString()} ل.س</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>النتيجة النهائية</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-lg">
+                    <span>مديونية الموكلين (أتعاب + مصاريف - دفعات):</span>
+                    <span className={`font-mono font-bold ${totalClientBalances >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {totalClientBalances.toLocaleString()} ل.س
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xl font-bold border-t pt-4">
+                    <span>صافي رصيد المكتب:</span>
+                    <span className={`font-mono ${netOfficeBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {netOfficeBalance.toLocaleString()} ل.س
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    صافي الرصيد = إيرادات المكتب - مصروفات المكتب + دفعات الموكلين - مصاريف الموكلين
+                  </p>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  لا توجد مصروفات مسجلة
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </div>
+    </Layout>
   );
 };
 
