@@ -23,6 +23,7 @@ const Clients = () => {
   const [cases, setCases] = useState<Case[]>([]);
   const [stages, setStages] = useState<CaseStage[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedCases, setExpandedCases] = useState<Set<string>>(new Set());
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
@@ -93,11 +94,25 @@ const Clients = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setClients(dataStore.getClients());
-    setCases(dataStore.getCases());
-    setStages(dataStore.getStages());
-    setSessions(dataStore.getSessions());
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [clientsData, casesData, stagesData, sessionsData] = await Promise.all([
+        dataStore.getClients(),
+        dataStore.getCases(),
+        dataStore.getStages(),
+        dataStore.getSessions()
+      ]);
+      
+      setClients(clientsData);
+      setCases(casesData);
+      setStages(stagesData);
+      setSessions(sessionsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Filter clients based on search term
@@ -142,109 +157,133 @@ const Clients = () => {
   };
 
   // CRUD operations
-  const handleAddClient = () => {
+  const handleAddClient = async () => {
     if (!clientForm.name) return;
 
-    dataStore.addClient({
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
-    });
+    try {
+      await dataStore.addClient({
+        name: clientForm.name,
+        email: clientForm.email,
+        phone: clientForm.phone,
+        address: clientForm.address,
+        notes: clientForm.notes
+      });
 
-    resetClientForm();
-    setIsClientDialogOpen(false);
-    loadData();
+      resetClientForm();
+      setIsClientDialogOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding client:', error);
+    }
   };
 
-  const handleEditClient = () => {
+  const handleEditClient = async () => {
     if (!editingClient || !clientForm.name) return;
 
-    dataStore.updateClient(editingClient.id, {
-      name: clientForm.name,
-      email: clientForm.email,
-      phone: clientForm.phone,
-      address: clientForm.address,
-      notes: clientForm.notes
-    });
+    try {
+      await dataStore.updateClient(editingClient.id, {
+        name: clientForm.name,
+        email: clientForm.email,
+        phone: clientForm.phone,
+        address: clientForm.address,
+        notes: clientForm.notes
+      });
 
-    resetClientForm();
-    setIsClientDialogOpen(false);
-    setEditingClient(null);
-    loadData();
+      resetClientForm();
+      setIsClientDialogOpen(false);
+      setEditingClient(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error updating client:', error);
+    }
   };
 
-  const handleAddCase = () => {
+  const handleAddCase = async () => {
     if (!caseForm.opponent || !caseForm.subject || !selectedClientId) return;
 
-    dataStore.addCase({
-      clientId: selectedClientId,
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description || '',
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType || 'عام',
-      status: 'active'
-    });
+    try {
+      await dataStore.addCase({
+        clientId: selectedClientId,
+        title: caseForm.title || caseForm.subject,
+        description: caseForm.description || '',
+        opponent: caseForm.opponent,
+        subject: caseForm.subject,
+        caseType: caseForm.caseType || 'عام',
+        status: 'active'
+      });
 
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
-    loadData();
+      resetCaseForm();
+      setIsCaseDialogOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding case:', error);
+    }
   };
 
-  const handleEditCase = () => {
+  const handleEditCase = async () => {
     if (!editingCase || !caseForm.opponent || !caseForm.subject) return;
 
-    dataStore.updateCase(editingCase.id, {
-      title: caseForm.title || caseForm.subject,
-      description: caseForm.description,
-      opponent: caseForm.opponent,
-      subject: caseForm.subject,
-      caseType: caseForm.caseType
-    });
+    try {
+      await dataStore.updateCase(editingCase.id, {
+        title: caseForm.title || caseForm.subject,
+        description: caseForm.description,
+        opponent: caseForm.opponent,
+        subject: caseForm.subject,
+        caseType: caseForm.caseType
+      });
 
-    resetCaseForm();
-    setIsCaseDialogOpen(false);
-    setEditingCase(null);
-    loadData();
+      resetCaseForm();
+      setIsCaseDialogOpen(false);
+      setEditingCase(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error updating case:', error);
+    }
   };
 
-  const handleAddStage = () => {
+  const handleAddStage = async () => {
     if (!stageForm.courtName || !stageForm.caseNumber || !selectedCaseId) return;
 
-    dataStore.addStage({
-      caseId: selectedCaseId,
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes,
-      firstSessionDate: null,
-      status: 'active'
-    });
+    try {
+      await dataStore.addStage({
+        caseId: selectedCaseId,
+        courtName: stageForm.courtName,
+        caseNumber: stageForm.caseNumber,
+        stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
+        notes: stageForm.notes,
+        firstSessionDate: null,
+        status: 'active'
+      });
 
-    resetStageForm();
-    setIsStageDialogOpen(false);
-    loadData();
+      resetStageForm();
+      setIsStageDialogOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding stage:', error);
+    }
   };
 
-  const handleEditStage = () => {
+  const handleEditStage = async () => {
     if (!editingStage || !stageForm.courtName || !stageForm.caseNumber) return;
 
-    dataStore.updateStage(editingStage.id, {
-      courtName: stageForm.courtName,
-      caseNumber: stageForm.caseNumber,
-      stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-      notes: stageForm.notes
-    });
+    try {
+      await dataStore.updateStage(editingStage.id, {
+        courtName: stageForm.courtName,
+        caseNumber: stageForm.caseNumber,
+        stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
+        notes: stageForm.notes
+      });
 
-    resetStageForm();
-    setIsStageDialogOpen(false);
-    setEditingStage(null);
-    loadData();
+      resetStageForm();
+      setIsStageDialogOpen(false);
+      setEditingStage(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error updating stage:', error);
+    }
   };
 
-  const handleAddSession = () => {
+  const handleAddSession = async () => {
     if (!sessionForm.firstSessionDate || !selectedStageId) return;
 
     const stage = stages.find(s => s.id === selectedStageId);
@@ -256,71 +295,87 @@ const Clients = () => {
     const client = clients.find(c => c.id === case_.clientId);
     if (!client) return;
 
-    dataStore.addSession({
-      stageId: selectedStageId,
-      courtName: stage.courtName,
-      caseNumber: stage.caseNumber,
-      sessionDate: sessionForm.firstSessionDate,
-      clientName: client.name,
-      opponent: case_.opponent,
-      postponementReason: sessionForm.postponementReason,
-      isTransferred: false
-    });
+    try {
+      await dataStore.addSession({
+        stageId: selectedStageId,
+        courtName: stage.courtName,
+        caseNumber: stage.caseNumber,
+        sessionDate: sessionForm.firstSessionDate,
+        clientName: client.name,
+        opponent: case_.opponent,
+        postponementReason: sessionForm.postponementReason,
+        isTransferred: false
+      });
 
-    // Update stage with first session date
-    dataStore.updateStage(selectedStageId, {
-      firstSessionDate: sessionForm.firstSessionDate
-    });
+      // Update stage with first session date
+      await dataStore.updateStage(selectedStageId, {
+        firstSessionDate: sessionForm.firstSessionDate
+      });
 
-    resetSessionForm();
-    setIsSessionDialogOpen(false);
-    loadData();
+      resetSessionForm();
+      setIsSessionDialogOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding session:', error);
+    }
   };
 
   // Accounting CRUD operations
-  const handleAddFee = () => {
+  const handleAddFee = async () => {
     if (!feeForm.description || !feeForm.amount || !selectedClientId) return;
 
-    dataStore.addClientFee({
-      clientId: selectedClientId,
-      description: feeForm.description,
-      amount: parseFloat(feeForm.amount),
-      feeDate: feeForm.feeDate
-    });
+    try {
+      await dataStore.addClientFee({
+        clientId: selectedClientId,
+        description: feeForm.description,
+        amount: parseFloat(feeForm.amount),
+        feeDate: feeForm.feeDate
+      });
 
-    resetFeeForm();
-    setIsFeeDialogOpen(false);
-    loadData();
+      resetFeeForm();
+      setIsFeeDialogOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding fee:', error);
+    }
   };
 
-  const handleAddPayment = () => {
+  const handleAddPayment = async () => {
     if (!paymentForm.description || !paymentForm.amount || !selectedClientId) return;
 
-    dataStore.addClientPayment({
-      clientId: selectedClientId,
-      description: paymentForm.description,
-      amount: parseFloat(paymentForm.amount),
-      paymentDate: paymentForm.paymentDate
-    });
+    try {
+      await dataStore.addClientPayment({
+        clientId: selectedClientId,
+        description: paymentForm.description,
+        amount: parseFloat(paymentForm.amount),
+        paymentDate: paymentForm.paymentDate
+      });
 
-    resetPaymentForm();
-    setIsPaymentDialogOpen(false);
-    loadData();
+      resetPaymentForm();
+      setIsPaymentDialogOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding payment:', error);
+    }
   };
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     if (!expenseForm.description || !expenseForm.amount || !selectedClientId) return;
 
-    dataStore.addClientExpense({
-      clientId: selectedClientId,
-      description: expenseForm.description,
-      amount: parseFloat(expenseForm.amount),
-      expenseDate: expenseForm.expenseDate
-    });
+    try {
+      await dataStore.addClientExpense({
+        clientId: selectedClientId,
+        description: expenseForm.description,
+        amount: parseFloat(expenseForm.amount),
+        expenseDate: expenseForm.expenseDate
+      });
 
-    resetExpenseForm();
-    setIsExpenseDialogOpen(false);
-    loadData();
+      resetExpenseForm();
+      setIsExpenseDialogOpen(false);
+      await loadData();
+    } catch (error) {
+      console.error('Error adding expense:', error);
+    }
   };
 
   // Reset form functions
@@ -474,14 +529,44 @@ const Clients = () => {
     return sessions.filter(session => session.stageId === stageId);
   };
 
-  const getClientAccountingData = (clientId: string) => {
-    const fees = dataStore.getClientFees(clientId);
-    const payments = dataStore.getClientPayments(clientId);
-    const expenses = dataStore.getClientExpenses(clientId);
-    const balance = dataStore.getClientBalance(clientId);
-    
-    return { fees, payments, expenses, balance };
+  const getClientAccountingData = async (clientId: string) => {
+    try {
+      const [fees, payments, expenses, balance] = await Promise.all([
+        dataStore.getClientFees(clientId),
+        dataStore.getClientPayments(clientId),
+        dataStore.getClientExpenses(clientId),
+        dataStore.getClientBalance(clientId)
+      ]);
+      
+      return { fees, payments, expenses, balance };
+    } catch (error) {
+      console.error('Error loading accounting data:', error);
+      return { 
+        fees: [], 
+        payments: [], 
+        expenses: [], 
+        balance: { 
+          totalFees: 0, 
+          totalPayments: 0, 
+          totalExpenses: 0, 
+          balance: 0 
+        } 
+      };
+    }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto p-4 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">جاري تحميل البيانات...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
