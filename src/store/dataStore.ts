@@ -1,4 +1,5 @@
 import { Client, Case, CaseStage, Session, Task, Appointment, ClientFee, ClientPayment, ClientExpense, OfficeIncome, OfficeExpense, ClientBalance } from '@/types';
+import { supabaseStore } from './supabaseStore';
 
 class DataStore {
   private storageKey = 'lawyer-management-data';
@@ -206,540 +207,205 @@ class DataStore {
     }
   }
 
-  getSessions(): Session[] {
-    return this.getData().sessions;
+  // All methods now delegate to supabaseStore
+  getSessions(): Promise<Session[]> {
+    return supabaseStore.getSessions();
   }
 
-  addSession(session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>): Session {
-    const data = this.getData();
-    const newSession: Session = {
-      ...session,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.sessions.push(newSession);
-    this.saveData(data);
-    return newSession;
+  addSession(session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>): Promise<Session> {
+    return supabaseStore.addSession(session);
   }
 
-  updateSession(id: string, updates: Partial<Session>): Session | null {
-    const data = this.getData();
-    const sessionIndex = data.sessions.findIndex(s => s.id === id);
-    if (sessionIndex === -1) return null;
-
-    data.sessions[sessionIndex] = {
-      ...data.sessions[sessionIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.sessions[sessionIndex];
+  updateSession(id: string, updates: Partial<Session>): Promise<Session | null> {
+    return supabaseStore.updateSession(id, updates);
   }
 
-  deleteSession(id: string): boolean {
-    const data = this.getData();
-    const sessionIndex = data.sessions.findIndex(s => s.id === id);
-    if (sessionIndex === -1) return false;
-
-    data.sessions.splice(sessionIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteSession(id: string): Promise<boolean> {
+    return supabaseStore.deleteSession(id);
   }
 
-  resolveSession(sessionId: string): Session | null {
-    const data = this.getData();
-    const session = data.sessions.find(s => s.id === sessionId);
-    if (!session) return null;
-
-    session.isResolved = true;
-    session.resolutionDate = new Date();
-    session.updatedAt = new Date();
-
-    this.saveData(data);
-    return session;
+  resolveSession(sessionId: string): Promise<Session | null> {
+    return supabaseStore.resolveSession(sessionId);
   }
 
-  transferSession(sessionId: string, nextDate: Date, reason: string): Session | null {
-    const data = this.getData();
-    const session = data.sessions.find(s => s.id === sessionId);
-    if (!session) return null;
-
-    session.nextSessionDate = nextDate;
-    session.nextPostponementReason = reason;
-    session.isTransferred = true;
-    session.updatedAt = new Date();
-
-    const newSession: Session = {
-      id: crypto.randomUUID(),
-      stageId: session.stageId,
-      courtName: session.courtName,
-      caseNumber: session.caseNumber,
-      sessionDate: nextDate,
-      clientName: session.clientName,
-      opponent: session.opponent,
-      isTransferred: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    data.sessions.push(newSession);
-    this.saveData(data);
-    return newSession;
+  transferSession(sessionId: string, nextDate: Date, reason: string): Promise<Session | null> {
+    return supabaseStore.transferSession(sessionId, nextDate, reason);
   }
 
-  getTasks(): Task[] {
-    return this.getData().tasks;
+  getTasks(): Promise<Task[]> {
+    return supabaseStore.getTasks();
   }
 
-  addTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task {
-    const data = this.getData();
-    const newTask: Task = {
-      ...task,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.tasks.push(newTask);
-    this.saveData(data);
-    return newTask;
+  addTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
+    return supabaseStore.addTask(task);
   }
 
-  updateTask(id: string, updates: Partial<Task>): Task | null {
-    const data = this.getData();
-    const taskIndex = data.tasks.findIndex(t => t.id === id);
-    if (taskIndex === -1) return null;
-
-    data.tasks[taskIndex] = {
-      ...data.tasks[taskIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.tasks[taskIndex];
+  updateTask(id: string, updates: Partial<Task>): Promise<Task | null> {
+    return supabaseStore.updateTask(id, updates);
   }
 
-  deleteTask(id: string): boolean {
-    const data = this.getData();
-    const taskIndex = data.tasks.findIndex(t => t.id === id);
-    if (taskIndex === -1) return false;
-
-    data.tasks.splice(taskIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteTask(id: string): Promise<boolean> {
+    return supabaseStore.deleteTask(id);
   }
 
-  getAppointments(): Appointment[] {
-    return this.getData().appointments;
+  getAppointments(): Promise<Appointment[]> {
+    return supabaseStore.getAppointments();
   }
 
-  addAppointment(appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Appointment {
-    const data = this.getData();
-    const newAppointment: Appointment = {
-      ...appointment,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.appointments.push(newAppointment);
-    this.saveData(data);
-    return newAppointment;
+  addAppointment(appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
+    return supabaseStore.addAppointment(appointment);
   }
 
-  updateAppointment(id: string, updates: Partial<Appointment>): Appointment | null {
-    const data = this.getData();
-    const appointmentIndex = data.appointments.findIndex(a => a.id === id);
-    if (appointmentIndex === -1) return null;
-
-    data.appointments[appointmentIndex] = {
-      ...data.appointments[appointmentIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.appointments[appointmentIndex];
+  updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment | null> {
+    return supabaseStore.updateAppointment(id, updates);
   }
 
-  deleteAppointment(id: string): boolean {
-    const data = this.getData();
-    const appointmentIndex = data.appointments.findIndex(a => a.id === id);
-    if (appointmentIndex === -1) return false;
-
-    data.appointments.splice(appointmentIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteAppointment(id: string): Promise<boolean> {
+    return supabaseStore.deleteAppointment(id);
   }
 
-  getClients(): Client[] {
-    return this.getData().clients;
+  getClients(): Promise<Client[]> {
+    return supabaseStore.getClients();
   }
 
-  addClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Client {
-    const data = this.getData();
-    const newClient: Client = {
-      ...client,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.clients.push(newClient);
-    this.saveData(data);
-    return newClient;
+  addClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> {
+    return supabaseStore.addClient(client);
   }
 
-  updateClient(id: string, updates: Partial<Client>): Client | null {
-    const data = this.getData();
-    const clientIndex = data.clients.findIndex(c => c.id === id);
-    if (clientIndex === -1) return null;
-
-    data.clients[clientIndex] = {
-      ...data.clients[clientIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.clients[clientIndex];
+  updateClient(id: string, updates: Partial<Client>): Promise<Client | null> {
+    return supabaseStore.updateClient(id, updates);
   }
 
-  deleteClient(id: string): boolean {
-    const data = this.getData();
-    const clientIndex = data.clients.findIndex(c => c.id === id);
-    if (clientIndex === -1) return false;
-
-    data.clients.splice(clientIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteClient(id: string): Promise<boolean> {
+    return supabaseStore.deleteClient(id);
   }
 
-  getCases(): Case[] {
-    return this.getData().cases;
+  getCases(): Promise<Case[]> {
+    return supabaseStore.getCases();
   }
 
-  addCase(case_: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>): Case {
-    const data = this.getData();
-    const newCase: Case = {
-      ...case_,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.cases.push(newCase);
-    this.saveData(data);
-    return newCase;
+  addCase(case_: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>): Promise<Case> {
+    return supabaseStore.addCase(case_);
   }
 
-  updateCase(id: string, updates: Partial<Case>): Case | null {
-    const data = this.getData();
-    const caseIndex = data.cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) return null;
-
-    data.cases[caseIndex] = {
-      ...data.cases[caseIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.cases[caseIndex];
+  updateCase(id: string, updates: Partial<Case>): Promise<Case | null> {
+    return supabaseStore.updateCase(id, updates);
   }
 
-  deleteCase(id: string): boolean {
-    const data = this.getData();
-    const caseIndex = data.cases.findIndex(c => c.id === id);
-    if (caseIndex === -1) return false;
-
-    data.cases.splice(caseIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteCase(id: string): Promise<boolean> {
+    return supabaseStore.deleteCase(id);
   }
 
-  getStages(): CaseStage[] {
-    return this.getData().stages;
+  getStages(): Promise<CaseStage[]> {
+    return supabaseStore.getStages();
   }
 
-  addStage(stage: Omit<CaseStage, 'id' | 'createdAt' | 'updatedAt'>): CaseStage {
-    const data = this.getData();
-    const newStage: CaseStage = {
-      ...stage,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.stages.push(newStage);
-    this.saveData(data);
-    return newStage;
+  addStage(stage: Omit<CaseStage, 'id' | 'createdAt' | 'updatedAt'>): Promise<CaseStage> {
+    return supabaseStore.addStage(stage);
   }
 
-  updateStage(id: string, updates: Partial<CaseStage>): CaseStage | null {
-    const data = this.getData();
-    const stageIndex = data.stages.findIndex(s => s.id === id);
-    if (stageIndex === -1) return null;
-
-    data.stages[stageIndex] = {
-      ...data.stages[stageIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.stages[stageIndex];
+  updateStage(id: string, updates: Partial<CaseStage>): Promise<CaseStage | null> {
+    return supabaseStore.updateStage(id, updates);
   }
 
-  deleteStage(id: string): boolean {
-    const data = this.getData();
-    const stageIndex = data.stages.findIndex(s => s.id === id);
-    if (stageIndex === -1) return false;
-
-    data.stages.splice(stageIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteStage(id: string): Promise<boolean> {
+    return supabaseStore.deleteStage(id);
   }
 
-  getClientFees(clientId?: string): ClientFee[] {
-    const fees = this.getData().clientFees;
-    return clientId ? fees.filter(fee => fee.clientId === clientId) : fees;
+  getClientFees(clientId?: string): Promise<ClientFee[]> {
+    return supabaseStore.getClientFees(clientId);
   }
 
-  addClientFee(fee: Omit<ClientFee, 'id' | 'createdAt' | 'updatedAt'>): ClientFee {
-    const data = this.getData();
-    const newFee: ClientFee = {
-      ...fee,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.clientFees.push(newFee);
-    this.saveData(data);
-    return newFee;
+  addClientFee(fee: Omit<ClientFee, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientFee> {
+    return supabaseStore.addClientFee(fee);
   }
 
-  updateClientFee(id: string, updates: Partial<ClientFee>): ClientFee | null {
-    const data = this.getData();
-    const feeIndex = data.clientFees.findIndex(f => f.id === id);
-    if (feeIndex === -1) return null;
-
-    data.clientFees[feeIndex] = {
-      ...data.clientFees[feeIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.clientFees[feeIndex];
+  updateClientFee(id: string, updates: Partial<ClientFee>): Promise<ClientFee | null> {
+    return supabaseStore.updateClientFee(id, updates);
   }
 
-  deleteClientFee(id: string): boolean {
-    const data = this.getData();
-    const feeIndex = data.clientFees.findIndex(f => f.id === id);
-    if (feeIndex === -1) return false;
-
-    data.clientFees.splice(feeIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteClientFee(id: string): Promise<boolean> {
+    return supabaseStore.deleteClientFee(id);
   }
 
-  getClientPayments(clientId?: string): ClientPayment[] {
-    const payments = this.getData().clientPayments;
-    return clientId ? payments.filter(payment => payment.clientId === clientId) : payments;
+  getClientPayments(clientId?: string): Promise<ClientPayment[]> {
+    return supabaseStore.getClientPayments(clientId);
   }
 
-  addClientPayment(payment: Omit<ClientPayment, 'id' | 'createdAt' | 'updatedAt'>): ClientPayment {
-    const data = this.getData();
-    const newPayment: ClientPayment = {
-      ...payment,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.clientPayments.push(newPayment);
-    this.saveData(data);
-    return newPayment;
+  addClientPayment(payment: Omit<ClientPayment, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientPayment> {
+    return supabaseStore.addClientPayment(payment);
   }
 
-  updateClientPayment(id: string, updates: Partial<ClientPayment>): ClientPayment | null {
-    const data = this.getData();
-    const paymentIndex = data.clientPayments.findIndex(p => p.id === id);
-    if (paymentIndex === -1) return null;
-
-    data.clientPayments[paymentIndex] = {
-      ...data.clientPayments[paymentIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.clientPayments[paymentIndex];
+  updateClientPayment(id: string, updates: Partial<ClientPayment>): Promise<ClientPayment | null> {
+    return supabaseStore.updateClientPayment(id, updates);
   }
 
-  deleteClientPayment(id: string): boolean {
-    const data = this.getData();
-    const paymentIndex = data.clientPayments.findIndex(p => p.id === id);
-    if (paymentIndex === -1) return false;
-
-    data.clientPayments.splice(paymentIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteClientPayment(id: string): Promise<boolean> {
+    return supabaseStore.deleteClientPayment(id);
   }
 
-  getClientExpenses(clientId?: string): ClientExpense[] {
-    const expenses = this.getData().clientExpenses;
-    return clientId ? expenses.filter(expense => expense.clientId === clientId) : expenses;
+  getClientExpenses(clientId?: string): Promise<ClientExpense[]> {
+    return supabaseStore.getClientExpenses(clientId);
   }
 
-  addClientExpense(expense: Omit<ClientExpense, 'id' | 'createdAt' | 'updatedAt'>): ClientExpense {
-    const data = this.getData();
-    const newExpense: ClientExpense = {
-      ...expense,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.clientExpenses.push(newExpense);
-    this.saveData(data);
-    return newExpense;
+  addClientExpense(expense: Omit<ClientExpense, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientExpense> {
+    return supabaseStore.addClientExpense(expense);
   }
 
-  updateClientExpense(id: string, updates: Partial<ClientExpense>): ClientExpense | null {
-    const data = this.getData();
-    const expenseIndex = data.clientExpenses.findIndex(e => e.id === id);
-    if (expenseIndex === -1) return null;
-
-    data.clientExpenses[expenseIndex] = {
-      ...data.clientExpenses[expenseIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.clientExpenses[expenseIndex];
+  updateClientExpense(id: string, updates: Partial<ClientExpense>): Promise<ClientExpense | null> {
+    return supabaseStore.updateClientExpense(id, updates);
   }
 
-  deleteClientExpense(id: string): boolean {
-    const data = this.getData();
-    const expenseIndex = data.clientExpenses.findIndex(e => e.id === id);
-    if (expenseIndex === -1) return false;
-
-    data.clientExpenses.splice(expenseIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteClientExpense(id: string): Promise<boolean> {
+    return supabaseStore.deleteClientExpense(id);
   }
 
-  getOfficeIncome(): OfficeIncome[] {
-    return this.getData().officeIncome;
+  getOfficeIncome(): Promise<OfficeIncome[]> {
+    return supabaseStore.getOfficeIncome();
   }
 
-  addOfficeIncome(income: Omit<OfficeIncome, 'id' | 'createdAt' | 'updatedAt'>): OfficeIncome {
-    const data = this.getData();
-    const newIncome: OfficeIncome = {
-      ...income,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.officeIncome.push(newIncome);
-    this.saveData(data);
-    return newIncome;
+  addOfficeIncome(income: Omit<OfficeIncome, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeIncome> {
+    return supabaseStore.addOfficeIncome(income);
   }
 
-  updateOfficeIncome(id: string, updates: Partial<OfficeIncome>): OfficeIncome | null {
-    const data = this.getData();
-    const incomeIndex = data.officeIncome.findIndex(i => i.id === id);
-    if (incomeIndex === -1) return null;
-
-    data.officeIncome[incomeIndex] = {
-      ...data.officeIncome[incomeIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.officeIncome[incomeIndex];
+  updateOfficeIncome(id: string, updates: Partial<OfficeIncome>): Promise<OfficeIncome | null> {
+    return supabaseStore.updateOfficeIncome(id, updates);
   }
 
-  deleteOfficeIncome(id: string): boolean {
-    const data = this.getData();
-    const incomeIndex = data.officeIncome.findIndex(i => i.id === id);
-    if (incomeIndex === -1) return false;
-
-    data.officeIncome.splice(incomeIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteOfficeIncome(id: string): Promise<boolean> {
+    return supabaseStore.deleteOfficeIncome(id);
   }
 
-  getOfficeExpenses(): OfficeExpense[] {
-    return this.getData().officeExpenses;
+  getOfficeExpenses(): Promise<OfficeExpense[]> {
+    return supabaseStore.getOfficeExpenses();
   }
 
-  addOfficeExpense(expense: Omit<OfficeExpense, 'id' | 'createdAt' | 'updatedAt'>): OfficeExpense {
-    const data = this.getData();
-    const newExpense: OfficeExpense = {
-      ...expense,
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    data.officeExpenses.push(newExpense);
-    this.saveData(data);
-    return newExpense;
+  addOfficeExpense(expense: Omit<OfficeExpense, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeExpense> {
+    return supabaseStore.addOfficeExpense(expense);
   }
 
-  updateOfficeExpense(id: string, updates: Partial<OfficeExpense>): OfficeExpense | null {
-    const data = this.getData();
-    const expenseIndex = data.officeExpenses.findIndex(e => e.id === id);
-    if (expenseIndex === -1) return null;
-
-    data.officeExpenses[expenseIndex] = {
-      ...data.officeExpenses[expenseIndex],
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.saveData(data);
-    return data.officeExpenses[expenseIndex];
+  updateOfficeExpense(id: string, updates: Partial<OfficeExpense>): Promise<OfficeExpense | null> {
+    return supabaseStore.updateOfficeExpense(id, updates);
   }
 
-  deleteOfficeExpense(id: string): boolean {
-    const data = this.getData();
-    const expenseIndex = data.officeExpenses.findIndex(e => e.id === id);
-    if (expenseIndex === -1) return false;
-
-    data.officeExpenses.splice(expenseIndex, 1);
-    this.saveData(data);
-    return true;
+  deleteOfficeExpense(id: string): Promise<boolean> {
+    return supabaseStore.deleteOfficeExpense(id);
   }
 
-  getClientBalance(clientId: string): ClientBalance {
-    const fees = this.getClientFees(clientId);
-    const payments = this.getClientPayments(clientId);
-    const expenses = this.getClientExpenses(clientId);
-
-    const totalFees = fees.reduce((sum, fee) => sum + fee.amount, 0);
-    const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
-    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    
-    const balance = totalFees + totalExpenses - totalPayments;
-
-    return {
-      totalFees,
-      totalPayments,
-      totalExpenses,
-      balance
-    };
+  getClientBalance(clientId: string): Promise<ClientBalance> {
+    return supabaseStore.getClientBalance(clientId);
   }
 
-  exportData(): string {
-    const data = this.getData();
-    return JSON.stringify(data, null, 2);
+  exportData(): Promise<string> {
+    return supabaseStore.exportData();
   }
 
-  importData(jsonData: string): boolean {
-    try {
-      const data = JSON.parse(jsonData);
-      this.convertDates(data);
-      this.saveData(data);
-      return true;
-    } catch (error) {
-      console.error('Error importing data:', error);
-      return false;
-    }
+  importData(jsonData: string): Promise<boolean> {
+    return supabaseStore.importData(jsonData);
   }
 
-  clearAllData(): void {
-    localStorage.removeItem(this.storageKey);
-    this.cache = { ...this.defaultData };
+  clearAllData(): Promise<void> {
+    return supabaseStore.clearAllData();
   }
 }
 
