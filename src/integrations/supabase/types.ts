@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
-  }
   public: {
     Tables: {
       api_keys: {
@@ -65,364 +60,6 @@ export type Database = {
           is_active?: boolean | null
           setting_name?: string
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      appointments: {
-        Row: {
-          appointment_date: string
-          created_at: string
-          description: string | null
-          id: string
-          location: string | null
-          time: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          appointment_date: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          location?: string | null
-          time?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          appointment_date?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          location?: string | null
-          time?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      case_expenses: {
-        Row: {
-          amount: number
-          case_id: string
-          created_at: string
-          description: string
-          expense_date: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          case_id: string
-          created_at?: string
-          description: string
-          expense_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          case_id?: string
-          created_at?: string
-          description?: string
-          expense_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      case_fees: {
-        Row: {
-          amount: number
-          case_id: string
-          created_at: string
-          description: string
-          fee_date: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          case_id: string
-          created_at?: string
-          description: string
-          fee_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          case_id?: string
-          created_at?: string
-          description?: string
-          fee_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      case_payments: {
-        Row: {
-          amount: number
-          case_id: string
-          created_at: string
-          description: string
-          id: string
-          payment_date: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          case_id: string
-          created_at?: string
-          description: string
-          id?: string
-          payment_date?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          case_id?: string
-          created_at?: string
-          description?: string
-          id?: string
-          payment_date?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      case_stages: {
-        Row: {
-          case_id: string | null
-          court_name: string
-          created_at: string
-          first_session_date: string | null
-          id: string
-          is_resolved: boolean | null
-          resolution_date: string | null
-          resolution_details: string | null
-          stage_name: string
-          updated_at: string
-        }
-        Insert: {
-          case_id?: string | null
-          court_name: string
-          created_at?: string
-          first_session_date?: string | null
-          id?: string
-          is_resolved?: boolean | null
-          resolution_date?: string | null
-          resolution_details?: string | null
-          stage_name: string
-          updated_at?: string
-        }
-        Update: {
-          case_id?: string | null
-          court_name?: string
-          created_at?: string
-          first_session_date?: string | null
-          id?: string
-          is_resolved?: boolean | null
-          resolution_date?: string | null
-          resolution_details?: string | null
-          stage_name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "case_stages_case_id_fkey"
-            columns: ["case_id"]
-            isOneToOne: false
-            referencedRelation: "cases"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cases: {
-        Row: {
-          case_number: string
-          client_id: string | null
-          created_at: string
-          description: string | null
-          id: string
-          status: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          case_number: string
-          client_id?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          status?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          case_number?: string
-          client_id?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          status?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cases_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      client_expenses: {
-        Row: {
-          amount: number
-          client_id: string | null
-          created_at: string
-          description: string
-          expense_date: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          client_id?: string | null
-          created_at?: string
-          description: string
-          expense_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          client_id?: string | null
-          created_at?: string
-          description?: string
-          expense_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_expenses_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      client_fees: {
-        Row: {
-          amount: number
-          client_id: string | null
-          created_at: string
-          description: string
-          fee_date: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          client_id?: string | null
-          created_at?: string
-          description: string
-          fee_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          client_id?: string | null
-          created_at?: string
-          description?: string
-          fee_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_fees_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      client_payments: {
-        Row: {
-          amount: number
-          client_id: string | null
-          created_at: string
-          description: string
-          id: string
-          payment_date: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          client_id?: string | null
-          created_at?: string
-          description: string
-          id?: string
-          payment_date?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          client_id?: string | null
-          created_at?: string
-          description?: string
-          id?: string
-          payment_date?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_payments_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      clients: {
-        Row: {
-          address: string | null
-          created_at: string
-          email: string | null
-          id: string
-          name: string
-          notes: string | null
-          phone: string | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          name: string
-          notes?: string | null
-          phone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          name?: string
-          notes?: string | null
-          phone?: string | null
-          updated_at?: string
         }
         Relationships: []
       }
@@ -612,60 +249,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      office_expenses: {
-        Row: {
-          amount: number
-          created_at: string
-          description: string
-          expense_date: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          description: string
-          expense_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          description?: string
-          expense_date?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      office_income: {
-        Row: {
-          amount: number
-          created_at: string
-          description: string
-          id: string
-          income_date: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          description: string
-          id?: string
-          income_date?: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          description?: string
-          id?: string
-          income_date?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       payments: {
         Row: {
@@ -930,68 +513,6 @@ export type Database = {
           },
         ]
       }
-      sessions: {
-        Row: {
-          case_number: string
-          client_name: string
-          court_name: string
-          created_at: string
-          id: string
-          is_resolved: boolean | null
-          is_transferred: boolean | null
-          next_postponement_reason: string | null
-          next_session_date: string | null
-          opponent: string | null
-          postponement_reason: string | null
-          resolution_date: string | null
-          session_date: string
-          stage_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          case_number: string
-          client_name: string
-          court_name: string
-          created_at?: string
-          id?: string
-          is_resolved?: boolean | null
-          is_transferred?: boolean | null
-          next_postponement_reason?: string | null
-          next_session_date?: string | null
-          opponent?: string | null
-          postponement_reason?: string | null
-          resolution_date?: string | null
-          session_date: string
-          stage_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          case_number?: string
-          client_name?: string
-          court_name?: string
-          created_at?: string
-          id?: string
-          is_resolved?: boolean | null
-          is_transferred?: boolean | null
-          next_postponement_reason?: string | null
-          next_session_date?: string | null
-          opponent?: string | null
-          postponement_reason?: string | null
-          resolution_date?: string | null
-          session_date?: string
-          stage_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sessions_stage_id_fkey"
-            columns: ["stage_id"]
-            isOneToOne: false
-            referencedRelation: "case_stages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       subscriptions: {
         Row: {
           created_at: string
@@ -1077,42 +598,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      tasks: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          description: string | null
-          due_date: string | null
-          id: string
-          is_completed: boolean | null
-          priority: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          is_completed?: boolean | null
-          priority?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          is_completed?: boolean | null
-          priority?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       trips: {
         Row: {
@@ -1226,25 +711,21 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -1262,16 +743,14 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -1287,16 +766,14 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -1312,16 +789,14 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -1329,16 +804,14 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof Database
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never

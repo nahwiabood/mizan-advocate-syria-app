@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,14 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { dataStore } from '@/store/dataStore';
-import { OfficeIncome, OfficeExpense, ClientBalance, Client } from '@/types';
+import { OfficeIncome, OfficeExpense, ClientBalance } from '@/types';
 import { toast } from 'sonner';
 
 const OfficeAccounting = () => {
-  const [incomes, setIncomes] = useState<OfficeIncome[]>([]);
-  const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [incomes, setIncomes] = useState<OfficeIncome[]>(dataStore.getOfficeIncome());
+  const [expenses, setExpenses] = useState<OfficeExpense[]>(dataStore.getOfficeExpenses());
+  const [clients] = useState(dataStore.getClients());
   
   const [incomeForm, setIncomeForm] = useState({
     description: '',
@@ -41,62 +40,19 @@ const OfficeAccounting = () => {
   const [editingIncome, setEditingIncome] = useState<OfficeIncome | null>(null);
   const [editingExpense, setEditingExpense] = useState<OfficeExpense | null>(null);
 
-  // Load data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [incomesData, expensesData, clientsData] = await Promise.all([
-          dataStore.getOfficeIncome(),
-          dataStore.getOfficeExpenses(),
-          dataStore.getClients()
-        ]);
-        
-        setIncomes(incomesData);
-        setExpenses(expensesData);
-        setClients(clientsData);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        toast.error('فشل في تحميل البيانات');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
   // Calculate totals
   const totalOfficeIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
   const totalOfficeExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
   // Calculate client balances - Updated logic: positive balance means client owes money
-  const getClientBalances = async () => {
-    const balances = await Promise.all(
-      clients.map(async (client) => {
-        const balance = await dataStore.getClientBalance(client.id);
-        return {
-          ...balance,
-          clientName: client.name,
-          clientId: client.id
-        };
-      })
-    );
-    return balances;
-  };
-
-  const [clientBalances, setClientBalances] = useState<(ClientBalance & { clientName: string; clientId: string })[]>([]);
-
-  useEffect(() => {
-    const loadBalances = async () => {
-      if (clients.length > 0) {
-        const balances = await getClientBalances();
-        setClientBalances(balances);
-      }
+  const clientBalances: (ClientBalance & { clientName: string; clientId: string })[] = clients.map(client => {
+    const balance = dataStore.getClientBalance(client.id);
+    return {
+      ...balance,
+      clientName: client.name,
+      clientId: client.id
     };
-    
-    loadBalances();
-  }, [clients]);
+  });
 
   const totalClientFees = clientBalances.reduce((sum, cb) => sum + cb.totalFees, 0);
   const totalClientPayments = clientBalances.reduce((sum, cb) => sum + cb.totalPayments, 0);
@@ -106,14 +62,14 @@ const OfficeAccounting = () => {
   // Net office balance: office income - office expenses + client payments - client expenses
   const netOfficeBalance = totalOfficeIncome - totalOfficeExpenses + totalClientPayments - totalClientExpenses;
 
-  const handleAddIncome = async () => {
+  const handleAddIncome = () => {
     if (!incomeForm.description || !incomeForm.amount) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
     try {
-      const newIncome = await dataStore.addOfficeIncome({
+      const newIncome = dataStore.addOfficeIncome({
         description: incomeForm.description,
         amount: parseFloat(incomeForm.amount),
         incomeDate: new Date(incomeForm.incomeDate),
@@ -140,14 +96,14 @@ const OfficeAccounting = () => {
     setIsIncomeDialogOpen(true);
   };
 
-  const handleUpdateIncome = async () => {
+  const handleUpdateIncome = () => {
     if (!editingIncome || !incomeForm.description || !incomeForm.amount) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
     try {
-      const updatedIncome = await dataStore.updateOfficeIncome(editingIncome.id, {
+      const updatedIncome = dataStore.updateOfficeIncome(editingIncome.id, {
         description: incomeForm.description,
         amount: parseFloat(incomeForm.amount),
         incomeDate: new Date(incomeForm.incomeDate),
@@ -166,10 +122,10 @@ const OfficeAccounting = () => {
     }
   };
 
-  const handleDeleteIncome = async (id: string) => {
+  const handleDeleteIncome = (id: string) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الإيراد؟')) {
       try {
-        await dataStore.deleteOfficeIncome(id);
+        dataStore.deleteOfficeIncome(id);
         setIncomes(incomes.filter(i => i.id !== id));
         toast.success('تم حذف الإيراد بنجاح');
       } catch (error) {
@@ -178,14 +134,14 @@ const OfficeAccounting = () => {
     }
   };
 
-  const handleAddExpense = async () => {
+  const handleAddExpense = () => {
     if (!expenseForm.description || !expenseForm.amount) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
     try {
-      const newExpense = await dataStore.addOfficeExpense({
+      const newExpense = dataStore.addOfficeExpense({
         description: expenseForm.description,
         amount: parseFloat(expenseForm.amount),
         expenseDate: new Date(expenseForm.expenseDate),
@@ -212,14 +168,14 @@ const OfficeAccounting = () => {
     setIsExpenseDialogOpen(true);
   };
 
-  const handleUpdateExpense = async () => {
+  const handleUpdateExpense = () => {
     if (!editingExpense || !expenseForm.description || !expenseForm.amount) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
     }
 
     try {
-      const updatedExpense = await dataStore.updateOfficeExpense(editingExpense.id, {
+      const updatedExpense = dataStore.updateOfficeExpense(editingExpense.id, {
         description: expenseForm.description,
         amount: parseFloat(expenseForm.amount),
         expenseDate: new Date(expenseForm.expenseDate),
@@ -238,10 +194,10 @@ const OfficeAccounting = () => {
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
+  const handleDeleteExpense = (id: string) => {
     if (window.confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
       try {
-        await dataStore.deleteOfficeExpense(id);
+        dataStore.deleteOfficeExpense(id);
         setExpenses(expenses.filter(e => e.id !== id));
         toast.success('تم حذف المصروف بنجاح');
       } catch (error) {
@@ -249,16 +205,6 @@ const OfficeAccounting = () => {
       }
     }
   };
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="container mx-auto p-4">
-          <div className="text-center">جاري التحميل...</div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>

@@ -24,7 +24,6 @@ const Index = () => {
   const [showUnTransferred, setShowUnTransferred] = useState(false);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
-  const [loading, setLoading] = useState(true);
   const printContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,23 +59,10 @@ const Index = () => {
     setUpcomingSessions(upcoming);
   }, [selectedDate, sessions, appointments]);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [sessionsData, tasksData, appointmentsData] = await Promise.all([
-        dataStore.getSessions(),
-        dataStore.getTasks(),
-        dataStore.getAppointments()
-      ]);
-      
-      setSessions(sessionsData);
-      setTasks(tasksData);
-      setAppointments(appointmentsData);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-    }
+  const loadData = () => {
+    setSessions(dataStore.getSessions());
+    setTasks(dataStore.getTasks());
+    setAppointments(dataStore.getAppointments());
   };
 
   const getDisplaySessions = () => {
@@ -244,19 +230,6 @@ const Index = () => {
       printWindow.print();
     }
   };
-
-  if (loading) {
-    return (
-      <Layout onPrintSchedule={handlePrintSchedule}>
-        <div className="container mx-auto p-2 sm:p-4 min-h-screen flex items-center justify-center" dir="rtl">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>جاري تحميل البيانات...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout onPrintSchedule={handlePrintSchedule}>
