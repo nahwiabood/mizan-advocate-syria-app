@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,7 +80,8 @@ const OfficeAccounting = () => {
       const newIncome = await dataStore.addOfficeIncome({
         description: incomeForm.description,
         amount: parseFloat(incomeForm.amount),
-        incomeDate: incomeForm.incomeDate
+        incomeDate: incomeForm.incomeDate,
+        source: incomeForm.source
       });
 
       setOfficeIncome([newIncome, ...officeIncome]);
@@ -97,7 +99,8 @@ const OfficeAccounting = () => {
       const updatedIncome = await dataStore.updateOfficeIncome(editingIncome.id, {
         description: incomeForm.description,
         amount: parseFloat(incomeForm.amount),
-        incomeDate: incomeForm.incomeDate
+        incomeDate: incomeForm.incomeDate,
+        source: incomeForm.source
       });
 
       if (updatedIncome) {
@@ -121,7 +124,8 @@ const OfficeAccounting = () => {
       const newExpense = await dataStore.addOfficeExpense({
         description: expenseForm.description,
         amount: parseFloat(expenseForm.amount),
-        expenseDate: expenseForm.expenseDate
+        expenseDate: expenseForm.expenseDate,
+        category: expenseForm.category
       });
 
       setOfficeExpenses([newExpense, ...officeExpenses]);
@@ -139,7 +143,8 @@ const OfficeAccounting = () => {
       const updatedExpense = await dataStore.updateOfficeExpense(editingExpense.id, {
         description: expenseForm.description,
         amount: parseFloat(expenseForm.amount),
-        expenseDate: expenseForm.expenseDate
+        expenseDate: expenseForm.expenseDate,
+        category: expenseForm.category
       });
 
       if (updatedExpense) {
@@ -186,7 +191,7 @@ const OfficeAccounting = () => {
       description: income.description,
       amount: income.amount.toString(),
       incomeDate: income.incomeDate,
-      source: 'client_fees'
+      source: income.source || 'client_fees'
     });
     setEditingIncome(income);
     setIsIncomeDialogOpen(true);
@@ -203,7 +208,7 @@ const OfficeAccounting = () => {
       description: expense.description,
       amount: expense.amount.toString(),
       expenseDate: expense.expenseDate,
-      category: 'office'
+      category: expense.category || 'office'
     });
     setEditingExpense(expense);
     setIsExpenseDialogOpen(true);
