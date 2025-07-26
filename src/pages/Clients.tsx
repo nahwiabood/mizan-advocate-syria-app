@@ -209,12 +209,12 @@ const Clients = () => {
   };
 
   const handleAddCase = async () => {
-    if (!caseForm.opponent || !caseForm.subject || !selectedClientId) return;
+    if (!caseForm.title || !caseForm.subject || !caseForm.opponent || !selectedClientId) return;
 
     try {
       await dataStore.addCase({
         clientId: selectedClientId,
-        title: caseForm.title || caseForm.subject,
+        title: caseForm.title,
         description: caseForm.description || '',
         opponent: caseForm.opponent,
         subject: caseForm.subject,
@@ -231,11 +231,11 @@ const Clients = () => {
   };
 
   const handleEditCase = async () => {
-    if (!editingCase || !caseForm.opponent || !caseForm.subject) return;
+    if (!editingCase || !caseForm.title || !caseForm.subject || !caseForm.opponent) return;
 
     try {
       await dataStore.updateCase(editingCase.id, {
-        title: caseForm.title || caseForm.subject,
+        title: caseForm.title,
         description: caseForm.description,
         opponent: caseForm.opponent,
         subject: caseForm.subject,
@@ -260,7 +260,7 @@ const Clients = () => {
         courtName: stageForm.courtName,
         caseNumber: stageForm.caseNumber,
         stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-        notes: stageForm.notes,
+        notes: stageForm.notes || '',
         firstSessionDate: new Date(),
         status: 'active'
       });
@@ -281,7 +281,7 @@ const Clients = () => {
         courtName: stageForm.courtName,
         caseNumber: stageForm.caseNumber,
         stageName: `${stageForm.courtName} - ${stageForm.caseNumber}`,
-        notes: stageForm.notes
+        notes: stageForm.notes || ''
       });
 
       resetStageForm();
