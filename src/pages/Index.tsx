@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, MapPin, User, FileText, AlertTriangle, CheckCircle, Users, Gavel, Calendar as CalendarIcon } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
 import { Session, Task, Appointment, DayData } from '@/types';
@@ -123,24 +124,43 @@ const Index = () => {
       <div className="container mx-auto p-4 space-y-6 max-w-full" dir="rtl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Calendar */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-right flex items-center gap-2">
-                <Calendar className="h-6 w-6 text-primary" />
-                التقويم والأنشطة
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ArabicCalendar 
-                sessions={sessions}
-                appointments={appointments}
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
-              />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-right flex items-center gap-2">
+                  <Calendar className="h-6 w-6 text-primary" />
+                  التقويم والأنشطة
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ArabicCalendar 
+                  sessions={sessions}
+                  appointments={appointments}
+                  selectedDate={selectedDate}
+                  onDateSelect={handleDateSelect}
+                />
+              </CardContent>
+            </Card>
 
-          {/* Tasks Section */}
+            {/* Sessions directly under calendar */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-right flex items-center gap-2">
+                  <Gavel className="h-6 w-6 text-blue-600" />
+                  الجلسات
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SessionsTable 
+                  sessions={sessions.slice(0, 5)} 
+                  selectedDate={selectedDate}
+                  onSessionUpdate={loadData}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tasks Section with Tabs */}
           <Card>
             <CardHeader>
               <CardTitle className="text-right flex items-center gap-2">
@@ -148,85 +168,51 @@ const Index = () => {
                 المهام
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Incomplete Tasks (Default Tab) */}
-              <div>
-                <h3 className="font-semibold text-right mb-4 flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-yellow-600" />
-                  المهام غير المنجزة ({incompleteTasks.length})
-                </h3>
-                <TasksTable 
-                  tasks={incompleteTasks}
-                  onTaskUpdate={loadData}
-                />
-              </div>
-
-              {/* Completed Tasks (Secondary Tab) */}
-              {completedTasks.length > 0 && (
-                <div className="border-t pt-6">
-                  <h3 className="font-semibold text-right mb-4 flex items-center gap-2 text-green-700">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+            <CardContent>
+              <Tabs defaultValue="incomplete" className="w-full" dir="rtl">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="incomplete" className="text-right">
+                    المهام غير المنجزة
+                  </TabsTrigger>
+                  <TabsTrigger value="completed" className="text-right">
                     المهام المنجزة ({completedTasks.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {completedTasks.slice(0, 5).map((task) => (
-                      <div key={task.id} className="border rounded-lg p-3 bg-green-50">
-                        <div className="flex items-center justify-between gap-4">
-                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-                          <div className="flex-1 text-right">
-                            <h4 className="font-medium line-through text-gray-600">
-                              {task.title}
-                            </h4>
-                            {task.dueDate && (
-                              <p className="text-sm text-gray-500">
-                                {formatSyrianDate(task.dueDate)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="incomplete" className="space-y-4">
+                  <TasksTable 
+                    tasks={incompleteTasks}
+                    onTaskUpdate={loadData}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="completed" className="space-y-4">
+                  <TasksTable 
+                    tasks={completedTasks}
+                    onTaskUpdate={loadData}
+                  />
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
 
-        {/* Recent Activities */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-right flex items-center gap-2">
-                <Gavel className="h-6 w-6 text-blue-600" />
-                آخر الجلسات
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SessionsTable 
-                sessions={sessions.slice(0, 5)} 
-                selectedDate={selectedDate}
-                onSessionUpdate={loadData}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-right flex items-center gap-2">
-                <CalendarIcon className="h-6 w-6 text-green-600" />
-                آخر المواعيد
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AppointmentsTable 
-                appointments={appointments.slice(0, 5)} 
-                selectedDate={selectedDate}
-                onAppointmentUpdate={loadData}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Appointments Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-right flex items-center gap-2">
+              <CalendarIcon className="h-6 w-6 text-green-600" />
+              المواعيد
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AppointmentsTable 
+              appointments={appointments.slice(0, 5)} 
+              selectedDate={selectedDate}
+              onAppointmentUpdate={loadData}
+            />
+          </CardContent>
+        </Card>
 
         {/* Day Details Dialog */}
         <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
