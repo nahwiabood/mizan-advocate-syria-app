@@ -10,32 +10,55 @@ class SupabaseStore {
       .select('*')
       .order('session_date', { ascending: false });
     
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error('Error fetching sessions:', error);
+      return [];
+    }
+
+    return data.map(session => ({
+      id: session.id,
+      stageId: session.stage_id,
+      courtName: session.court_name,
+      caseNumber: session.case_number,
+      sessionDate: new Date(session.session_date),
+      clientName: session.client_name,
+      opponent: session.opponent || '',
+      postponementReason: session.postponement_reason,
+      nextSessionDate: session.next_session_date ? new Date(session.next_session_date) : undefined,
+      nextPostponementReason: session.next_postponement_reason,
+      isTransferred: session.is_transferred || false,
+      isResolved: session.is_resolved || false,
+      resolutionDate: session.resolution_date ? new Date(session.resolution_date) : undefined,
+      createdAt: new Date(session.created_at),
+      updatedAt: new Date(session.updated_at)
+    }));
   }
 
   async addSession(session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>): Promise<Session> {
     const { data, error } = await supabase
       .from('sessions')
-      .insert([{
+      .insert({
         stage_id: session.stageId,
         court_name: session.courtName,
         case_number: session.caseNumber,
-        session_date: session.sessionDate,
+        session_date: session.sessionDate.toISOString().split('T')[0],
         client_name: session.clientName,
         opponent: session.opponent,
-        next_session_date: session.nextSessionDate,
         postponement_reason: session.postponementReason,
+        next_session_date: session.nextSessionDate?.toISOString().split('T')[0],
         next_postponement_reason: session.nextPostponementReason,
-        is_transferred: session.isTransferred || false,
-        is_resolved: session.isResolved || false,
-        resolution_date: session.resolutionDate
-      }])
+        is_transferred: session.isTransferred,
+        is_resolved: session.isResolved,
+        resolution_date: session.resolutionDate?.toISOString().split('T')[0]
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding session:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       stageId: data.stage_id,
@@ -43,12 +66,12 @@ class SupabaseStore {
       caseNumber: data.case_number,
       sessionDate: new Date(data.session_date),
       clientName: data.client_name,
-      opponent: data.opponent,
-      nextSessionDate: data.next_session_date ? new Date(data.next_session_date) : undefined,
+      opponent: data.opponent || '',
       postponementReason: data.postponement_reason,
+      nextSessionDate: data.next_session_date ? new Date(data.next_session_date) : undefined,
       nextPostponementReason: data.next_postponement_reason,
-      isTransferred: data.is_transferred,
-      isResolved: data.is_resolved,
+      isTransferred: data.is_transferred || false,
+      isResolved: data.is_resolved || false,
       resolutionDate: data.resolution_date ? new Date(data.resolution_date) : undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -58,18 +81,18 @@ class SupabaseStore {
   async updateSession(id: string, updates: Partial<Session>): Promise<Session | null> {
     const updateData: any = {};
     
-    if (updates.stageId) updateData.stage_id = updates.stageId;
-    if (updates.courtName) updateData.court_name = updates.courtName;
-    if (updates.caseNumber) updateData.case_number = updates.caseNumber;
-    if (updates.sessionDate) updateData.session_date = updates.sessionDate;
-    if (updates.clientName) updateData.client_name = updates.clientName;
+    if (updates.stageId !== undefined) updateData.stage_id = updates.stageId;
+    if (updates.courtName !== undefined) updateData.court_name = updates.courtName;
+    if (updates.caseNumber !== undefined) updateData.case_number = updates.caseNumber;
+    if (updates.sessionDate !== undefined) updateData.session_date = updates.sessionDate.toISOString().split('T')[0];
+    if (updates.clientName !== undefined) updateData.client_name = updates.clientName;
     if (updates.opponent !== undefined) updateData.opponent = updates.opponent;
-    if (updates.nextSessionDate !== undefined) updateData.next_session_date = updates.nextSessionDate;
     if (updates.postponementReason !== undefined) updateData.postponement_reason = updates.postponementReason;
+    if (updates.nextSessionDate !== undefined) updateData.next_session_date = updates.nextSessionDate?.toISOString().split('T')[0];
     if (updates.nextPostponementReason !== undefined) updateData.next_postponement_reason = updates.nextPostponementReason;
     if (updates.isTransferred !== undefined) updateData.is_transferred = updates.isTransferred;
     if (updates.isResolved !== undefined) updateData.is_resolved = updates.isResolved;
-    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate;
+    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate?.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('sessions')
@@ -77,10 +100,12 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating session:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       stageId: data.stage_id,
@@ -88,12 +113,12 @@ class SupabaseStore {
       caseNumber: data.case_number,
       sessionDate: new Date(data.session_date),
       clientName: data.client_name,
-      opponent: data.opponent,
-      nextSessionDate: data.next_session_date ? new Date(data.next_session_date) : undefined,
+      opponent: data.opponent || '',
       postponementReason: data.postponement_reason,
+      nextSessionDate: data.next_session_date ? new Date(data.next_session_date) : undefined,
       nextPostponementReason: data.next_postponement_reason,
-      isTransferred: data.is_transferred,
-      isResolved: data.is_resolved,
+      isTransferred: data.is_transferred || false,
+      isResolved: data.is_resolved || false,
       resolutionDate: data.resolution_date ? new Date(data.resolution_date) : undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -105,7 +130,7 @@ class SupabaseStore {
       .from('sessions')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -117,31 +142,10 @@ class SupabaseStore {
   }
 
   async transferSession(sessionId: string, nextDate: Date, reason: string): Promise<Session | null> {
-    // Update current session
-    await this.updateSession(sessionId, {
+    return this.updateSession(sessionId, {
       nextSessionDate: nextDate,
       nextPostponementReason: reason,
       isTransferred: true
-    });
-
-    // Get the current session to create a new one
-    const { data: currentSession } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .single();
-
-    if (!currentSession) return null;
-
-    // Create new session
-    return this.addSession({
-      stageId: currentSession.stage_id,
-      courtName: currentSession.court_name,
-      caseNumber: currentSession.case_number,
-      sessionDate: nextDate,
-      clientName: currentSession.client_name,
-      opponent: currentSession.opponent,
-      isTransferred: false
     });
   }
 
@@ -152,14 +156,18 @@ class SupabaseStore {
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
-    return (data || []).map(task => ({
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      return [];
+    }
+
+    return data.map(task => ({
       id: task.id,
       title: task.title,
       description: task.description,
-      priority: task.priority,
+      priority: task.priority as 'low' | 'medium' | 'high',
       dueDate: task.due_date ? new Date(task.due_date) : undefined,
-      isCompleted: task.is_completed,
+      isCompleted: task.is_completed || false,
       completedAt: task.completed_at ? new Date(task.completed_at) : undefined,
       createdAt: new Date(task.created_at),
       updatedAt: new Date(task.updated_at)
@@ -169,26 +177,29 @@ class SupabaseStore {
   async addTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
     const { data, error } = await supabase
       .from('tasks')
-      .insert([{
+      .insert({
         title: task.title,
         description: task.description,
         priority: task.priority,
-        due_date: task.dueDate,
-        is_completed: task.isCompleted || false,
-        completed_at: task.completedAt
-      }])
+        due_date: task.dueDate?.toISOString().split('T')[0],
+        is_completed: task.isCompleted,
+        completed_at: task.completedAt?.toISOString()
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding task:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       title: data.title,
       description: data.description,
-      priority: data.priority,
+      priority: data.priority as 'low' | 'medium' | 'high',
       dueDate: data.due_date ? new Date(data.due_date) : undefined,
-      isCompleted: data.is_completed,
+      isCompleted: data.is_completed || false,
       completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -198,12 +209,12 @@ class SupabaseStore {
   async updateTask(id: string, updates: Partial<Task>): Promise<Task | null> {
     const updateData: any = {};
     
-    if (updates.title) updateData.title = updates.title;
+    if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.priority) updateData.priority = updates.priority;
-    if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate;
+    if (updates.priority !== undefined) updateData.priority = updates.priority;
+    if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate?.toISOString().split('T')[0];
     if (updates.isCompleted !== undefined) updateData.is_completed = updates.isCompleted;
-    if (updates.completedAt !== undefined) updateData.completed_at = updates.completedAt;
+    if (updates.completedAt !== undefined) updateData.completed_at = updates.completedAt?.toISOString();
 
     const { data, error } = await supabase
       .from('tasks')
@@ -211,17 +222,19 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating task:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       title: data.title,
       description: data.description,
-      priority: data.priority,
+      priority: data.priority as 'low' | 'medium' | 'high',
       dueDate: data.due_date ? new Date(data.due_date) : undefined,
-      isCompleted: data.is_completed,
+      isCompleted: data.is_completed || false,
       completedAt: data.completed_at ? new Date(data.completed_at) : undefined,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -233,7 +246,7 @@ class SupabaseStore {
       .from('tasks')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -242,15 +255,21 @@ class SupabaseStore {
     const { data, error } = await supabase
       .from('appointments')
       .select('*')
-      .order('appointment_date', { ascending: false });
+      .order('appointment_date', { ascending: true });
     
-    if (error) throw error;
-    return (data || []).map(appointment => ({
+    if (error) {
+      console.error('Error fetching appointments:', error);
+      return [];
+    }
+
+    return data.map(appointment => ({
       id: appointment.id,
       title: appointment.title,
       description: appointment.description,
       appointmentDate: new Date(appointment.appointment_date),
       time: appointment.time,
+      duration: 60, // Default duration since it's not in DB
+      clientName: undefined,
       location: appointment.location,
       createdAt: new Date(appointment.created_at),
       updatedAt: new Date(appointment.updated_at)
@@ -260,24 +279,29 @@ class SupabaseStore {
   async addAppointment(appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
     const { data, error } = await supabase
       .from('appointments')
-      .insert([{
+      .insert({
         title: appointment.title,
         description: appointment.description,
-        appointment_date: appointment.appointmentDate,
+        appointment_date: appointment.appointmentDate.toISOString().split('T')[0],
         time: appointment.time,
         location: appointment.location
-      }])
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding appointment:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       title: data.title,
       description: data.description,
       appointmentDate: new Date(data.appointment_date),
       time: data.time,
+      duration: 60, // Default duration
+      clientName: undefined,
       location: data.location,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -287,9 +311,9 @@ class SupabaseStore {
   async updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment | null> {
     const updateData: any = {};
     
-    if (updates.title) updateData.title = updates.title;
+    if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.appointmentDate) updateData.appointment_date = updates.appointmentDate;
+    if (updates.appointmentDate !== undefined) updateData.appointment_date = updates.appointmentDate.toISOString().split('T')[0];
     if (updates.time !== undefined) updateData.time = updates.time;
     if (updates.location !== undefined) updateData.location = updates.location;
 
@@ -299,16 +323,20 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating appointment:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       title: data.title,
       description: data.description,
       appointmentDate: new Date(data.appointment_date),
       time: data.time,
+      duration: 60, // Default duration
+      clientName: undefined,
       location: data.location,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -320,7 +348,7 @@ class SupabaseStore {
       .from('appointments')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -329,15 +357,20 @@ class SupabaseStore {
     const { data, error } = await supabase
       .from('clients')
       .select('*')
-      .order('name');
+      .order('created_at', { ascending: false });
     
-    if (error) throw error;
-    return (data || []).map(client => ({
+    if (error) {
+      console.error('Error fetching clients:', error);
+      return [];
+    }
+
+    return data.map(client => ({
       id: client.id,
       name: client.name,
       phone: client.phone,
       email: client.email,
       address: client.address,
+      nationalId: undefined,
       notes: client.notes,
       createdAt: new Date(client.created_at),
       updatedAt: new Date(client.updated_at)
@@ -347,24 +380,28 @@ class SupabaseStore {
   async addClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> {
     const { data, error } = await supabase
       .from('clients')
-      .insert([{
+      .insert({
         name: client.name,
         phone: client.phone,
         email: client.email,
         address: client.address,
         notes: client.notes
-      }])
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding client:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       name: data.name,
       phone: data.phone,
       email: data.email,
       address: data.address,
+      nationalId: undefined,
       notes: data.notes,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -374,7 +411,7 @@ class SupabaseStore {
   async updateClient(id: string, updates: Partial<Client>): Promise<Client | null> {
     const updateData: any = {};
     
-    if (updates.name) updateData.name = updates.name;
+    if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.phone !== undefined) updateData.phone = updates.phone;
     if (updates.email !== undefined) updateData.email = updates.email;
     if (updates.address !== undefined) updateData.address = updates.address;
@@ -386,16 +423,19 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating client:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       name: data.name,
       phone: data.phone,
       email: data.email,
       address: data.address,
+      nationalId: undefined,
       notes: data.notes,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -407,7 +447,7 @@ class SupabaseStore {
       .from('clients')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -418,14 +458,20 @@ class SupabaseStore {
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
-    return (data || []).map(case_ => ({
+    if (error) {
+      console.error('Error fetching cases:', error);
+      return [];
+    }
+
+    return data.map(case_ => ({
       id: case_.id,
       clientId: case_.client_id,
-      caseNumber: case_.case_number,
       title: case_.title,
       description: case_.description,
-      status: case_.status,
+      opponent: '', // Default empty as not in DB
+      subject: case_.title, // Use title as subject
+      caseType: 'عام', // Default case type
+      status: case_.status as 'active' | 'closed' | 'pending',
       createdAt: new Date(case_.created_at),
       updatedAt: new Date(case_.updated_at)
     }));
@@ -434,25 +480,30 @@ class SupabaseStore {
   async addCase(case_: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>): Promise<Case> {
     const { data, error } = await supabase
       .from('cases')
-      .insert([{
+      .insert({
         client_id: case_.clientId,
-        case_number: case_.caseNumber,
+        case_number: case_.subject || case_.title,
         title: case_.title,
         description: case_.description,
         status: case_.status
-      }])
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding case:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
-      caseNumber: data.case_number,
       title: data.title,
       description: data.description,
-      status: data.status,
+      opponent: case_.opponent,
+      subject: case_.subject,
+      caseType: case_.caseType,
+      status: data.status as 'active' | 'closed' | 'pending',
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -461,11 +512,10 @@ class SupabaseStore {
   async updateCase(id: string, updates: Partial<Case>): Promise<Case | null> {
     const updateData: any = {};
     
-    if (updates.clientId !== undefined) updateData.client_id = updates.clientId;
-    if (updates.caseNumber) updateData.case_number = updates.caseNumber;
-    if (updates.title) updateData.title = updates.title;
+    if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.status) updateData.status = updates.status;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.subject !== undefined) updateData.case_number = updates.subject;
 
     const { data, error } = await supabase
       .from('cases')
@@ -473,17 +523,21 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating case:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
-      caseNumber: data.case_number,
       title: data.title,
       description: data.description,
-      status: data.status,
+      opponent: updates.opponent || '',
+      subject: updates.subject || data.title,
+      caseType: updates.caseType || 'عام',
+      status: data.status as 'active' | 'closed' | 'pending',
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -494,27 +548,34 @@ class SupabaseStore {
       .from('cases')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
-  // Case Stages
+  // Stages
   async getStages(): Promise<CaseStage[]> {
     const { data, error } = await supabase
       .from('case_stages')
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
-    return (data || []).map(stage => ({
+    if (error) {
+      console.error('Error fetching stages:', error);
+      return [];
+    }
+
+    return data.map(stage => ({
       id: stage.id,
       caseId: stage.case_id,
-      stageName: stage.stage_name,
       courtName: stage.court_name,
-      firstSessionDate: stage.first_session_date ? new Date(stage.first_session_date) : undefined,
+      caseNumber: '', // Default empty as not in current DB structure
+      stageName: stage.stage_name,
+      firstSessionDate: stage.first_session_date ? new Date(stage.first_session_date) : new Date(),
+      status: 'active' as 'active' | 'completed', // Default status
+      notes: undefined,
+      isResolved: stage.is_resolved || false,
       resolutionDate: stage.resolution_date ? new Date(stage.resolution_date) : undefined,
-      isResolved: stage.is_resolved,
-      resolutionDetails: stage.resolution_details,
+      decisionNumber: undefined,
       createdAt: new Date(stage.created_at),
       updatedAt: new Date(stage.updated_at)
     }));
@@ -523,29 +584,34 @@ class SupabaseStore {
   async addStage(stage: Omit<CaseStage, 'id' | 'createdAt' | 'updatedAt'>): Promise<CaseStage> {
     const { data, error } = await supabase
       .from('case_stages')
-      .insert([{
+      .insert({
         case_id: stage.caseId,
         stage_name: stage.stageName,
         court_name: stage.courtName,
-        first_session_date: stage.firstSessionDate,
-        resolution_date: stage.resolutionDate,
+        first_session_date: stage.firstSessionDate?.toISOString().split('T')[0],
         is_resolved: stage.isResolved || false,
-        resolution_details: stage.resolutionDetails
-      }])
+        resolution_date: stage.resolutionDate?.toISOString().split('T')[0]
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding stage:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       caseId: data.case_id,
-      stageName: data.stage_name,
       courtName: data.court_name,
-      firstSessionDate: data.first_session_date ? new Date(data.first_session_date) : undefined,
+      caseNumber: stage.caseNumber || '',
+      stageName: data.stage_name,
+      firstSessionDate: data.first_session_date ? new Date(data.first_session_date) : new Date(),
+      status: 'active' as 'active' | 'completed',
+      notes: stage.notes,
+      isResolved: data.is_resolved || false,
       resolutionDate: data.resolution_date ? new Date(data.resolution_date) : undefined,
-      isResolved: data.is_resolved,
-      resolutionDetails: data.resolution_details,
+      decisionNumber: stage.decisionNumber,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -554,13 +620,11 @@ class SupabaseStore {
   async updateStage(id: string, updates: Partial<CaseStage>): Promise<CaseStage | null> {
     const updateData: any = {};
     
-    if (updates.caseId !== undefined) updateData.case_id = updates.caseId;
-    if (updates.stageName) updateData.stage_name = updates.stageName;
-    if (updates.courtName) updateData.court_name = updates.courtName;
-    if (updates.firstSessionDate !== undefined) updateData.first_session_date = updates.firstSessionDate;
-    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate;
+    if (updates.stageName !== undefined) updateData.stage_name = updates.stageName;
+    if (updates.courtName !== undefined) updateData.court_name = updates.courtName;
+    if (updates.firstSessionDate !== undefined) updateData.first_session_date = updates.firstSessionDate?.toISOString().split('T')[0];
     if (updates.isResolved !== undefined) updateData.is_resolved = updates.isResolved;
-    if (updates.resolutionDetails !== undefined) updateData.resolution_details = updates.resolutionDetails;
+    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate?.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('case_stages')
@@ -568,19 +632,24 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating stage:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       caseId: data.case_id,
-      stageName: data.stage_name,
       courtName: data.court_name,
-      firstSessionDate: data.first_session_date ? new Date(data.first_session_date) : undefined,
+      caseNumber: updates.caseNumber || '',
+      stageName: data.stage_name,
+      firstSessionDate: data.first_session_date ? new Date(data.first_session_date) : new Date(),
+      status: 'active' as 'active' | 'completed',
+      notes: updates.notes,
+      isResolved: data.is_resolved || false,
       resolutionDate: data.resolution_date ? new Date(data.resolution_date) : undefined,
-      isResolved: data.is_resolved,
-      resolutionDetails: data.resolution_details,
+      decisionNumber: updates.decisionNumber,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -591,29 +660,30 @@ class SupabaseStore {
       .from('case_stages')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
   // Client Fees
   async getClientFees(clientId?: string): Promise<ClientFee[]> {
-    let query = supabase
-      .from('client_fees')
-      .select('*')
-      .order('fee_date', { ascending: false });
+    let query = supabase.from('client_fees').select('*');
     
     if (clientId) {
       query = query.eq('client_id', clientId);
     }
     
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data, error } = await query.order('fee_date', { ascending: false });
     
-    return (data || []).map(fee => ({
+    if (error) {
+      console.error('Error fetching client fees:', error);
+      return [];
+    }
+
+    return data.map(fee => ({
       id: fee.id,
       clientId: fee.client_id,
       description: fee.description,
-      amount: fee.amount,
+      amount: parseFloat(fee.amount),
       feeDate: new Date(fee.fee_date),
       createdAt: new Date(fee.created_at),
       updatedAt: new Date(fee.updated_at)
@@ -623,22 +693,25 @@ class SupabaseStore {
   async addClientFee(fee: Omit<ClientFee, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientFee> {
     const { data, error } = await supabase
       .from('client_fees')
-      .insert([{
+      .insert({
         client_id: fee.clientId,
         description: fee.description,
         amount: fee.amount,
-        fee_date: fee.feeDate
-      }])
+        fee_date: fee.feeDate.toISOString().split('T')[0]
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding client fee:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       feeDate: new Date(data.fee_date),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -648,10 +721,9 @@ class SupabaseStore {
   async updateClientFee(id: string, updates: Partial<ClientFee>): Promise<ClientFee | null> {
     const updateData: any = {};
     
-    if (updates.clientId !== undefined) updateData.client_id = updates.clientId;
-    if (updates.description) updateData.description = updates.description;
+    if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.feeDate) updateData.fee_date = updates.feeDate;
+    if (updates.feeDate !== undefined) updateData.fee_date = updates.feeDate.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('client_fees')
@@ -659,15 +731,17 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating client fee:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       feeDate: new Date(data.fee_date),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -679,29 +753,30 @@ class SupabaseStore {
       .from('client_fees')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
   // Client Payments
   async getClientPayments(clientId?: string): Promise<ClientPayment[]> {
-    let query = supabase
-      .from('client_payments')
-      .select('*')
-      .order('payment_date', { ascending: false });
+    let query = supabase.from('client_payments').select('*');
     
     if (clientId) {
       query = query.eq('client_id', clientId);
     }
     
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data, error } = await query.order('payment_date', { ascending: false });
     
-    return (data || []).map(payment => ({
+    if (error) {
+      console.error('Error fetching client payments:', error);
+      return [];
+    }
+
+    return data.map(payment => ({
       id: payment.id,
       clientId: payment.client_id,
       description: payment.description,
-      amount: payment.amount,
+      amount: parseFloat(payment.amount),
       paymentDate: new Date(payment.payment_date),
       createdAt: new Date(payment.created_at),
       updatedAt: new Date(payment.updated_at)
@@ -711,22 +786,25 @@ class SupabaseStore {
   async addClientPayment(payment: Omit<ClientPayment, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientPayment> {
     const { data, error } = await supabase
       .from('client_payments')
-      .insert([{
+      .insert({
         client_id: payment.clientId,
         description: payment.description,
         amount: payment.amount,
-        payment_date: payment.paymentDate
-      }])
+        payment_date: payment.paymentDate.toISOString().split('T')[0]
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding client payment:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       paymentDate: new Date(data.payment_date),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -736,10 +814,9 @@ class SupabaseStore {
   async updateClientPayment(id: string, updates: Partial<ClientPayment>): Promise<ClientPayment | null> {
     const updateData: any = {};
     
-    if (updates.clientId !== undefined) updateData.client_id = updates.clientId;
-    if (updates.description) updateData.description = updates.description;
+    if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.paymentDate) updateData.payment_date = updates.paymentDate;
+    if (updates.paymentDate !== undefined) updateData.payment_date = updates.paymentDate.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('client_payments')
@@ -747,15 +824,17 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating client payment:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       paymentDate: new Date(data.payment_date),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -767,29 +846,30 @@ class SupabaseStore {
       .from('client_payments')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
   // Client Expenses
   async getClientExpenses(clientId?: string): Promise<ClientExpense[]> {
-    let query = supabase
-      .from('client_expenses')
-      .select('*')
-      .order('expense_date', { ascending: false });
+    let query = supabase.from('client_expenses').select('*');
     
     if (clientId) {
       query = query.eq('client_id', clientId);
     }
     
-    const { data, error } = await query;
-    if (error) throw error;
+    const { data, error } = await query.order('expense_date', { ascending: false });
     
-    return (data || []).map(expense => ({
+    if (error) {
+      console.error('Error fetching client expenses:', error);
+      return [];
+    }
+
+    return data.map(expense => ({
       id: expense.id,
       clientId: expense.client_id,
       description: expense.description,
-      amount: expense.amount,
+      amount: parseFloat(expense.amount),
       expenseDate: new Date(expense.expense_date),
       createdAt: new Date(expense.created_at),
       updatedAt: new Date(expense.updated_at)
@@ -799,22 +879,25 @@ class SupabaseStore {
   async addClientExpense(expense: Omit<ClientExpense, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientExpense> {
     const { data, error } = await supabase
       .from('client_expenses')
-      .insert([{
+      .insert({
         client_id: expense.clientId,
         description: expense.description,
         amount: expense.amount,
-        expense_date: expense.expenseDate
-      }])
+        expense_date: expense.expenseDate.toISOString().split('T')[0]
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding client expense:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       expenseDate: new Date(data.expense_date),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -824,10 +907,9 @@ class SupabaseStore {
   async updateClientExpense(id: string, updates: Partial<ClientExpense>): Promise<ClientExpense | null> {
     const updateData: any = {};
     
-    if (updates.clientId !== undefined) updateData.client_id = updates.clientId;
-    if (updates.description) updateData.description = updates.description;
+    if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.expenseDate) updateData.expense_date = updates.expenseDate;
+    if (updates.expenseDate !== undefined) updateData.expense_date = updates.expenseDate.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('client_expenses')
@@ -835,15 +917,17 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating client expense:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       clientId: data.client_id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       expenseDate: new Date(data.expense_date),
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
@@ -855,7 +939,7 @@ class SupabaseStore {
       .from('client_expenses')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -866,12 +950,17 @@ class SupabaseStore {
       .select('*')
       .order('income_date', { ascending: false });
     
-    if (error) throw error;
-    return (data || []).map(income => ({
+    if (error) {
+      console.error('Error fetching office income:', error);
+      return [];
+    }
+
+    return data.map(income => ({
       id: income.id,
       description: income.description,
-      amount: income.amount,
+      amount: parseFloat(income.amount),
       incomeDate: new Date(income.income_date),
+      source: 'عام', // Default source
       createdAt: new Date(income.created_at),
       updatedAt: new Date(income.updated_at)
     }));
@@ -880,21 +969,25 @@ class SupabaseStore {
   async addOfficeIncome(income: Omit<OfficeIncome, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeIncome> {
     const { data, error } = await supabase
       .from('office_income')
-      .insert([{
+      .insert({
         description: income.description,
         amount: income.amount,
-        income_date: income.incomeDate
-      }])
+        income_date: income.incomeDate.toISOString().split('T')[0]
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding office income:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       incomeDate: new Date(data.income_date),
+      source: income.source || 'عام',
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -903,9 +996,9 @@ class SupabaseStore {
   async updateOfficeIncome(id: string, updates: Partial<OfficeIncome>): Promise<OfficeIncome | null> {
     const updateData: any = {};
     
-    if (updates.description) updateData.description = updates.description;
+    if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.incomeDate) updateData.income_date = updates.incomeDate;
+    if (updates.incomeDate !== undefined) updateData.income_date = updates.incomeDate.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('office_income')
@@ -913,15 +1006,18 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating office income:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       incomeDate: new Date(data.income_date),
+      source: updates.source || 'عام',
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -932,7 +1028,7 @@ class SupabaseStore {
       .from('office_income')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -943,12 +1039,17 @@ class SupabaseStore {
       .select('*')
       .order('expense_date', { ascending: false });
     
-    if (error) throw error;
-    return (data || []).map(expense => ({
+    if (error) {
+      console.error('Error fetching office expenses:', error);
+      return [];
+    }
+
+    return data.map(expense => ({
       id: expense.id,
       description: expense.description,
-      amount: expense.amount,
+      amount: parseFloat(expense.amount),
       expenseDate: new Date(expense.expense_date),
+      category: 'عام', // Default category
       createdAt: new Date(expense.created_at),
       updatedAt: new Date(expense.updated_at)
     }));
@@ -957,21 +1058,25 @@ class SupabaseStore {
   async addOfficeExpense(expense: Omit<OfficeExpense, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeExpense> {
     const { data, error } = await supabase
       .from('office_expenses')
-      .insert([{
+      .insert({
         description: expense.description,
         amount: expense.amount,
-        expense_date: expense.expenseDate
-      }])
+        expense_date: expense.expenseDate.toISOString().split('T')[0]
+      })
       .select()
       .single();
-    
-    if (error) throw error;
-    
+
+    if (error) {
+      console.error('Error adding office expense:', error);
+      throw error;
+    }
+
     return {
       id: data.id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       expenseDate: new Date(data.expense_date),
+      category: expense.category || 'عام',
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -980,9 +1085,9 @@ class SupabaseStore {
   async updateOfficeExpense(id: string, updates: Partial<OfficeExpense>): Promise<OfficeExpense | null> {
     const updateData: any = {};
     
-    if (updates.description) updateData.description = updates.description;
+    if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.expenseDate) updateData.expense_date = updates.expenseDate;
+    if (updates.expenseDate !== undefined) updateData.expense_date = updates.expenseDate.toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('office_expenses')
@@ -990,15 +1095,18 @@ class SupabaseStore {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
-    if (!data) return null;
-    
+
+    if (error) {
+      console.error('Error updating office expense:', error);
+      return null;
+    }
+
     return {
       id: data.id,
       description: data.description,
-      amount: data.amount,
+      amount: parseFloat(data.amount),
       expenseDate: new Date(data.expense_date),
+      category: updates.category || 'عام',
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at)
     };
@@ -1009,7 +1117,7 @@ class SupabaseStore {
       .from('office_expenses')
       .delete()
       .eq('id', id);
-    
+
     return !error;
   }
 
@@ -1022,8 +1130,7 @@ class SupabaseStore {
     const totalFees = fees.reduce((sum, fee) => sum + fee.amount, 0);
     const totalPayments = payments.reduce((sum, payment) => sum + payment.amount, 0);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    
-    const balance = totalFees + totalExpenses - totalPayments;
+    const balance = totalFees - totalPayments - totalExpenses;
 
     return {
       totalFees,
@@ -1033,24 +1140,36 @@ class SupabaseStore {
     };
   }
 
-  // Data Export/Import
+  // Export/Import
   async exportData(): Promise<string> {
+    const [clients, cases, stages, sessions, tasks, appointments, clientFees, clientPayments, clientExpenses, officeIncome, officeExpenses] = await Promise.all([
+      this.getClients(),
+      this.getCases(),
+      this.getStages(),
+      this.getSessions(),
+      this.getTasks(),
+      this.getAppointments(),
+      this.getClientFees(),
+      this.getClientPayments(),
+      this.getClientExpenses(),
+      this.getOfficeIncome(),
+      this.getOfficeExpenses()
+    ]);
+
     const data = {
-      clients: await this.getClients(),
-      cases: await this.getCases(),
-      stages: await this.getStages(),
-      sessions: await this.getSessions(),
-      tasks: await this.getTasks(),
-      appointments: await this.getAppointments(),
-      clientFees: await this.getClientFees(),
-      clientPayments: await this.getClientPayments(),
-      clientExpenses: await this.getClientExpenses(),
-      officeIncome: await this.getOfficeIncome(),
-      officeExpenses: await this.getOfficeExpenses(),
-      version: '1.0.0',
-      exportDate: new Date().toISOString()
+      clients,
+      cases,
+      stages,
+      sessions,
+      tasks,
+      appointments,
+      clientFees,
+      clientPayments,
+      clientExpenses,
+      officeIncome,
+      officeExpenses
     };
-    
+
     return JSON.stringify(data, null, 2);
   }
 
@@ -1058,11 +1177,77 @@ class SupabaseStore {
     try {
       const data = JSON.parse(jsonData);
       
-      // This is a simplified import - in a real scenario, you'd want to be more careful
-      // about data validation and handling conflicts
+      // Clear existing data
+      await this.clearAllData();
       
-      console.log('Import functionality not fully implemented for Supabase');
-      return false;
+      // Import in order of dependencies
+      if (data.clients) {
+        for (const client of data.clients) {
+          await this.addClient(client);
+        }
+      }
+      
+      if (data.cases) {
+        for (const case_ of data.cases) {
+          await this.addCase(case_);
+        }
+      }
+      
+      if (data.stages) {
+        for (const stage of data.stages) {
+          await this.addStage(stage);
+        }
+      }
+      
+      if (data.sessions) {
+        for (const session of data.sessions) {
+          await this.addSession(session);
+        }
+      }
+      
+      if (data.tasks) {
+        for (const task of data.tasks) {
+          await this.addTask(task);
+        }
+      }
+      
+      if (data.appointments) {
+        for (const appointment of data.appointments) {
+          await this.addAppointment(appointment);
+        }
+      }
+      
+      if (data.clientFees) {
+        for (const fee of data.clientFees) {
+          await this.addClientFee(fee);
+        }
+      }
+      
+      if (data.clientPayments) {
+        for (const payment of data.clientPayments) {
+          await this.addClientPayment(payment);
+        }
+      }
+      
+      if (data.clientExpenses) {
+        for (const expense of data.clientExpenses) {
+          await this.addClientExpense(expense);
+        }
+      }
+      
+      if (data.officeIncome) {
+        for (const income of data.officeIncome) {
+          await this.addOfficeIncome(income);
+        }
+      }
+      
+      if (data.officeExpenses) {
+        for (const expense of data.officeExpenses) {
+          await this.addOfficeExpense(expense);
+        }
+      }
+      
+      return true;
     } catch (error) {
       console.error('Error importing data:', error);
       return false;
@@ -1070,7 +1255,25 @@ class SupabaseStore {
   }
 
   async clearAllData(): Promise<void> {
-    console.log('Clear all data functionality not implemented for Supabase');
+    try {
+      // Delete in reverse order of dependencies
+      await Promise.all([
+        supabase.from('sessions').delete().neq('id', ''),
+        supabase.from('case_stages').delete().neq('id', ''),
+        supabase.from('cases').delete().neq('id', ''),
+        supabase.from('clients').delete().neq('id', ''),
+        supabase.from('tasks').delete().neq('id', ''),
+        supabase.from('appointments').delete().neq('id', ''),
+        supabase.from('client_fees').delete().neq('id', ''),
+        supabase.from('client_payments').delete().neq('id', ''),
+        supabase.from('client_expenses').delete().neq('id', ''),
+        supabase.from('office_income').delete().neq('id', ''),
+        supabase.from('office_expenses').delete().neq('id', '')
+      ]);
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      throw error;
+    }
   }
 }
 
