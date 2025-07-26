@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
-import { dataStore } from '@/store/dataStore';
+import { supabase } from '@/integrations/supabase/client';
 
 const Settings: React.FC = () => {
   const [lawyerInfo, setLawyerInfo] = useState({
@@ -104,8 +104,23 @@ const Settings: React.FC = () => {
   const handleResetData = async () => {
     if (confirm('هل أنت متأكد من رغبتك في حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.')) {
       try {
-        // Clear all data using dataStore
-        await dataStore.clearAllData();
+        // Clear all Supabase tables
+        const tablesToClear = [
+          'sessions', 'appointments', 'tasks', 'clients', 'cases', 'case_stages',
+          'client_fees', 'client_payments', 'client_expenses', 
+          'office_income', 'office_expenses'
+        ];
+
+        for (const table of tablesToClear) {
+          const { error } = await supabase
+            .from(table)
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+          
+          if (error) {
+            console.error(`Error clearing ${table}:`, error);
+          }
+        }
         
         // Clear settings
         localStorage.removeItem('lawyer-info');
@@ -149,7 +164,25 @@ const Settings: React.FC = () => {
 
   const handleExportData = async () => {
     try {
-      const exportedData = await dataStore.exportData();
+      // Export data from all tables
+      const tablesToExport = [
+        'sessions', 'appointments', 'tasks', 'clients', 'cases', 'case_stages',
+        'client_fees', 'client_payments', 'client_expenses', 
+        'office_income', 'office_expenses'
+      ];
+
+      const exportedData = {};
+      
+      for (const table of tablesToExport) {
+        const { data, error } = await supabase
+          .from(table)
+          .select('*');
+        
+        if (!error && data) {
+          exportedData[table] = data;
+        }
+      }
+
       const allData = {
         lawyerData: exportedData,
         lawyerInfo: localStorage.getItem('lawyer-info'),
@@ -157,12 +190,12 @@ const Settings: React.FC = () => {
         displaySettings: localStorage.getItem('display-settings')
       };
 
-      if (!allData.lawyerData && !allData.lawyerInfo) {
+      if (!Object.keys(exportedData).length && !allData.lawyerInfo) {
         toast.error('لا توجد بيانات للتصدير');
         return;
       }
 
-      const dataString = JSON.stringify(allData);
+      const dataString = JSON.stringify(allData, null, 2);
       const blob = new Blob([dataString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const fileName = `mizan-lawyer-data-${new Date().toISOString().split('T')[0]}.json`;
@@ -190,12 +223,20 @@ const Settings: React.FC = () => {
       try {
         const data = JSON.parse(event.target?.result as string);
         
-        // Import main data using dataStore
+        // Import main data to Supabase
         if (data.lawyerData) {
-          const success = await dataStore.importData(data.lawyerData);
-          if (success) {
-            toast.success('تم استيراد بيانات المحامي بنجاح');
+          for (const [table, records] of Object.entries(data.lawyerData)) {
+            if (Array.isArray(records) && records.length > 0) {
+              const { error } = await supabase
+                .from(table)
+                .insert(records);
+              
+              if (error) {
+                console.error(`Error importing ${table}:`, error);
+              }
+            }
           }
+          toast.success('تم استيراد بيانات المحامي بنجاح');
         }
         
         // Import settings

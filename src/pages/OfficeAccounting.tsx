@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, DollarSign, TrendingDown, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
 import { Client, OfficeIncome, OfficeExpense } from '@/types';
@@ -156,107 +157,125 @@ const OfficeAccounting = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Income Section */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-right flex items-center gap-2">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
-                  الإيرادات
-                </CardTitle>
-                <Button 
-                  onClick={() => setIsIncomeDialogOpen(true)}
-                  className="gap-2 bg-green-600 hover:bg-green-700"
+        {/* Main Content with Tabs */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl text-right flex items-center gap-2">
+              <DollarSign className="h-6 w-6 text-blue-600" />
+              محاسبة المكتب
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="expenses" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted rounded-lg p-1">
+                <TabsTrigger 
+                  value="expenses" 
+                  className="text-sm px-4 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
-                  <Plus className="h-5 w-5" />
-                  إضافة إيراد
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-right">الوصف</TableHead>
-                      <TableHead className="text-right">المبلغ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {income.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="text-right">{formatSyrianDate(item.incomeDate)}</TableCell>
-                        <TableCell className="text-right">{item.description}</TableCell>
-                        <TableCell className="text-right text-green-600 font-medium">
-                          {item.amount.toLocaleString()} ل.س
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {income.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground">
-                          لا توجد إيرادات مسجلة
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Expenses Section */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-right flex items-center gap-2">
-                  <TrendingDown className="h-6 w-6 text-red-600" />
                   المصاريف
-                </CardTitle>
-                <Button 
-                  onClick={() => setIsExpenseDialogOpen(true)}
-                  className="gap-2 bg-red-600 hover:bg-red-700"
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="income" 
+                  className="text-sm px-4 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
-                  <Plus className="h-5 w-5" />
-                  إضافة مصروف
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">التاريخ</TableHead>
-                      <TableHead className="text-right">الوصف</TableHead>
-                      <TableHead className="text-right">المبلغ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expenses.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="text-right">{formatSyrianDate(item.expenseDate)}</TableCell>
-                        <TableCell className="text-right">{item.description}</TableCell>
-                        <TableCell className="text-right text-red-600 font-medium">
-                          {item.amount.toLocaleString()} ل.س
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {expenses.length === 0 && (
+                  الإيرادات
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Expenses Tab */}
+              <TabsContent value="expenses" className="mt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-right flex items-center gap-2">
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                    المصاريف
+                  </h3>
+                  <Button 
+                    onClick={() => setIsExpenseDialogOpen(true)}
+                    className="gap-2 bg-red-600 hover:bg-red-700"
+                  >
+                    <Plus className="h-5 w-5" />
+                    إضافة مصروف
+                  </Button>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground">
-                          لا توجد مصاريف مسجلة
-                        </TableCell>
+                        <TableHead className="text-right">التاريخ</TableHead>
+                        <TableHead className="text-right">الوصف</TableHead>
+                        <TableHead className="text-right">المبلغ</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    </TableHeader>
+                    <TableBody>
+                      {expenses.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="text-right">{formatSyrianDate(item.expenseDate)}</TableCell>
+                          <TableCell className="text-right">{item.description}</TableCell>
+                          <TableCell className="text-right text-red-600 font-medium">
+                            {item.amount.toLocaleString()} ل.س
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {expenses.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center text-muted-foreground">
+                            لا توجد مصاريف مسجلة
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              {/* Income Tab */}
+              <TabsContent value="income" className="mt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-right flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    الإيرادات
+                  </h3>
+                  <Button 
+                    onClick={() => setIsIncomeDialogOpen(true)}
+                    className="gap-2 bg-green-600 hover:bg-green-700"
+                  >
+                    <Plus className="h-5 w-5" />
+                    إضافة إيراد
+                  </Button>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right">التاريخ</TableHead>
+                        <TableHead className="text-right">الوصف</TableHead>
+                        <TableHead className="text-right">المبلغ</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {income.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="text-right">{formatSyrianDate(item.incomeDate)}</TableCell>
+                          <TableCell className="text-right">{item.description}</TableCell>
+                          <TableCell className="text-right text-green-600 font-medium">
+                            {item.amount.toLocaleString()} ل.س
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {income.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center text-muted-foreground">
+                            لا توجد إيرادات مسجلة
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
 
         {/* Income Dialog */}
         <Dialog open={isIncomeDialogOpen} onOpenChange={setIsIncomeDialogOpen}>
