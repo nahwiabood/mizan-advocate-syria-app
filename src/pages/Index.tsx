@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,41 +41,6 @@ const Index = () => {
       console.error('Error loading data:', error);
     }
   };
-
-  // Calculate today's statistics
-  const todayStats = useMemo(() => {
-    const today = new Date();
-    const todayString = today.toDateString();
-
-    const todaySessions = sessions.filter(session => 
-      session.sessionDate.toDateString() === todayString
-    );
-
-    const todayTasks = tasks.filter(task => 
-      task.dueDate && task.dueDate.toDateString() === todayString
-    );
-
-    const todayAppointments = appointments.filter(appointment => 
-      appointment.appointmentDate.toDateString() === todayString
-    );
-
-    const overdueTasks = tasks.filter(task => 
-      task.dueDate && task.dueDate < today && !task.isCompleted
-    );
-
-    const completedTasks = tasks.filter(task => task.isCompleted);
-
-    return {
-      todaySessions: todaySessions.length,
-      todayTasks: todayTasks.length,
-      todayAppointments: todayAppointments.length,
-      overdueTasks: overdueTasks.length,
-      totalSessions: sessions.length,
-      totalTasks: tasks.length,
-      totalAppointments: appointments.length,
-      completedTasks: completedTasks.length
-    };
-  }, [sessions, tasks, appointments]);
 
   // Get data for calendar
   const calendarData = useMemo(() => {
@@ -148,67 +114,16 @@ const Index = () => {
     setSelectedDate(date);
   };
 
+  // Separate tasks into completed and incomplete
+  const completedTasks = tasks.filter(task => task.isCompleted);
+  const incompleteTasks = tasks.filter(task => !task.isCompleted);
+
   return (
     <Layout>
       <div className="container mx-auto p-4 space-y-6 max-w-full" dir="rtl">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">جلسات اليوم</p>
-                  <p className="text-2xl font-bold text-blue-600">{todayStats.todaySessions}</p>
-                  <p className="text-xs text-muted-foreground">من أصل {todayStats.totalSessions}</p>
-                </div>
-                <Gavel className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">مواعيد اليوم</p>
-                  <p className="text-2xl font-bold text-green-600">{todayStats.todayAppointments}</p>
-                  <p className="text-xs text-muted-foreground">من أصل {todayStats.totalAppointments}</p>
-                </div>
-                <CalendarIcon className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-yellow-50 border-yellow-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">مهام اليوم</p>
-                  <p className="text-2xl font-bold text-yellow-600">{todayStats.todayTasks}</p>
-                  <p className="text-xs text-muted-foreground">من أصل {todayStats.totalTasks}</p>
-                </div>
-                <FileText className="h-8 w-8 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-red-50 border-red-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">مهام متأخرة</p>
-                  <p className="text-2xl font-bold text-red-600">{todayStats.overdueTasks}</p>
-                  <p className="text-xs text-muted-foreground">تحتاج متابعة</p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Calendar */}
-          <Card className="lg:col-span-2">
+          <Card>
             <CardHeader>
               <CardTitle className="text-right flex items-center gap-2">
                 <Calendar className="h-6 w-6 text-primary" />
@@ -225,83 +140,61 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Quick Overview */}
+          {/* Tasks Section */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-right">نظرة سريعة</CardTitle>
+              <CardTitle className="text-right flex items-center gap-2">
+                <FileText className="h-6 w-6 text-yellow-600" />
+                المهام
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Today's Sessions */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <Gavel className="h-4 w-4 text-blue-600" />
-                  جلسات اليوم ({todayStats.todaySessions})
-                </h4>
-                {sessions
-                  .filter(session => session.sessionDate.toDateString() === new Date().toDateString())
-                  .slice(0, 3)
-                  .map(session => (
-                    <div key={session.id} className="p-2 bg-blue-50 rounded text-sm">
-                      <p className="font-medium text-right">{session.clientName}</p>
-                      <p className="text-muted-foreground text-right">{session.courtName}</p>
-                    </div>
-                  ))
-                }
+            <CardContent className="space-y-6">
+              {/* Incomplete Tasks (Default Tab) */}
+              <div>
+                <h3 className="font-semibold text-right mb-4 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-yellow-600" />
+                  المهام غير المنجزة ({incompleteTasks.length})
+                </h3>
+                <TasksTable 
+                  tasks={incompleteTasks}
+                  onTaskUpdate={loadData}
+                />
               </div>
 
-              {/* Today's Appointments */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-green-600" />
-                  مواعيد اليوم ({todayStats.todayAppointments})
-                </h4>
-                {appointments
-                  .filter(appointment => appointment.appointmentDate.toDateString() === new Date().toDateString())
-                  .slice(0, 3)
-                  .map(appointment => (
-                    <div key={appointment.id} className="p-2 bg-green-50 rounded text-sm">
-                      <p className="font-medium text-right">{appointment.title}</p>
-                      <p className="text-muted-foreground text-right">
-                        {appointment.time && `${appointment.time} - `}
-                        {appointment.location || 'بدون موقع محدد'}
-                      </p>
-                    </div>
-                  ))
-                }
-              </div>
-
-              {/* Pending Tasks */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-yellow-600" />
-                  مهام معلقة
-                </h4>
-                {tasks
-                  .filter(task => !task.isCompleted)
-                  .slice(0, 3)
-                  .map(task => (
-                    <div key={task.id} className="p-2 bg-yellow-50 rounded text-sm">
-                      <div className="flex items-center justify-between">
-                        <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'secondary' : 'outline'}>
-                          {task.priority === 'high' ? 'عالية' : task.priority === 'medium' ? 'متوسطة' : 'منخفضة'}
-                        </Badge>
-                        <p className="font-medium text-right flex-1 mr-2">{task.title}</p>
+              {/* Completed Tasks (Secondary Tab) */}
+              {completedTasks.length > 0 && (
+                <div className="border-t pt-6">
+                  <h3 className="font-semibold text-right mb-4 flex items-center gap-2 text-green-700">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    المهام المنجزة ({completedTasks.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {completedTasks.slice(0, 5).map((task) => (
+                      <div key={task.id} className="border rounded-lg p-3 bg-green-50">
+                        <div className="flex items-center justify-between gap-4">
+                          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                          <div className="flex-1 text-right">
+                            <h4 className="font-medium line-through text-gray-600">
+                              {task.title}
+                            </h4>
+                            {task.dueDate && (
+                              <p className="text-sm text-gray-500">
+                                {formatSyrianDate(task.dueDate)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      {task.dueDate && (
-                        <p className="text-muted-foreground text-right text-xs mt-1">
-                          موعد الانتهاء: {formatSyrianDate(task.dueDate)}
-                        </p>
-                      )}
-                    </div>
-                  ))
-                }
-              </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Recent Activities */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-right flex items-center gap-2">
@@ -314,21 +207,6 @@ const Index = () => {
                 sessions={sessions.slice(0, 5)} 
                 selectedDate={selectedDate}
                 onSessionUpdate={loadData}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-right flex items-center gap-2">
-                <FileText className="h-6 w-6 text-yellow-600" />
-                المهام الحديثة
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TasksTable 
-                tasks={tasks.slice(0, 5)}
-                onTaskUpdate={loadData}
               />
             </CardContent>
           </Card>
