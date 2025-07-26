@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -328,7 +327,8 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <TasksTable 
-                tasks={tasks.slice(0, 5)} 
+                tasks={tasks.slice(0, 5)}
+                onTaskUpdate={loadData}
               />
             </CardContent>
           </Card>
@@ -382,7 +382,10 @@ const Index = () => {
                       <FileText className="h-5 w-5 text-yellow-600" />
                       المهام ({selectedDayData.tasks.length})
                     </h3>
-                    <TasksTable tasks={selectedDayData.tasks} />
+                    <TasksTable 
+                      tasks={selectedDayData.tasks}
+                      onTaskUpdate={loadData}
+                    />
                   </div>
                 )}
 
