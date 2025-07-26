@@ -145,6 +145,10 @@ const Index = () => {
     }
   };
 
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
+
   return (
     <Layout>
       <div className="container mx-auto p-4 space-y-6 max-w-full" dir="rtl">
@@ -214,10 +218,10 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <ArabicCalendar 
-                data={calendarData} 
-                onDateClick={handleDateClick}
+                sessions={sessions}
+                appointments={appointments}
                 selectedDate={selectedDate}
-                onDateChange={setSelectedDate}
+                onDateSelect={handleDateSelect}
               />
             </CardContent>
           </Card>
@@ -307,7 +311,11 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SessionsTable sessions={sessions.slice(0, 5)} compact />
+              <SessionsTable 
+                sessions={sessions.slice(0, 5)} 
+                selectedDate={selectedDate}
+                onSessionUpdate={loadData}
+              />
             </CardContent>
           </Card>
 
@@ -321,8 +329,6 @@ const Index = () => {
             <CardContent>
               <TasksTable 
                 tasks={tasks.slice(0, 5)} 
-                compact 
-                onTaskToggle={handleTaskToggle}
               />
             </CardContent>
           </Card>
@@ -335,7 +341,11 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <AppointmentsTable appointments={appointments.slice(0, 5)} compact />
+              <AppointmentsTable 
+                appointments={appointments.slice(0, 5)} 
+                selectedDate={selectedDate}
+                onAppointmentUpdate={loadData}
+              />
             </CardContent>
           </Card>
         </div>
@@ -357,7 +367,11 @@ const Index = () => {
                       <Gavel className="h-5 w-5 text-blue-600" />
                       الجلسات ({selectedDayData.sessions.length})
                     </h3>
-                    <SessionsTable sessions={selectedDayData.sessions} />
+                    <SessionsTable 
+                      sessions={selectedDayData.sessions} 
+                      selectedDate={selectedDayData.date}
+                      onSessionUpdate={loadData}
+                    />
                   </div>
                 )}
 
@@ -368,10 +382,7 @@ const Index = () => {
                       <FileText className="h-5 w-5 text-yellow-600" />
                       المهام ({selectedDayData.tasks.length})
                     </h3>
-                    <TasksTable 
-                      tasks={selectedDayData.tasks} 
-                      onTaskToggle={handleTaskToggle}
-                    />
+                    <TasksTable tasks={selectedDayData.tasks} />
                   </div>
                 )}
 
@@ -382,7 +393,11 @@ const Index = () => {
                       <CalendarIcon className="h-5 w-5 text-green-600" />
                       المواعيد ({selectedDayData.appointments.length})
                     </h3>
-                    <AppointmentsTable appointments={selectedDayData.appointments} />
+                    <AppointmentsTable 
+                      appointments={selectedDayData.appointments}
+                      selectedDate={selectedDayData.date}
+                      onAppointmentUpdate={loadData}
+                    />
                   </div>
                 )}
 
