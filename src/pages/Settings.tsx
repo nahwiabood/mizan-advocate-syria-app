@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -102,11 +101,11 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleResetData = () => {
+  const handleResetData = async () => {
     if (confirm('هل أنت متأكد من رغبتك في حذف جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.')) {
       try {
         // Clear all data using dataStore
-        dataStore.clearAllData();
+        await dataStore.clearAllData();
         
         // Clear settings
         localStorage.removeItem('lawyer-info');
@@ -148,10 +147,11 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     try {
+      const exportedData = await dataStore.exportData();
       const allData = {
-        lawyerData: dataStore.exportData(),
+        lawyerData: exportedData,
         lawyerInfo: localStorage.getItem('lawyer-info'),
         printSettings: localStorage.getItem('print-settings'),
         displaySettings: localStorage.getItem('display-settings')
@@ -186,13 +186,14 @@ const Settings: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
         
         // Import main data using dataStore
         if (data.lawyerData) {
-          if (dataStore.importData(data.lawyerData)) {
+          const success = await dataStore.importData(data.lawyerData);
+          if (success) {
             toast.success('تم استيراد بيانات المحامي بنجاح');
           }
         }
@@ -234,11 +235,11 @@ const Settings: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl text-right flex items-center gap-2">
-              <span className="text-green-600">🔒</span>
-              الضبط - تطبيق محلي (بدون انترنت)
+              <span className="text-blue-600">☁️</span>
+              الضبط - تطبيق متصل بالإنترنت
             </CardTitle>
             <p className="text-sm text-muted-foreground text-right">
-              جميع بياناتك محفوظة محلياً على جهازك ولا تحتاج للانترنت
+              بياناتك محفوظة في قاعدة بيانات آمنة على الإنترنت مع إمكانية النسخ الاحتياطي المحلي
             </p>
           </CardHeader>
           <CardContent>
@@ -269,6 +270,7 @@ const Settings: React.FC = () => {
                   إدارة البيانات
                 </TabsTrigger>
               </TabsList>
+              
               
               <TabsContent value="lawyer-info" className="mt-6 space-y-6">
                 <div>
@@ -332,6 +334,7 @@ const Settings: React.FC = () => {
                 </Button>
               </TabsContent>
               
+              
               <TabsContent value="print" className="mt-6 space-y-6">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="includeLogo" className="text-right">إظهار الشعار في الطباعة</Label>
@@ -387,6 +390,7 @@ const Settings: React.FC = () => {
                   حفظ إعدادات الطباعة
                 </Button>
               </TabsContent>
+              
               
               <TabsContent value="display" className="mt-6 space-y-6">
                 <div className="flex items-center justify-between">
@@ -487,24 +491,24 @@ const Settings: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="text-lg text-right flex items-center gap-2">
                       <span className="text-blue-600">💾</span>
-                      النسخ الاحتياطي والاستعادة
+                      النسخ الاحتياطي للجهاز
                     </CardTitle>
                     <p className="text-sm text-muted-foreground text-right">
-                      جميع البيانات محفوظة محلياً على جهازك - لا حاجة للانترنت
+                      احتفظ بنسخة احتياطية من بياناتك على جهازك للأمان الإضافي
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground mb-2 text-right">
-                        يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي أو النقل إلى جهاز آخر. سيتم حفظ الملف في مجلد التحميلات الخاص بك.
+                        يمكنك تصدير جميع بياناتك كملف JSON للنسخ الاحتياطي على جهازك أو النقل إلى جهاز آخر.
                       </p>
                       <Button onClick={handleExportData} className="w-full">
-                        📤 تصدير البيانات إلى مجلد التحميلات
+                        📤 تصدير البيانات إلى الجهاز
                       </Button>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-2 text-right">
-                        يمكنك استيراد البيانات من ملف JSON سابق. سيؤدي هذا إلى استبدال جميع بياناتك الحالية.
+                        يمكنك استيراد البيانات من ملف JSON محفوظ على جهازك. سيؤدي هذا إلى استبدال بياناتك الحالية.
                       </p>
                       <div className="flex items-center gap-2">
                         <Input
@@ -519,7 +523,7 @@ const Settings: React.FC = () => {
                           className="w-full"
                           onClick={() => document.getElementById('importData')?.click()}
                         >
-                          📥 استيراد البيانات من ملف
+                          📥 استيراد البيانات من الجهاز
                         </Button>
                       </div>
                     </div>
@@ -535,7 +539,7 @@ const Settings: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4 text-right">
-                      سيؤدي هذا الإجراء إلى حذف جميع بياناتك بشكل دائم من جهازك. لا يمكن التراجع عن هذا الإجراء.
+                      سيؤدي هذا الإجراء إلى حذف جميع بياناتك بشكل دائم من قاعدة البيانات. لا يمكن التراجع عن هذا الإجراء.
                     </p>
                     <Button variant="destructive" onClick={handleResetData} className="w-full">
                       🗑️ إعادة تعيين جميع البيانات
