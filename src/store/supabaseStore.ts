@@ -535,7 +535,7 @@ class SupabaseStore {
       title: data.title,
       description: data.description,
       opponent: updates.opponent || '',
-      subject: updates.subject || data.title,
+      subject: updates.subject || data.case_number,
       caseType: updates.caseType || 'عام',
       status: data.status as 'active' | 'closed' | 'pending',
       createdAt: new Date(data.created_at),
@@ -568,11 +568,11 @@ class SupabaseStore {
       id: stage.id,
       caseId: stage.case_id,
       courtName: stage.court_name,
-      caseNumber: '', // Default empty as not in current DB structure
+      caseNumber: stage.stage_name.split(' - ')[1] || '',
       stageName: stage.stage_name,
       firstSessionDate: stage.first_session_date ? new Date(stage.first_session_date) : new Date(),
-      status: 'active' as 'active' | 'completed', // Default status
-      notes: undefined,
+      status: 'active' as 'active' | 'completed',
+      notes: stage.resolution_details,
       isResolved: stage.is_resolved || false,
       resolutionDate: stage.resolution_date ? new Date(stage.resolution_date) : undefined,
       decisionNumber: undefined,
@@ -590,7 +590,8 @@ class SupabaseStore {
         court_name: stage.courtName,
         first_session_date: stage.firstSessionDate?.toISOString().split('T')[0],
         is_resolved: stage.isResolved || false,
-        resolution_date: stage.resolutionDate?.toISOString().split('T')[0]
+        resolution_date: stage.resolutionDate?.toISOString().split('T')[0],
+        resolution_details: stage.notes
       })
       .select()
       .single();
@@ -625,6 +626,7 @@ class SupabaseStore {
     if (updates.firstSessionDate !== undefined) updateData.first_session_date = updates.firstSessionDate?.toISOString().split('T')[0];
     if (updates.isResolved !== undefined) updateData.is_resolved = updates.isResolved;
     if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate?.toISOString().split('T')[0];
+    if (updates.notes !== undefined) updateData.resolution_details = updates.notes;
 
     const { data, error } = await supabase
       .from('case_stages')
