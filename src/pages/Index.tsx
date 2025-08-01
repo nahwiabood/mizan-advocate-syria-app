@@ -99,6 +99,28 @@ const Index = () => {
     setIsTaskDialogOpen(true);
   };
 
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    // Find sessions and appointments for this date
+    const dateStr = date.toISOString().split('T')[0];
+    const sessionsForDate = sessions.filter(session => 
+      session.sessionDate.toISOString().split('T')[0] === dateStr
+    );
+    const appointmentsForDate = appointments.filter(appointment => 
+      appointment.appointmentDate.toISOString().split('T')[0] === dateStr
+    );
+    
+    const dayData: DayData = {
+      date,
+      sessions: sessionsForDate,
+      tasks: [],
+      appointments: appointmentsForDate
+    };
+    
+    setSelectedDayData(dayData);
+    setIsTaskDialogOpen(true);
+  };
+
   const handleTaskToggle = async (taskId: string, completed: boolean) => {
     try {
       await dataStore.updateTask(taskId, {
@@ -111,9 +133,6 @@ const Index = () => {
     }
   };
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-  };
 
   // Separate tasks into completed and incomplete
   const completedTasks = tasks.filter(task => task.isCompleted);

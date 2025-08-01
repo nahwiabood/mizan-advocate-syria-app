@@ -468,9 +468,9 @@ class SupabaseStore {
       clientId: case_.client_id,
       title: case_.title,
       description: case_.description,
-      opponent: '', // Default empty as not in DB
-      subject: case_.title, // Use title as subject
-      caseType: 'عام', // Default case type
+      opponent: case_.opponent || '',
+      subject: case_.case_number || case_.title,
+      caseType: 'عام',
       status: case_.status as 'active' | 'closed' | 'pending',
       createdAt: new Date(case_.created_at),
       updatedAt: new Date(case_.updated_at)
@@ -482,10 +482,10 @@ class SupabaseStore {
       .from('cases')
       .insert({
         client_id: case_.clientId,
-        case_number: case_.subject || case_.title,
         title: case_.title,
         description: case_.description,
-        status: case_.status
+        case_number: case_.subject,
+        opponent: case_.opponent
       })
       .select()
       .single();
@@ -500,8 +500,8 @@ class SupabaseStore {
       clientId: data.client_id,
       title: data.title,
       description: data.description,
-      opponent: case_.opponent,
-      subject: case_.subject,
+      opponent: data.opponent,
+      subject: data.case_number,
       caseType: case_.caseType,
       status: data.status as 'active' | 'closed' | 'pending',
       createdAt: new Date(data.created_at),
@@ -516,6 +516,7 @@ class SupabaseStore {
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.status !== undefined) updateData.status = updates.status;
     if (updates.subject !== undefined) updateData.case_number = updates.subject;
+    if (updates.opponent !== undefined) updateData.opponent = updates.opponent;
 
     const { data, error } = await supabase
       .from('cases')
@@ -534,8 +535,8 @@ class SupabaseStore {
       clientId: data.client_id,
       title: data.title,
       description: data.description,
-      opponent: updates.opponent || '',
-      subject: updates.subject || data.case_number,
+      opponent: data.opponent || '',
+      subject: data.case_number || '',
       caseType: updates.caseType || 'عام',
       status: data.status as 'active' | 'closed' | 'pending',
       createdAt: new Date(data.created_at),
@@ -568,7 +569,7 @@ class SupabaseStore {
       id: stage.id,
       caseId: stage.case_id,
       courtName: stage.court_name,
-      caseNumber: stage.stage_name.split(' - ')[1] || '',
+      caseNumber: stage.case_number_ref || '',
       stageName: stage.stage_name,
       firstSessionDate: stage.first_session_date ? new Date(stage.first_session_date) : new Date(),
       status: 'active' as 'active' | 'completed',
@@ -588,6 +589,7 @@ class SupabaseStore {
         case_id: stage.caseId,
         stage_name: stage.stageName,
         court_name: stage.courtName,
+        case_number_ref: stage.caseNumber,
         first_session_date: stage.firstSessionDate?.toISOString().split('T')[0],
         is_resolved: stage.isResolved || false,
         resolution_date: stage.resolutionDate?.toISOString().split('T')[0],
@@ -623,6 +625,7 @@ class SupabaseStore {
     
     if (updates.stageName !== undefined) updateData.stage_name = updates.stageName;
     if (updates.courtName !== undefined) updateData.court_name = updates.courtName;
+    if (updates.caseNumber !== undefined) updateData.case_number_ref = updates.caseNumber;
     if (updates.firstSessionDate !== undefined) updateData.first_session_date = updates.firstSessionDate?.toISOString().split('T')[0];
     if (updates.isResolved !== undefined) updateData.is_resolved = updates.isResolved;
     if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate?.toISOString().split('T')[0];
