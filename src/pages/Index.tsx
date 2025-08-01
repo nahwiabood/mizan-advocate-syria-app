@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,8 +19,10 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
+  const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [selectedDayData, setSelectedDayData] = useState<DayData | null>(null);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -34,10 +35,12 @@ const Index = () => {
         dataStore.getTasks(),
         dataStore.getAppointments()
       ]);
-
       setSessions(sessionsData);
       setTasks(tasksData);
       setAppointments(appointmentsData);
+      
+      // Initialize with today's data
+      filterDataByDate(new Date(), sessionsData, appointmentsData);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -94,6 +97,21 @@ const Index = () => {
     return Array.from(dataMap.values());
   }, [sessions, tasks, appointments]);
 
+  const filterDataByDate = (date: Date, sessionsData: Session[] = sessions, appointmentsData: Appointment[] = appointments) => {
+    const dateStr = date.toISOString().split('T')[0];
+    
+    const sessionsForDate = sessionsData.filter(session => 
+      session.sessionDate.toISOString().split('T')[0] === dateStr
+    );
+    
+    const appointmentsForDate = appointmentsData.filter(appointment => 
+      appointment.appointmentDate.toISOString().split('T')[0] === dateStr
+    );
+    
+    setFilteredSessions(sessionsForDate);
+    setFilteredAppointments(appointmentsForDate);
+  };
+
   const handleDateClick = (dayData: DayData) => {
     setSelectedDayData(dayData);
     setIsTaskDialogOpen(true);
@@ -101,24 +119,7 @@ const Index = () => {
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    // Find sessions and appointments for this date
-    const dateStr = date.toISOString().split('T')[0];
-    const sessionsForDate = sessions.filter(session => 
-      session.sessionDate.toISOString().split('T')[0] === dateStr
-    );
-    const appointmentsForDate = appointments.filter(appointment => 
-      appointment.appointmentDate.toISOString().split('T')[0] === dateStr
-    );
-    
-    const dayData: DayData = {
-      date,
-      sessions: sessionsForDate,
-      tasks: [],
-      appointments: appointmentsForDate
-    };
-    
-    setSelectedDayData(dayData);
-    setIsTaskDialogOpen(true);
+    filterDataByDate(date);
   };
 
   const handleTaskToggle = async (taskId: string, completed: boolean) => {
@@ -132,7 +133,6 @@ const Index = () => {
       console.error('Error updating task:', error);
     }
   };
-
 
   // Separate tasks into completed and incomplete
   const completedTasks = tasks.filter(task => task.isCompleted);
@@ -167,11 +167,16 @@ const Index = () => {
                 <CardTitle className="text-right flex items-center gap-2">
                   <Gavel className="h-6 w-6 text-blue-600" />
                   الجلسات
+                  {filteredSessions.length > 0 && (
+                    <Badge variant="secondary" className="mr-2">
+                      {formatSyrianDate(selectedDate)}
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <SessionsTable 
-                  sessions={sessions.slice(0, 5)} 
+                  sessions={filteredSessions.length > 0 ? filteredSessions : sessions.slice(0, 5)} 
                   selectedDate={selectedDate}
                   onSessionUpdate={loadData}
                 />
@@ -222,11 +227,16 @@ const Index = () => {
             <CardTitle className="text-right flex items-center gap-2">
               <CalendarIcon className="h-6 w-6 text-green-600" />
               المواعيد
+              {filteredAppointments.length > 0 && (
+                <Badge variant="secondary" className="mr-2">
+                  {formatSyrianDate(selectedDate)}
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <AppointmentsTable 
-              appointments={appointments.slice(0, 5)} 
+              appointments={filteredAppointments.length > 0 ? filteredAppointments : appointments.slice(0, 5)}
               selectedDate={selectedDate}
               onAppointmentUpdate={loadData}
             />
