@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -169,32 +168,11 @@ const OfficeAccounting = () => {
   const safeFormatDate = (date: any): string => {
     if (!date) return 'غير محدد';
     try {
-      // Handle string dates from database
-      if (typeof date === 'string') {
-        const parsedDate = new Date(date);
-        if (isNaN(parsedDate.getTime())) {
-          return 'تاريخ غير صحيح';
-        }
-        return formatSyrianDate(parsedDate);
-      }
-      // Handle Date objects
-      if (date instanceof Date) {
-        if (isNaN(date.getTime())) {
-          return 'تاريخ غير صحيح';
-        }
-        return formatSyrianDate(date);
-      }
-      return 'تاريخ غير صحيح';
+      return formatSyrianDate(date);
     } catch (error) {
       console.error('Error formatting date:', date, error);
       return 'تاريخ غير صحيح';
     }
-  };
-
-  // Helper function to get client name by ID
-  const getClientNameById = (clientId: string): string => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? client.name : 'موكل غير معروف';
   };
 
   // Calculate totals including client and case data
@@ -314,7 +292,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">مصاريف المكتب العامة</span>
+                               <span className="text-xs text-muted-foreground">مصاريف المكتب</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-red-600 font-medium">
@@ -330,9 +308,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-blue-600 font-medium">
-                                 مصروف في حساب الموكل: {getClientNameById(item.client_id)}
-                               </span>
+                               <span className="text-xs text-muted-foreground">مصاريف الموكلين</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-red-600 font-medium">
@@ -348,9 +324,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-purple-600 font-medium">
-                                 مصروف قضية رقم: {item.case_id}
-                               </span>
+                               <span className="text-xs text-muted-foreground">مصاريف القضايا</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-red-600 font-medium">
@@ -403,7 +377,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">إيرادات المكتب العامة</span>
+                               <span className="text-xs text-muted-foreground">إيرادات المكتب</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
@@ -419,9 +393,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-blue-600 font-medium">
-                                 دفعة وارد في حساب الموكل: {getClientNameById(item.client_id)}
-                               </span>
+                               <span className="text-xs text-muted-foreground">دفعات الموكلين</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
@@ -437,9 +409,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-blue-600 font-medium">
-                                 أتعاب وارد في حساب الموكل: {getClientNameById(item.client_id)}
-                               </span>
+                               <span className="text-xs text-muted-foreground">أتعاب الموكلين</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
@@ -455,9 +425,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-purple-600 font-medium">
-                                 دفعة قضية رقم: {item.case_id}
-                               </span>
+                               <span className="text-xs text-muted-foreground">دفعات القضايا</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
@@ -473,9 +441,7 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-purple-600 font-medium">
-                                 أتعاب قضية رقم: {item.case_id}
-                               </span>
+                               <span className="text-xs text-muted-foreground">أتعاب القضايا</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
