@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -165,6 +164,17 @@ const OfficeAccounting = () => {
     });
   };
 
+  // Helper function to safely format dates
+  const safeFormatDate = (date: any): string => {
+    if (!date) return 'غير محدد';
+    try {
+      return formatSyrianDate(date);
+    } catch (error) {
+      console.error('Error formatting date:', date, error);
+      return 'تاريخ غير صحيح';
+    }
+  };
+
   // Calculate totals including client and case data
   const officeIncome = income.reduce((sum, item) => sum + item.amount, 0);
   const clientIncomeTotal = clientPayments.reduce((sum, item) => sum + item.amount, 0) + 
@@ -278,7 +288,7 @@ const OfficeAccounting = () => {
                        {/* Office Expenses */}
                        {expenses.map((item) => (
                          <TableRow key={`office-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.expenseDate)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.expenseDate)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
@@ -294,7 +304,7 @@ const OfficeAccounting = () => {
                        {/* Client Expenses */}
                        {clientExpenses.map((item) => (
                          <TableRow key={`client-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.expense_date)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.expense_date)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
@@ -310,7 +320,7 @@ const OfficeAccounting = () => {
                        {/* Case Expenses */}
                        {caseExpenses.map((item) => (
                          <TableRow key={`case-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.expense_date)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.expense_date)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
@@ -363,7 +373,7 @@ const OfficeAccounting = () => {
                        {/* Office Income */}
                        {income.map((item) => (
                          <TableRow key={`office-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.incomeDate)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.incomeDate)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
@@ -379,7 +389,7 @@ const OfficeAccounting = () => {
                        {/* Client Payments */}
                        {clientPayments.map((item) => (
                          <TableRow key={`client-payment-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.payment_date)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.payment_date)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
@@ -395,7 +405,7 @@ const OfficeAccounting = () => {
                        {/* Client Fees */}
                        {clientFees.map((item) => (
                          <TableRow key={`client-fee-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.fee_date)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.fee_date)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
@@ -411,7 +421,7 @@ const OfficeAccounting = () => {
                        {/* Case Payments */}
                        {casePayments.map((item) => (
                          <TableRow key={`case-payment-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.payment_date)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.payment_date)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
@@ -427,7 +437,7 @@ const OfficeAccounting = () => {
                        {/* Case Fees */}
                        {caseFees.map((item) => (
                          <TableRow key={`case-fee-${item.id}`}>
-                           <TableCell className="text-right">{formatSyrianDate(item.fee_date)}</TableCell>
+                           <TableCell className="text-right">{safeFormatDate(item.fee_date)}</TableCell>
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>

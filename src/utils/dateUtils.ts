@@ -1,13 +1,28 @@
-
 import { format, parse, isToday, isBefore, startOfDay } from 'date-fns';
 
 // Syrian date formatting utilities
-export const formatSyrianDate = (date: Date): string => {
-  return format(date, 'dd/MM/yyyy');
+export const formatSyrianDate = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    console.error('Invalid date passed to formatSyrianDate:', date);
+    return 'تاريخ غير صحيح';
+  }
+  
+  return format(dateObj, 'dd/MM/yyyy');
 };
 
-export const formatSyrianDateTime = (date: Date): string => {
-  return format(date, 'dd/MM/yyyy HH:mm');
+export const formatSyrianDateTime = (date: Date | string): string => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    console.error('Invalid date passed to formatSyrianDateTime:', date);
+    return 'تاريخ غير صحيح';
+  }
+  
+  return format(dateObj, 'dd/MM/yyyy HH:mm');
 };
 
 export const parseSyrianDate = (dateString: string): Date => {
