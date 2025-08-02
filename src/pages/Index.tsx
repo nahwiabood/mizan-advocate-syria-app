@@ -40,7 +40,7 @@ const Index = () => {
       setAppointments(appointmentsData);
       
       // Initialize with today's data
-      filterDataByDate(new Date(), sessionsData, appointmentsData);
+      filterDataByDate(selectedDate, sessionsData, appointmentsData);
     } catch (error) {
       console.error('Error loading data:', error);
     }
