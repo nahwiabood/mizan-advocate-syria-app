@@ -13,6 +13,7 @@ import { Plus, DollarSign, TrendingDown, TrendingUp, Calendar as CalendarIcon } 
 import { dataStore } from '@/store/dataStore';
 import { Client, OfficeIncome, OfficeExpense } from '@/types';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { Layout } from '@/components/Layout';
 
@@ -20,6 +21,12 @@ const OfficeAccounting = () => {
   const [income, setIncome] = useState<OfficeIncome[]>([]);
   const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [clientPayments, setClientPayments] = useState<any[]>([]);
+  const [clientFees, setClientFees] = useState<any[]>([]);
+  const [clientExpenses, setClientExpenses] = useState<any[]>([]);
+  const [casePayments, setCasePayments] = useState<any[]>([]);
+  const [caseFees, setCaseFees] = useState<any[]>([]);
+  const [caseExpenses, setCaseExpenses] = useState<any[]>([]);
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
 
@@ -39,17 +46,66 @@ const OfficeAccounting = () => {
     loadData();
   }, []);
 
+  const fetchCasePayments = async () => {
+    const { data, error } = await supabase.from('case_payments').select('*');
+    if (error) {
+      console.error('Error fetching case payments:', error);
+      return [];
+    }
+    return data || [];
+  };
+
+  const fetchCaseFees = async () => {
+    const { data, error } = await supabase.from('case_fees').select('*');
+    if (error) {
+      console.error('Error fetching case fees:', error);
+      return [];
+    }
+    return data || [];
+  };
+
+  const fetchCaseExpenses = async () => {
+    const { data, error } = await supabase.from('case_expenses').select('*');
+    if (error) {
+      console.error('Error fetching case expenses:', error);
+      return [];
+    }
+    return data || [];
+  };
+
   const loadData = async () => {
     try {
-      const [incomeData, expensesData, clientsData] = await Promise.all([
+      const [
+        incomeData, 
+        expensesData, 
+        clientsData, 
+        clientPaymentsData,
+        clientFeesData,
+        clientExpensesData,
+        casePaymentsData,
+        caseFeesData,
+        caseExpensesData
+      ] = await Promise.all([
         dataStore.getOfficeIncome(),
         dataStore.getOfficeExpenses(),
-        dataStore.getClients()
+        dataStore.getClients(),
+        dataStore.getClientPayments(),
+        dataStore.getClientFees(),
+        dataStore.getClientExpenses(),
+        fetchCasePayments(),
+        fetchCaseFees(),
+        fetchCaseExpenses()
       ]);
 
       setIncome(incomeData);
       setExpenses(expensesData);
       setClients(clientsData);
+      setClientPayments(clientPaymentsData);
+      setClientFees(clientFeesData);
+      setClientExpenses(clientExpensesData);
+      setCasePayments(casePaymentsData);
+      setCaseFees(caseFeesData);
+      setCaseExpenses(caseExpensesData);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -109,8 +165,20 @@ const OfficeAccounting = () => {
     });
   };
 
-  const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
-  const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
+  // Calculate totals including client and case data
+  const officeIncome = income.reduce((sum, item) => sum + item.amount, 0);
+  const clientIncomeTotal = clientPayments.reduce((sum, item) => sum + item.amount, 0) + 
+                           clientFees.reduce((sum, item) => sum + item.amount, 0);
+  const caseIncomeTotal = casePayments.reduce((sum, item) => sum + item.amount, 0) + 
+                         caseFees.reduce((sum, item) => sum + item.amount, 0);
+  
+  const totalIncome = officeIncome + clientIncomeTotal + caseIncomeTotal;
+  
+  const officeExpensesTotal = expenses.reduce((sum, item) => sum + item.amount, 0);
+  const clientExpensesTotal = clientExpenses.reduce((sum, item) => sum + item.amount, 0);
+  const caseExpensesTotal = caseExpenses.reduce((sum, item) => sum + item.amount, 0);
+  
+  const totalExpenses = officeExpensesTotal + clientExpensesTotal + caseExpensesTotal;
   const netProfit = totalIncome - totalExpenses;
 
   return (
@@ -206,24 +274,63 @@ const OfficeAccounting = () => {
                         <TableHead className="text-right">المبلغ</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {expenses.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="text-right">{formatSyrianDate(item.expenseDate)}</TableCell>
-                          <TableCell className="text-right">{item.description}</TableCell>
-                          <TableCell className="text-right text-red-600 font-medium">
-                            {item.amount.toLocaleString()} ل.س
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {expenses.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center text-muted-foreground">
-                            لا توجد مصاريف مسجلة
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
+                     <TableBody>
+                       {/* Office Expenses */}
+                       {expenses.map((item) => (
+                         <TableRow key={`office-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.expenseDate)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">مصاريف المكتب</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-red-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {/* Client Expenses */}
+                       {clientExpenses.map((item) => (
+                         <TableRow key={`client-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.expense_date)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">مصاريف الموكلين</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-red-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {/* Case Expenses */}
+                       {caseExpenses.map((item) => (
+                         <TableRow key={`case-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.expense_date)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">مصاريف القضايا</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-red-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {(expenses.length === 0 && clientExpenses.length === 0 && caseExpenses.length === 0) && (
+                         <TableRow>
+                           <TableCell colSpan={3} className="text-center text-muted-foreground">
+                             لا توجد مصاريف مسجلة
+                           </TableCell>
+                         </TableRow>
+                       )}
+                     </TableBody>
                   </Table>
                 </div>
               </TabsContent>
@@ -252,24 +359,95 @@ const OfficeAccounting = () => {
                         <TableHead className="text-right">المبلغ</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {income.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="text-right">{formatSyrianDate(item.incomeDate)}</TableCell>
-                          <TableCell className="text-right">{item.description}</TableCell>
-                          <TableCell className="text-right text-green-600 font-medium">
-                            {item.amount.toLocaleString()} ل.س
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {income.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center text-muted-foreground">
-                            لا توجد إيرادات مسجلة
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
+                     <TableBody>
+                       {/* Office Income */}
+                       {income.map((item) => (
+                         <TableRow key={`office-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.incomeDate)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">إيرادات المكتب</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-green-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {/* Client Payments */}
+                       {clientPayments.map((item) => (
+                         <TableRow key={`client-payment-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.payment_date)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">دفعات الموكلين</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-green-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {/* Client Fees */}
+                       {clientFees.map((item) => (
+                         <TableRow key={`client-fee-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.fee_date)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">أتعاب الموكلين</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-green-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {/* Case Payments */}
+                       {casePayments.map((item) => (
+                         <TableRow key={`case-payment-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.payment_date)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">دفعات القضايا</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-green-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {/* Case Fees */}
+                       {caseFees.map((item) => (
+                         <TableRow key={`case-fee-${item.id}`}>
+                           <TableCell className="text-right">{formatSyrianDate(item.fee_date)}</TableCell>
+                           <TableCell className="text-right">
+                             <div className="flex flex-col">
+                               <span>{item.description}</span>
+                               <span className="text-xs text-muted-foreground">أتعاب القضايا</span>
+                             </div>
+                           </TableCell>
+                           <TableCell className="text-right text-green-600 font-medium">
+                             {item.amount.toLocaleString()} ل.س
+                           </TableCell>
+                         </TableRow>
+                       ))}
+                       
+                       {(income.length === 0 && clientPayments.length === 0 && clientFees.length === 0 && casePayments.length === 0 && caseFees.length === 0) && (
+                         <TableRow>
+                           <TableCell colSpan={3} className="text-center text-muted-foreground">
+                             لا توجد إيرادات مسجلة
+                           </TableCell>
+                         </TableRow>
+                       )}
+                     </TableBody>
                   </Table>
                 </div>
               </TabsContent>

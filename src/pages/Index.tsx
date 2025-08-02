@@ -100,15 +100,24 @@ const Index = () => {
   const filterDataByDate = (date: Date, sessionsData: Session[] = sessions, appointmentsData: Appointment[] = appointments) => {
     const dateStr = date.toISOString().split('T')[0];
     
-    const sessionsForDate = sessionsData.filter(session => 
+    // Filter sessions for the selected date (current session date)
+    const currentSessionsForDate = sessionsData.filter(session => 
       session.sessionDate.toISOString().split('T')[0] === dateStr
     );
+    
+    // Filter sessions that are postponed to the selected date
+    const postponedSessionsForDate = sessionsData.filter(session => 
+      session.nextSessionDate && session.nextSessionDate.toISOString().split('T')[0] === dateStr
+    );
+    
+    // Combine current and postponed sessions
+    const allSessionsForDate = [...currentSessionsForDate, ...postponedSessionsForDate];
     
     const appointmentsForDate = appointmentsData.filter(appointment => 
       appointment.appointmentDate.toISOString().split('T')[0] === dateStr
     );
     
-    setFilteredSessions(sessionsForDate);
+    setFilteredSessions(allSessionsForDate);
     setFilteredAppointments(appointmentsForDate);
   };
 
@@ -179,6 +188,7 @@ const Index = () => {
                   sessions={filteredSessions.length > 0 ? filteredSessions : sessions.slice(0, 5)} 
                   selectedDate={selectedDate}
                   onSessionUpdate={loadData}
+                  showAddButton={false}
                 />
               </CardContent>
             </Card>

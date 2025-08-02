@@ -172,6 +172,7 @@ class DataStore {
     return supabaseStore.deleteClientExpense(id);
   }
 
+
   // Office Income
   getOfficeIncome(): Promise<OfficeIncome[]> {
     return supabaseStore.getOfficeIncome();
