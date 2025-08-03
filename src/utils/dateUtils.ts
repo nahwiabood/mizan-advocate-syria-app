@@ -1,44 +1,71 @@
+import { format, isToday, isWeekend as isWeekendFns, parse, isValid } from 'date-fns';
+import { format as formatHijri, isHijri, toGregorian } from 'hijri-date/lib/conversion';
 
-import { format, parseISO } from 'date-fns';
-import { arSA } from 'date-fns/locale';
+const hijriMonths = [
+  'محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
+  'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+];
 
-export const formatSyrianDate = (date: string | Date): string => {
+const syrianDays = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+const syrianMonths = [
+  'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
+  'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
+];
+
+export const formatSyrianDate = (date: Date): string => {
+  const day = date.getDate();
+  const monthIndex = date.getMonth();
+  const year = date.getFullYear();
+
+  return `${day} ${syrianMonths[monthIndex]} ${year}`;
+};
+
+export const formatFullSyrianDate = (date: Date): string => {
+  const dayName = syrianDays[date.getDay()];
+  return `${dayName}، ${formatSyrianDate(date)}`;
+};
+
+export const formatISODate = (dateString: string): string => {
   try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    if (isNaN(dateObj.getTime())) {
-      return 'تاريخ غير صحيح';
-    }
-    return format(dateObj, 'dd/MM/yyyy', { locale: arSA });
+    const date = parse(dateString, 'yyyy-MM-dd', new Date());
+    return formatSyrianDate(date);
   } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'تاريخ غير صحيح';
+    console.error("Error parsing date:", error);
+    return 'Invalid Date';
   }
 };
 
-export const formatFullSyrianDate = (date: string | Date): string => {
-  try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    if (isNaN(dateObj.getTime())) {
-      return 'تاريخ غير صحيح';
-    }
-    return format(dateObj, 'EEEE، dd MMMM yyyy', { locale: arSA });
-  } catch (error) {
-    console.error('Error formatting full date:', error);
-    return 'تاريخ غير صحيح';
-  }
+export const getSyrianMonthName = (monthIndex: number): string => {
+  return syrianMonths[monthIndex];
 };
 
-export const formatSyrianDateTime = (date: string | Date): string => {
-  try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    if (isNaN(dateObj.getTime())) {
-      return 'تاريخ غير صحيح';
-    }
-    return format(dateObj, 'dd/MM/yyyy HH:mm', { locale: arSA });
-  } catch (error) {
-    console.error('Error formatting datetime:', error);
-    return 'تاريخ غير صحيح';
-  }
+export const getFullSyrianDayName = (date: Date): string => {
+  return syrianDays[date.getDay()];
+};
+
+export const isDateToday = (date: Date): boolean => {
+  return isToday(date);
+};
+
+export const isWeekend = (date: Date): boolean => {
+  return isWeekendFns(date);
+};
+
+export const getSyrianHoliday = (date: Date): string | null => {
+  const day = date.getDate();
+  const month = date.getMonth();
+
+  if (month === 0 && day === 1) return 'عيد رأس السنة الميلادية';
+  if (month === 3 && day === 17) return 'عيد الجلاء';
+  if (month === 4 && day === 1) return 'عيد العمال';
+  if (month === 4 && day === 6) return 'عيد الشهداء';
+  if (month === 11 && day === 25) return 'عيد الميلاد المجيد';
+
+  return null;
+};
+
+export const isSyrianHoliday = (date: Date): boolean => {
+  return getSyrianHoliday(date) !== null;
 };
 
 export const isSameDay = (date1: Date, date2: Date): boolean => {
@@ -49,63 +76,33 @@ export const isSameDay = (date1: Date, date2: Date): boolean => {
   );
 };
 
-export const isToday = (date: Date): boolean => {
-  return isSameDay(date, new Date());
-};
-
-export const addDays = (date: Date, days: number): Date => {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-};
-
-// إضافة الدوال المفقودة
-export const getSyrianMonthName = (monthIndex: number): string => {
-  const months = [
-    'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
-    'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
-  ];
-  return months[monthIndex] || '';
-};
-
-export const isDateToday = (date: Date): boolean => {
-  return isToday(date);
-};
-
-export const getFullSyrianDayName = (dayIndex: number): string => {
-  const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  return days[dayIndex] || '';
-};
-
-export const isWeekend = (date: Date): boolean => {
-  const day = date.getDay();
-  return day === 5 || day === 6; // الجمعة والسبت
-};
-
-export const getSyrianHoliday = (date: Date): string | null => {
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+export const formatSyrianTime = (time: string | Date): string => {
+  if (!time) return '';
   
-  // عيد رأس السنة
-  if (month === 1 && day === 1) return 'رأس السنة الميلادية';
-  
-  // عيد الاستقلال
-  if (month === 4 && day === 17) return 'عيد الاستقلال';
-  
-  // عيد العمال
-  if (month === 5 && day === 1) return 'عيد العمال';
-  
-  return null;
-};
-
-export const isSyrianHoliday = (date: Date): boolean => {
-  return getSyrianHoliday(date) !== null;
-};
-
-export const isDatePast = (date: Date): boolean => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const compareDate = new Date(date);
-  compareDate.setHours(0, 0, 0, 0);
-  return compareDate < today;
+  try {
+    let timeString: string;
+    
+    if (time instanceof Date) {
+      timeString = time.toTimeString().slice(0, 5);
+    } else {
+      timeString = time;
+    }
+    
+    // Convert from HH:MM format to Arabic format
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours);
+    const min = parseInt(minutes);
+    
+    if (hour === 12) {
+      return `${hour}:${minutes.padStart(2, '0')} ظهراً`;
+    } else if (hour > 12) {
+      return `${hour - 12}:${minutes.padStart(2, '0')} مساءً`;
+    } else if (hour === 0) {
+      return `12:${minutes.padStart(2, '0')} صباحاً`;
+    } else {
+      return `${hour}:${minutes.padStart(2, '0')} صباحاً`;
+    }
+  } catch (error) {
+    return time.toString();
+  }
 };

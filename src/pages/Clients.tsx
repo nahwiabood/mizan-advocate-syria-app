@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, ChevronDown, ChevronRight, User, FileText, Calendar as CalendarIcon, Users, Search, DollarSign, Receipt, CreditCard, Wallet } from 'lucide-react';
+import { Plus, Edit, ChevronDown, ChevronRight, User, FileText, Calendar as CalendarIcon, Users, Search, DollarSign, Receipt, CreditCard, Wallet, Edit2, Trash2 } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
 import { Client, Case, CaseStage, Session, ClientFee, ClientPayment, ClientExpense } from '@/types';
 import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
@@ -37,9 +37,11 @@ const Clients = () => {
   const [isFeeDialogOpen, setIsFeeDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const [isEditEntryDialogOpen, setIsEditEntryDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingCase, setEditingCase] = useState<Case | null>(null);
   const [editingStage, setEditingStage] = useState<CaseStage | null>(null);
+  const [editingEntry, setEditingEntry] = useState<any>(null);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [selectedStageId, setSelectedStageId] = useState<string>('');
@@ -388,6 +390,58 @@ const Clients = () => {
     }
   };
 
+  // Edit accounting entry
+  const handleEditEntry = async (updatedEntry: any) => {
+    try {
+      const entryType = updatedEntry.entryType;
+      const clientName = clients.find(c => c.id === updatedEntry.client_id)?.name || '';
+      
+      if (entryType === 'fee') {
+        await dataStore.updateClientFee(updatedEntry.id, {
+          description: `${clientName} - ${updatedEntry.description}`,
+          amount: updatedEntry.amount,
+          feeDate: updatedEntry.date
+        });
+      } else if (entryType === 'payment') {
+        await dataStore.updateClientPayment(updatedEntry.id, {
+          description: `${clientName} - ${updatedEntry.description}`,
+          amount: updatedEntry.amount,
+          paymentDate: updatedEntry.date
+        });
+      } else if (entryType === 'expense') {
+        await dataStore.updateClientExpense(updatedEntry.id, {
+          description: `${clientName} - ${updatedEntry.description}`,
+          amount: updatedEntry.amount,
+          expenseDate: updatedEntry.date
+        });
+      }
+
+      setIsEditEntryDialogOpen(false);
+      setEditingEntry(null);
+      await loadData();
+    } catch (error) {
+      console.error('Error updating entry:', error);
+    }
+  };
+
+  // Delete accounting entry
+  const handleDeleteEntry = async (id: string, type: string) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا القيد؟')) return;
+
+    try {
+      if (type === 'fee') {
+        await dataStore.deleteClientFee(id);
+      } else if (type === 'payment') {
+        await dataStore.deleteClientPayment(id);
+      } else if (type === 'expense') {
+        await dataStore.deleteClientExpense(id);
+      }
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    }
+  };
+
   // Reset form functions
   const resetClientForm = () => {
     setClientForm({
@@ -525,6 +579,17 @@ const Clients = () => {
     resetExpenseForm();
     setSelectedClientId(clientId);
     setIsExpenseDialogOpen(true);
+  };
+
+  const openEditEntryDialog = (entry: any, type: string, clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    setEditingEntry({
+      ...entry,
+      entryType: type,
+      client_id: clientId,
+      clientName: client?.name || ''
+    });
+    setIsEditEntryDialogOpen(true);
   };
 
   const getClientCases = (clientId: string) => {
@@ -882,110 +947,132 @@ const Clients = () => {
                                 </Button>
                               </div>
 
-                              {/* Accounting Tables */}
-                              <Tabs defaultValue="fees" className="w-full">
-                                <TabsList className="grid w-full grid-cols-3">
-                                  <TabsTrigger value="fees">الأتعاب</TabsTrigger>
-                                  <TabsTrigger value="payments">المدفوعات</TabsTrigger>
-                                  <TabsTrigger value="expenses">المصاريف</TabsTrigger>
-                                </TabsList>
-                                
-                                <TabsContent value="fees">
-                                  <div className="overflow-x-auto">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead className="text-right">التاريخ</TableHead>
-                                          <TableHead className="text-right">الوصف</TableHead>
-                                          <TableHead className="text-right">المبلغ</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {accountingData.fees.map((fee) => (
-                                          <TableRow key={fee.id}>
-                                            <TableCell className="text-right">{formatSyrianDate(fee.feeDate)}</TableCell>
-                                            <TableCell className="text-right">{fee.description}</TableCell>
-                                            <TableCell className="text-right text-green-600 font-medium">
-                                              {fee.amount.toLocaleString()} ل.س
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                        {accountingData.fees.length === 0 && (
-                                          <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                              لا توجد أتعاب مسجلة
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </TabsContent>
-                                
-                                <TabsContent value="payments">
-                                  <div className="overflow-x-auto">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead className="text-right">التاريخ</TableHead>
-                                          <TableHead className="text-right">الوصف</TableHead>
-                                          <TableHead className="text-right">المبلغ</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {accountingData.payments.map((payment) => (
-                                          <TableRow key={payment.id}>
-                                            <TableCell className="text-right">{formatSyrianDate(payment.paymentDate)}</TableCell>
-                                            <TableCell className="text-right">{payment.description}</TableCell>
-                                            <TableCell className="text-right text-blue-600 font-medium">
-                                              {payment.amount.toLocaleString()} ل.س
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                        {accountingData.payments.length === 0 && (
-                                          <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                              لا توجد مدفوعات مسجلة
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </TabsContent>
-                                
-                                <TabsContent value="expenses">
-                                  <div className="overflow-x-auto">
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead className="text-right">التاريخ</TableHead>
-                                          <TableHead className="text-right">الوصف</TableHead>
-                                          <TableHead className="text-right">المبلغ</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {accountingData.expenses.map((expense) => (
-                                          <TableRow key={expense.id}>
-                                            <TableCell className="text-right">{formatSyrianDate(expense.expenseDate)}</TableCell>
-                                            <TableCell className="text-right">{expense.description}</TableCell>
-                                            <TableCell className="text-right text-orange-600 font-medium">
-                                              {expense.amount.toLocaleString()} ل.س
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                        {accountingData.expenses.length === 0 && (
-                                          <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                              لا توجد مصاريف مسجلة
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                </TabsContent>
-                              </Tabs>
+                              {/* Unified Accounting Table */}
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="text-right">التاريخ</TableHead>
+                                      <TableHead className="text-right">البيان</TableHead>
+                                      <TableHead className="text-right">الموكل</TableHead>
+                                      <TableHead className="text-right">الدفعات</TableHead>
+                                      <TableHead className="text-right">المصاريف</TableHead>
+                                      <TableHead className="text-right">الإجراءات</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {/* Fees */}
+                                    {accountingData.fees.map((fee) => (
+                                      <TableRow key={`fee-${fee.id}`}>
+                                        <TableCell className="text-right">{formatSyrianDate(fee.feeDate)}</TableCell>
+                                        <TableCell className="text-right">{fee.description}</TableCell>
+                                        <TableCell className="text-right">{client.name}</TableCell>
+                                        <TableCell className="text-right">
+                                          <span className="text-green-600 font-medium">
+                                            {fee.amount.toLocaleString()} ل.س
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className="text-right">-</TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex gap-1">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => openEditEntryDialog(fee, 'fee', client.id)}
+                                            >
+                                              <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleDeleteEntry(fee.id, 'fee')}
+                                              className="text-red-600 hover:text-red-700"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                    
+                                    {/* Payments */}
+                                    {accountingData.payments.map((payment) => (
+                                      <TableRow key={`payment-${payment.id}`}>
+                                        <TableCell className="text-right">{formatSyrianDate(payment.paymentDate)}</TableCell>
+                                        <TableCell className="text-right">{payment.description}</TableCell>
+                                        <TableCell className="text-right">{client.name}</TableCell>
+                                        <TableCell className="text-right">
+                                          <span className="text-blue-600 font-medium">
+                                            {payment.amount.toLocaleString()} ل.س
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className="text-right">-</TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex gap-1">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => openEditEntryDialog(payment, 'payment', client.id)}
+                                            >
+                                              <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleDeleteEntry(payment.id, 'payment')}
+                                              className="text-red-600 hover:text-red-700"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                    
+                                    {/* Expenses */}
+                                    {accountingData.expenses.map((expense) => (
+                                      <TableRow key={`expense-${expense.id}`}>
+                                        <TableCell className="text-right">{formatSyrianDate(expense.expenseDate)}</TableCell>
+                                        <TableCell className="text-right">{expense.description}</TableCell>
+                                        <TableCell className="text-right">{client.name}</TableCell>
+                                        <TableCell className="text-right">-</TableCell>
+                                        <TableCell className="text-right">
+                                          <span className="text-red-600 font-medium">
+                                            {expense.amount.toLocaleString()} ل.س
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex gap-1">
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => openEditEntryDialog(expense, 'expense', client.id)}
+                                            >
+                                              <Edit2 className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleDeleteEntry(expense.id, 'expense')}
+                                              className="text-red-600 hover:text-red-700"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                    
+                                    {(accountingData.fees.length === 0 && accountingData.payments.length === 0 && accountingData.expenses.length === 0) && (
+                                      <TableRow>
+                                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                          لا توجد قيود محاسبية
+                                        </TableCell>
+                                      </TableRow>
+                                    )}
+                                  </TableBody>
+                                </Table>
+                              </div>
                             </div>
                           </TabsContent>
                         </Tabs>
@@ -1425,6 +1512,73 @@ const Clients = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Entry Dialog */}
+        {editingEntry && (
+          <Dialog open={isEditEntryDialogOpen} onOpenChange={setIsEditEntryDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-right">تعديل القيد المحاسبي</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4" dir="rtl">
+                <div>
+                  <Label htmlFor="editDescription">البيان</Label>
+                  <Input
+                    id="editDescription"
+                    value={editingEntry.description}
+                    onChange={(e) => setEditingEntry({ ...editingEntry, description: e.target.value })}
+                    className="text-right"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editAmount">المبلغ</Label>
+                  <Input
+                    id="editAmount"
+                    type="number"
+                    value={editingEntry.amount}
+                    onChange={(e) => setEditingEntry({ ...editingEntry, amount: parseFloat(e.target.value) || 0 })}
+                    className="text-right"
+                  />
+                </div>
+                <div>
+                  <Label>التاريخ</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-end text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {editingEntry.date ? formatFullSyrianDate(new Date(editingEntry.date)) : 'اختر تاريخاً'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={editingEntry.date ? new Date(editingEntry.date) : new Date()}
+                        onSelect={(date) => setEditingEntry({ ...editingEntry, date: date || new Date() })}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label htmlFor="editClient">الموكل</Label>
+                  <Input
+                    id="editClient"
+                    value={editingEntry.clientName}
+                    disabled
+                    className="text-right bg-gray-100"
+                  />
+                </div>
+                <Button onClick={() => handleEditEntry(editingEntry)} className="w-full">
+                  حفظ التعديلات
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </Layout>
   );
