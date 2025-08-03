@@ -1,31 +1,61 @@
 
-import moment from 'moment';
-import 'moment/locale/ar-sy';
+// Arabic date utilities without moment.js dependency
 
-moment.locale('ar-sy');
+const ARABIC_MONTHS = [
+  'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
+  'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
+];
+
+const ARABIC_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+const parseDate = (date: Date | string): Date => {
+  return typeof date === 'string' ? new Date(date) : date;
+};
 
 export const formatSyrianDate = (date: Date | string): string => {
-  return moment(date).format('D MMMM YYYY');
+  const d = parseDate(date);
+  const day = d.getDate();
+  const month = ARABIC_MONTHS[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
 };
 
 export const formatFullSyrianDate = (date: Date | string): string => {
-  return moment(date).format('dddd D MMMM YYYY');
+  const d = parseDate(date);
+  const dayName = ARABIC_DAYS[d.getDay()];
+  const day = d.getDate();
+  const month = ARABIC_MONTHS[d.getMonth()];
+  const year = d.getFullYear();
+  return `${dayName} ${day} ${month} ${year}`;
 };
 
 export const formatSyrianDateTime = (date: Date | string): string => {
-  return moment(date).format('dddd D MMMM YYYY - HH:mm');
+  const d = parseDate(date);
+  const dayName = ARABIC_DAYS[d.getDay()];
+  const day = d.getDate();
+  const month = ARABIC_MONTHS[d.getMonth()];
+  const year = d.getFullYear();
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  return `${dayName} ${day} ${month} ${year} - ${hours}:${minutes}`;
 };
 
 export const isSameDay = (date1: Date | string, date2: Date | string): boolean => {
-  return moment(date1).isSame(date2, 'day');
+  const d1 = parseDate(date1);
+  const d2 = parseDate(date2);
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
 };
 
 export const isToday = (date: Date | string): boolean => {
-  return moment(date).isSame(new Date(), 'day');
+  return isSameDay(date, new Date());
 };
 
 export const addDays = (date: Date | string, days: number): Date => {
-  return moment(date).add(days, 'days').toDate();
+  const d = new Date(parseDate(date));
+  d.setDate(d.getDate() + days);
+  return d;
 };
 
 export const formatSyrianTime = (time: string): string => {
@@ -41,31 +71,26 @@ export const formatSyrianTime = (time: string): string => {
 };
 
 export const getSyrianMonthName = (month: number): string => {
-  const monthNames = [
-    'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
-    'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
-  ];
-  return monthNames[month] || '';
+  return ARABIC_MONTHS[month] || '';
 };
 
 export const isDateToday = (date: Date | string): boolean => {
-  return moment(date).isSame(new Date(), 'day');
+  return isToday(date);
 };
 
 export const getFullSyrianDayName = (dayIndex: number): string => {
-  const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  return dayNames[dayIndex] || '';
+  return ARABIC_DAYS[dayIndex] || '';
 };
 
 export const isWeekend = (date: Date | string): boolean => {
-  const day = moment(date).day();
+  const day = parseDate(date).getDay();
   return day === 5 || day === 6; // Friday or Saturday
 };
 
 export const getSyrianHoliday = (date: Date | string): string | null => {
-  const momentDate = moment(date);
-  const month = momentDate.month() + 1; // moment months are 0-indexed
-  const day = momentDate.date();
+  const d = parseDate(date);
+  const month = d.getMonth() + 1; // JavaScript months are 0-indexed
+  const day = d.getDate();
   
   // Syrian national holidays
   const holidays: Record<string, string> = {
@@ -87,5 +112,9 @@ export const isSyrianHoliday = (date: Date | string): boolean => {
 };
 
 export const isDatePast = (date: Date | string): boolean => {
-  return moment(date).isBefore(new Date(), 'day');
+  const d = parseDate(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  return d < today;
 };
