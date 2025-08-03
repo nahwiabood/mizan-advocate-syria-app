@@ -1,7 +1,12 @@
-
 import { format, isToday, isWeekend as isWeekendFns, parse, isValid } from 'date-fns';
+import { format as formatHijri, isHijri, toGregorian } from 'hijri-date/lib/conversion';
 
-const syrianDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const hijriMonths = [
+  'محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
+  'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+];
+
+const syrianDays = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
 const syrianMonths = [
   'كانون الثاني', 'شباط', 'آذار', 'نيسان', 'أيار', 'حزيران',
   'تموز', 'آب', 'أيلول', 'تشرين الأول', 'تشرين الثاني', 'كانون الأول'
@@ -43,33 +48,17 @@ export const isDateToday = (date: Date): boolean => {
 };
 
 export const isWeekend = (date: Date): boolean => {
-  // In Syria, Friday and Saturday are weekend days
-  const day = date.getDay();
-  return day === 5 || day === 6; // Friday = 5, Saturday = 6
+  return isWeekendFns(date);
 };
 
-export const isDatePast = (date: Date): boolean => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const compareDate = new Date(date);
-  compareDate.setHours(0, 0, 0, 0);
-  return compareDate < today;
-};
-
-// Syrian national holidays
 export const getSyrianHoliday = (date: Date): string | null => {
   const day = date.getDate();
   const month = date.getMonth();
 
-  // Fixed date holidays
-  if (month === 0 && day === 1) return 'رأس السنة الميلادية';
-  if (month === 2 && day === 8) return 'عيد الثورة';
-  if (month === 2 && day === 21) return 'عيد الأم';
+  if (month === 0 && day === 1) return 'عيد رأس السنة الميلادية';
   if (month === 3 && day === 17) return 'عيد الجلاء';
   if (month === 4 && day === 1) return 'عيد العمال';
   if (month === 4 && day === 6) return 'عيد الشهداء';
-  if (month === 7 && day === 1) return 'عيد الجيش';
-  if (month === 10 && day === 16) return 'عيد التصحيح';
   if (month === 11 && day === 25) return 'عيد الميلاد المجيد';
 
   return null;
@@ -77,10 +66,6 @@ export const getSyrianHoliday = (date: Date): string | null => {
 
 export const isSyrianHoliday = (date: Date): boolean => {
   return getSyrianHoliday(date) !== null;
-};
-
-export const isHolidayOrWeekend = (date: Date): boolean => {
-  return isWeekend(date) || isSyrianHoliday(date);
 };
 
 export const isSameDay = (date1: Date, date2: Date): boolean => {
@@ -106,6 +91,7 @@ export const formatSyrianTime = (time: string | Date): string => {
     // Convert from HH:MM format to Arabic format
     const [hours, minutes] = timeString.split(':');
     const hour = parseInt(hours);
+    const min = parseInt(minutes);
     
     if (hour === 12) {
       return `${hour}:${minutes.padStart(2, '0')} ظهراً`;

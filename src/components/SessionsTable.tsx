@@ -1,293 +1,531 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { Session } from '@/types';
-import { formatSyrianDate, formatSyrianTime, isHolidayOrWeekend, getSyrianHoliday } from '@/utils/dateUtils';
-import { dataStore } from '@/store/dataStore';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CalendarIcon, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
+import { Session } from '@/types';
+import { dataStore } from '@/store/dataStore';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface SessionsTableProps {
   sessions: Session[];
+  selectedDate: Date;
   onSessionUpdate: () => void;
-  selectedDate?: Date;
+  showAddButton?: boolean;
+  onWeekendWarning?: (date: Date) => void;
 }
 
-export const SessionsTable: React.FC<SessionsTableProps> = ({ 
-  sessions, 
+export const SessionsTable: React.FC<SessionsTableProps> = ({
+  sessions,
+  selectedDate,
   onSessionUpdate,
-  selectedDate 
+  showAddButton = true,
+  onWeekendWarning
 }) => {
-  const [transferDate, setTransferDate] = useState<Date>();
-  const [transferReason, setTransferReason] = useState('');
-  const [transferingSessionId, setTransferingSessionId] = useState<string | null>(null);
-  const [showHolidayWarning, setShowHolidayWarning] = useState(false);
-  const [holidayWarningData, setHolidayWarningData] = useState<{
-    sessionId: string;
-    date: Date;
-    reason: string;
-    holidayName?: string;
-  } | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [newSession, setNewSession] = useState({
+    courtName: '',
+    caseNumber: '',
+    clientName: '',
+    opponent: '',
+    postponementReason: '',
+    sessionDate: undefined as Date | undefined,
+  });
+  const [transferData, setTransferData] = useState({
+    nextDate: undefined as Date | undefined,
+    reason: '',
+  });
 
-  const handleTransferSession = async (sessionId: string, newDate: Date, reason: string) => {
-    try {
-      // Check if the target date is a holiday or weekend
-      if (isHolidayOrWeekend(newDate)) {
-        const holidayName = getSyrianHoliday(newDate);
-        setHolidayWarningData({
-          sessionId,
-          date: newDate,
-          reason,
-          holidayName: holidayName || 'عطلة أسبوعية'
-        });
-        setShowHolidayWarning(true);
-        return;
-      }
-
-      await dataStore.transferSession(sessionId, newDate, reason);
-      setTransferDate(undefined);
-      setTransferReason('');
-      setTransferingSessionId(null);
-      onSessionUpdate();
-      toast.success('تم ترحيل الجلسة بنجاح');
-    } catch (error) {
-      console.error('Error transferring session:', error);
-      toast.error('حدث خطأ في ترحيل الجلسة');
+  const handleAddSession = () => {
+    if (!newSession.courtName || !newSession.caseNumber || !newSession.clientName) {
+      return;
     }
+
+    dataStore.addSession({
+      stageId: '',
+      courtName: newSession.courtName,
+      caseNumber: newSession.caseNumber,
+      sessionDate: selectedDate,
+      clientName: newSession.clientName,
+      opponent: newSession.opponent,
+      postponementReason: newSession.postponementReason,
+      isTransferred: false,
+    });
+
+    setNewSession({
+      courtName: '',
+      caseNumber: '',
+      clientName: '',
+      opponent: '',
+      postponementReason: '',
+      sessionDate: undefined,
+    });
+    setIsAddDialogOpen(false);
+    onSessionUpdate();
   };
 
-  const confirmHolidayTransfer = async () => {
-    if (!holidayWarningData) return;
-
-    try {
-      await dataStore.transferSession(
-        holidayWarningData.sessionId,
-        holidayWarningData.date,
-        holidayWarningData.reason
-      );
-      
-      setTransferDate(undefined);
-      setTransferReason('');
-      setTransferingSessionId(null);
-      setShowHolidayWarning(false);
-      setHolidayWarningData(null);
-      onSessionUpdate();
-      toast.success('تم ترحيل الجلسة بنجاح');
-    } catch (error) {
-      console.error('Error transferring session:', error);
-      toast.error('حدث خطأ في ترحيل الجلسة');
-    }
+  const handleEditSession = () => {
+    if (!selectedSession) return;
+    
+    dataStore.updateSession(selectedSession.id, {
+      courtName: newSession.courtName || selectedSession.courtName,
+      caseNumber: newSession.caseNumber || selectedSession.caseNumber,
+      clientName: newSession.clientName || selectedSession.clientName,
+      opponent: newSession.opponent || selectedSession.opponent,
+      postponementReason: newSession.postponementReason || selectedSession.postponementReason,
+      sessionDate: newSession.sessionDate || selectedSession.sessionDate,
+    });
+    
+    setIsEditDialogOpen(false);
+    setSelectedSession(null);
+    setNewSession({
+      courtName: '',
+      caseNumber: '',
+      clientName: '',
+      opponent: '',
+      postponementReason: '',
+      sessionDate: undefined,
+    });
+    onSessionUpdate();
   };
 
-  const handleResolveSession = async (sessionId: string) => {
-    try {
-      await dataStore.resolveSession(sessionId);
-      onSessionUpdate();
-      toast.success('تم إغلاق الجلسة بنجاح');
-    } catch (error) {
-      console.error('Error resolving session:', error);
-      toast.error('حدث خطأ في إغلاق الجلسة');
-    }
+  const handleDeleteSession = () => {
+    if (!selectedSession) return;
+    
+    dataStore.deleteSession(selectedSession.id);
+    setIsDeleteDialogOpen(false);
+    setSelectedSession(null);
+    onSessionUpdate();
   };
 
-  if (sessions.length === 0) {
-    return (
-      <div className="text-center text-muted-foreground py-8">
-        لا توجد جلسات في هذا التاريخ
-      </div>
-    );
-  }
+  const handleResolveSession = (session: Session) => {
+    dataStore.resolveSession(session.id);
+    onSessionUpdate();
+  };
+
+  const handleTransferSession = () => {
+    if (!selectedSession || !transferData.nextDate || !transferData.reason) {
+      return;
+    }
+
+    if (onWeekendWarning) {
+      onWeekendWarning(transferData.nextDate);
+    }
+
+    dataStore.transferSession(selectedSession.id, transferData.nextDate, transferData.reason);
+    
+    setTransferData({ nextDate: undefined, reason: '' });
+    setIsTransferDialogOpen(false);
+    setSelectedSession(null);
+    onSessionUpdate();
+  };
+
+  const openTransferDialog = (session: Session) => {
+    setSelectedSession(session);
+    setIsTransferDialogOpen(true);
+  };
+
+  const openEditDialog = (session: Session) => {
+    setSelectedSession(session);
+    setNewSession({
+      courtName: session.courtName,
+      caseNumber: session.caseNumber,
+      clientName: session.clientName,
+      opponent: session.opponent,
+      postponementReason: session.postponementReason || '',
+      sessionDate: session.sessionDate,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (session: Session) => {
+    setSelectedSession(session);
+    setIsDeleteDialogOpen(true);
+  };
 
   return (
-    <>
-      <div className="space-y-4">
-        {sessions.map((session) => (
-          <div key={session.id} className="border rounded-lg p-4 space-y-3 bg-card">
-            {/* Session Header */}
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <h3 className="font-semibold text-right">{session.clientName}</h3>
-                <p className="text-sm text-muted-foreground text-right">
-                  {session.courtName} - رقم القضية: {session.caseNumber}
-                </p>
-                <p className="text-sm text-muted-foreground text-right">
-                  الخصم: {session.opponent}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  <Clock className="h-3 w-3 ml-1" />
-                  {formatSyrianDate(new Date(session.sessionDate))}
-                </Badge>
-                {session.isResolved && (
-                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                    <CheckCircle2 className="h-3 w-3 ml-1" />
-                    مغلقة
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Postponement Info */}
-            {session.postponementReason && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 text-right">
-                <p className="text-sm font-medium text-yellow-800">سبب التأجيل:</p>
-                <p className="text-sm text-yellow-700">{session.postponementReason}</p>
-              </div>
-            )}
-
-            {/* Next Session Info */}
-            {session.nextSessionDate && !session.isResolved && (
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-3 text-right">
-                <div className="flex items-center gap-2 mb-1">
-                  <ArrowRight className="h-4 w-4 text-blue-600" />
-                  <p className="text-sm font-medium text-blue-800">الجلسة القادمة:</p>
-                </div>
-                <p className="text-sm text-blue-700">
-                  {formatSyrianDate(new Date(session.nextSessionDate))}
-                </p>
-                {session.nextPostponementReason && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    السبب: {session.nextPostponementReason}
+    <Card className="w-full">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-right text-sm sm:text-base truncate">
+            جلسات {formatSyrianDate(selectedDate)}
+          </CardTitle>
+          {showAddButton && (
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  إضافة جلسة
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle className="text-right">إضافة جلسة جديدة</DialogTitle>
+                  <p className="text-sm text-muted-foreground text-right">
+                    التاريخ المحدد: {format(selectedDate, 'EEEE, MMMM d, yyyy')} - {formatFullSyrianDate(selectedDate)}
                   </p>
-                )}
-              </div>
-            )}
-
-            {/* Actions */}
-            {!session.isResolved && (
-              <div className="flex gap-2 pt-2 border-t">
-                {transferingSessionId === session.id ? (
-                  <div className="flex-1 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label className="text-sm">تاريخ الترحيل الجديد</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="text-right">
+                    <Label htmlFor="courtName" className="text-right">المحكمة</Label>
+                    <Input
+                      id="courtName"
+                      value={newSession.courtName}
+                      onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
+                      placeholder="اسم المحكمة"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="caseNumber" className="text-right">رقم الأساس</Label>
+                    <Input
+                      id="caseNumber"
+                      value={newSession.caseNumber}
+                      onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
+                      placeholder="رقم الأساس"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="clientName" className="text-right">الموكل</Label>
+                    <Input
+                      id="clientName"
+                      value={newSession.clientName}
+                      onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
+                      placeholder="اسم الموكل"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="opponent" className="text-right">الخصم</Label>
+                    <Input
+                      id="opponent"
+                      value={newSession.opponent}
+                      onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
+                      placeholder="اسم الخصم"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="text-right">
+                    <Label htmlFor="postponementReason" className="text-right">سبب التأجيل</Label>
+                    <Textarea
+                      id="postponementReason"
+                      value={newSession.postponementReason}
+                      onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
+                      placeholder="سبب التأجيل (اختياري)"
+                      className="text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                  <Button onClick={handleAddSession} className="w-full">
+                    إضافة الجلسة
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        {sessions.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            لا توجد جلسات في هذا التاريخ
+          </div>
+        ) : (
+          <div className="w-full overflow-x-auto">
+            <Table dir="rtl" className="min-w-[800px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right min-w-[180px]">المحكمة</TableHead>
+                  <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
+                  <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
+                  <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
+                  <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
+                  <TableHead className="text-right min-w-[200px]">الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell className="text-right">
+                      <div className="space-y-1">
+                        <div className="font-medium">{session.courtName}</div>
+                        <div className="text-sm text-muted-foreground">{session.caseNumber}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.clientName}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.opponent}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {session.nextPostponementReason || session.postponementReason || '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2">
+                        {session.isResolved ? (
+                          <span className="text-green-600 font-semibold">حُسمت</span>
+                        ) : (
+                          <>
+                            {!session.nextSessionDate && (
+                              <Button
+                                variant="outline"
+                                onClick={() => openTransferDialog(session)}
+                                size="sm"
+                              >
+                                الجلسة القادمة
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
-                              className="w-full justify-start text-right text-sm"
+                              onClick={() => handleResolveSession(session)}
+                              size="sm"
+                              className="gap-1 text-green-600 border-green-600 hover:bg-green-50"
                             >
-                              <Calendar className="mr-2 h-4 w-4" />
-                              {transferDate ? formatSyrianDate(transferDate) : 'اختر التاريخ'}
+                              <CheckCircle className="h-4 w-4" />
+                              حُسمت
                             </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <CalendarComponent
-                              mode="single"
-                              selected={transferDate}
-                              onSelect={setTransferDate}
-                            />
-                          </PopoverContent>
-                        </Popover>
+                          </>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(session)}
+                          className="gap-1"
+                        >
+                          <Edit className="h-4 w-4" />
+                          تعديل
+                        </Button>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label className="text-sm">سبب الترحيل</Label>
-                        <Input
-                          value={transferReason}
-                          onChange={(e) => setTransferReason(e.target.value)}
-                          placeholder="أدخل سبب الترحيل"
-                          className="text-right text-sm"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => transferDate && handleTransferSession(session.id, transferDate, transferReason)}
-                        disabled={!transferDate || !transferReason}
-                        className="flex-1"
-                      >
-                        تأكيد الترحيل
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setTransferingSessionId(null);
-                          setTransferDate(undefined);
-                          setTransferReason('');
-                        }}
-                        className="flex-1"
-                      >
-                        إلغاء
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setTransferingSessionId(session.id)}
-                      className="flex-1"
-                    >
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                      ترحيل الجلسة
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleResolveSession(session.id)}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle2 className="h-4 w-4 ml-1" />
-                      إغلاق الجلسة
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        ))}
-      </div>
+        )}
+        
+        {/* Edit Session Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">تعديل الجلسة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label htmlFor="edit-courtName" className="text-right">المحكمة</Label>
+                <Input
+                  id="edit-courtName"
+                  value={newSession.courtName}
+                  onChange={(e) => setNewSession({ ...newSession, courtName: e.target.value })}
+                  placeholder="اسم المحكمة"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-caseNumber" className="text-right">رقم الأساس</Label>
+                <Input
+                  id="edit-caseNumber"
+                  value={newSession.caseNumber}
+                  onChange={(e) => setNewSession({ ...newSession, caseNumber: e.target.value })}
+                  placeholder="رقم الأساس"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-clientName" className="text-right">الموكل</Label>
+                <Input
+                  id="edit-clientName"
+                  value={newSession.clientName}
+                  onChange={(e) => setNewSession({ ...newSession, clientName: e.target.value })}
+                  placeholder="اسم الموكل"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-opponent" className="text-right">الخصم</Label>
+                <Input
+                  id="edit-opponent"
+                  value={newSession.opponent}
+                  onChange={(e) => setNewSession({ ...newSession, opponent: e.target.value })}
+                  placeholder="اسم الخصم"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="text-right">
+                <Label className="text-right">تاريخ الجلسة</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !newSession.sessionDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {newSession.sessionDate ? (
+                        formatSyrianDate(newSession.sessionDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={newSession.sessionDate}
+                      onSelect={(date) => setNewSession({ ...newSession, sessionDate: date })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-right">
+                <Label htmlFor="edit-postponementReason" className="text-right">سبب التأجيل</Label>
+                <Textarea
+                  id="edit-postponementReason"
+                  value={newSession.postponementReason}
+                  onChange={(e) => setNewSession({ ...newSession, postponementReason: e.target.value })}
+                  placeholder="سبب التأجيل (اختياري)"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleEditSession} className="flex-1">
+                  حفظ التعديلات
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setIsDeleteDialogOpen(true);
+                  }}
+                  className="flex-1 gap-1"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  حذف
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Holiday Warning Dialog */}
-      <AlertDialog open={showHolidayWarning} onOpenChange={setShowHolidayWarning}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-right">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              تحذير: تاريخ عطلة
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-right">
-              التاريخ المحدد ({holidayWarningData && formatSyrianDate(holidayWarningData.date)}) 
-              يصادف {holidayWarningData?.holidayName}. هل تريد المتابعة بترحيل الجلسة إلى هذا التاريخ؟
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex gap-2">
-            <AlertDialogCancel onClick={() => {
-              setShowHolidayWarning(false);
-              setHolidayWarningData(null);
-            }}>
-              إلغاء
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmHolidayTransfer}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              المتابعة رغم العطلة
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">تأكيد الحذف</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 text-right">
+              <p>هل أنت متأكد من رغبتك في حذف هذه الجلسة؟</p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDeleteSession}
+                  className="flex-1"
+                >
+                  حذف
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  className="flex-1"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Transfer Session Dialog */}
+        <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-right">ترحيل الجلسة</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-right">
+                <Label className="text-right">تاريخ الجلسة القادمة</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !transferData.nextDate && "text-muted-foreground"
+                      )}
+                      dir="rtl"
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {transferData.nextDate ? (
+                        formatSyrianDate(transferData.nextDate)
+                      ) : (
+                        <span>اختر التاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={transferData.nextDate}
+                      onSelect={(date) => setTransferData({ ...transferData, nextDate: date })}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="text-right">
+                <Label htmlFor="transferReason" className="text-right">سبب التأجيل</Label>
+                <Textarea
+                  id="transferReason"
+                  value={transferData.reason}
+                  onChange={(e) => setTransferData({ ...transferData, reason: e.target.value })}
+                  placeholder="أدخل سبب التأجيل"
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+              
+              <Button onClick={handleTransferSession} className="w-full">
+                ترحيل الجلسة
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 };

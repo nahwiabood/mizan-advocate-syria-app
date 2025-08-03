@@ -1,178 +1,159 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { formatFullSyrianDate } from '@/utils/dateUtils';
 import { dataStore } from '@/store/dataStore';
-import { formatSyrianDate } from '@/utils/dateUtils';
 
 interface AddAppointmentDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
   onAppointmentAdded: () => void;
-  selectedDate?: Date;
 }
 
 export const AddAppointmentDialog: React.FC<AddAppointmentDialogProps> = ({
-  onAppointmentAdded,
-  selectedDate
+  isOpen,
+  onClose,
+  onAppointmentAdded
 }) => {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [appointmentDate, setAppointmentDate] = useState<Date>(selectedDate || new Date());
-  const [time, setTime] = useState('');
-  const [duration, setDuration] = useState(60);
-  const [clientName, setClientName] = useState('');
-  const [location, setLocation] = useState('');
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    appointmentDate: new Date(),
+    time: '',
+    location: ''
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async () => {
+    if (!form.title || !form.appointmentDate) return;
+
     try {
       await dataStore.addAppointment({
-        title,
-        description,
-        appointmentDate,
-        time,
-        duration,
-        clientName,
-        location
+        title: form.title,
+        description: form.description,
+        appointmentDate: form.appointmentDate,
+        time: form.time || null,
+        location: form.location || null
       });
 
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setAppointmentDate(selectedDate || new Date());
-      setTime('');
-      setDuration(60);
-      setClientName('');
-      setLocation('');
-      
-      setOpen(false);
+      setForm({
+        title: '',
+        description: '',
+        appointmentDate: new Date(),
+        time: '',
+        location: ''
+      });
+
       onAppointmentAdded();
+      onClose();
     } catch (error) {
       console.error('Error adding appointment:', error);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="mb-4">
-          <Plus className="h-4 w-4 ml-2" />
-          إضافة موعد جديد
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]" dir="rtl">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-right">إضافة موعد جديد</DialogTitle>
+          <DialogTitle className="text-right">إضافة موعد جديد</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">عنوان الموعد *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                className="text-right"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="clientName">اسم الموكل</Label>
-              <Input
-                id="clientName"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                className="text-right"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="description">الوصف</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="text-right"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>تاريخ الموعد *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-right"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formatSyrianDate(appointmentDate)}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={appointmentDate}
-                    onSelect={(date) => date && setAppointmentDate(date)}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="time">وقت الموعد</Label>
-              <Input
-                id="time"
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="text-right"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="duration">مدة الموعد (بالدقائق)</Label>
-              <Input
-                id="duration"
-                type="number"
-                value={duration}
-                onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
-                min="15"
-                max="480"
-                className="text-right"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">المكان</Label>
-              <Input
-                id="location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="text-right"
-              />
-            </div>
+        <div className="space-y-4" dir="rtl">
+          <div>
+            <Label htmlFor="appointmentTitle">عنوان الموعد</Label>
+            <Input
+              id="appointmentTitle"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="عنوان الموعد"
+              className="text-right"
+            />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" className="flex-1">
-              إضافة الموعد
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
+          <div>
+            <Label>التاريخ</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-end text-right font-normal",
+                    !form.appointmentDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="ml-2 h-4 w-4" />
+                  {form.appointmentDate ? (
+                    formatFullSyrianDate(form.appointmentDate)
+                  ) : (
+                    <span>اختر تاريخاً</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={form.appointmentDate}
+                  onSelect={(date) => setForm({ ...form, appointmentDate: date || new Date() })}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <Label htmlFor="appointmentTime">الوقت (اختياري)</Label>
+            <Input
+              id="appointmentTime"
+              type="time"
+              value={form.time}
+              onChange={(e) => setForm({ ...form, time: e.target.value })}
+              className="text-right"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="appointmentLocation">المكان (اختياري)</Label>
+            <Input
+              id="appointmentLocation"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              placeholder="مكان الموعد"
+              className="text-right"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="appointmentDescription">الوصف (اختياري)</Label>
+            <Textarea
+              id="appointmentDescription"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="تفاصيل الموعد"
+              className="text-right"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={onClose} variant="outline" className="flex-1">
               إلغاء
             </Button>
+            <Button 
+              onClick={handleSubmit} 
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              disabled={!form.title || !form.appointmentDate}
+            >
+              إضافة الموعد
+            </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName, isWeekend, getSyrianHoliday, isSyrianHoliday, isSameDay } from '@/utils/dateUtils';
 import { Session, Appointment } from '@/types';
@@ -113,7 +114,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
         <div className="grid grid-cols-7 gap-1">
           {calendarDays.map((date, index) => {
             if (!date) {
-              return <div key={index} className="h-16"></div>;
+              return <div key={index} className="h-12"></div>;
             }
 
             const isSelected = isSameDay(date, selectedDate);
@@ -124,58 +125,47 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             const daySessionsCount = getSessionsForDate(date).length;
             const dayAppointmentsCount = getAppointmentsForDate(date).length;
 
-            let bgColor = '';
-            let textColor = 'text-gray-900';
-            
-            if (isSelected) {
-              bgColor = 'bg-blue-500 text-white hover:bg-blue-600';
-              textColor = 'text-white';
-            } else if (isToday) {
-              bgColor = 'bg-blue-100 text-blue-800 font-bold';
-              textColor = 'text-blue-800';
-            } else if (isHoliday) {
-              bgColor = 'bg-red-100 text-red-800 font-semibold';
-              textColor = 'text-red-800';
-            } else if (isWeekendDay) {
-              bgColor = 'bg-yellow-50 text-red-600';
-              textColor = 'text-red-600';
-            }
-
             return (
               <button
                 key={index}
                 onClick={() => onDateSelect(date)}
-                className={`h-16 p-1 rounded-md text-sm transition-all hover:bg-gray-100 relative ${bgColor} ${textColor}`}
+                className={`h-12 p-1 rounded-md text-sm transition-all hover:bg-gray-100 relative ${
+                  isSelected
+                    ? 'bg-blue-500 text-white hover:bg-blue-600'
+                    : isToday
+                    ? 'bg-blue-100 text-blue-800 font-bold'
+                    : isHoliday
+                    ? 'bg-red-100 text-red-800'
+                    : isWeekendDay
+                    ? 'text-red-600'
+                    : 'text-gray-900'
+                }`}
                 title={holiday || undefined}
               >
                 <div className="flex flex-col items-center justify-center h-full">
-                  <span className="text-sm mb-1">{date.getDate()}</span>
+                  <span className="text-xs">{date.getDate()}</span>
                   
-                  {/* Counters row */}
-                  <div className="flex gap-1 text-xs">
-                    {/* Sessions count */}
-                    {daySessionsCount > 0 && (
-                      <span className={`px-1 py-0 rounded text-[10px] ${
-                        isSelected ? 'bg-white text-blue-500' : 'bg-green-500 text-white'
-                      }`}>
-                        {daySessionsCount}
-                      </span>
-                    )}
-                    
-                    {/* Appointments count */}
-                    {dayAppointmentsCount > 0 && (
-                      <span className={`px-1 py-0 rounded text-[10px] ${
-                        isSelected ? 'bg-white text-blue-500' : 'bg-purple-500 text-white'
-                      }`}>
-                        {dayAppointmentsCount}
-                      </span>
-                    )}
-                  </div>
+                  {/* Sessions indicator */}
+                  {daySessionsCount > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      <Badge 
+                        variant="secondary" 
+                        className="text-[10px] px-1 py-0 h-4 bg-green-100 text-green-800"
+                      >
+                        {daySessionsCount}ج
+                      </Badge>
+                    </div>
+                  )}
                   
-                  {/* Holiday name indicator */}
-                  {holiday && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-red-600 text-white text-[8px] px-1 rounded-b-md truncate">
-                      {holiday}
+                  {/* Appointments indicator */}
+                  {dayAppointmentsCount > 0 && (
+                    <div className="flex gap-1 mt-1">
+                      <Badge 
+                        variant="secondary" 
+                        className="text-[10px] px-1 py-0 h-4 bg-purple-100 text-purple-800"
+                      >
+                        {dayAppointmentsCount}م
+                      </Badge>
                     </div>
                   )}
                 </div>
@@ -185,22 +175,14 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-4 mt-4 text-xs text-muted-foreground justify-center">
+        <div className="flex flex-wrap gap-2 mt-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green-500 rounded"></div>
-            <span>جلسات</span>
+            <div className="w-3 h-3 bg-green-100 rounded"></div>
+            <span>ج = جلسات</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-purple-500 rounded"></div>
-            <span>مواعيد</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
-            <span>عطلة أسبوعية</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
-            <span>عطلة رسمية</span>
+            <div className="w-3 h-3 bg-purple-100 rounded"></div>
+            <span>م = مواعيد</span>
           </div>
         </div>
       </CardContent>
