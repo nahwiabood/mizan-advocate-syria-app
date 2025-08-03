@@ -1,5 +1,10 @@
-
 import { format, isToday, isWeekend as isWeekendFns, parse, isValid } from 'date-fns';
+import { format as formatHijri, isHijri, toGregorian } from 'hijri-date/lib/conversion';
+
+const hijriMonths = [
+  'محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
+  'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+];
 
 const syrianDays = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
 const syrianMonths = [
@@ -69,14 +74,6 @@ export const isSameDay = (date1: Date, date2: Date): boolean => {
     date1.getMonth() === date2.getMonth() &&
     date1.getDate() === date2.getDate()
   );
-};
-
-export const isDatePast = (date: Date): boolean => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const checkDate = new Date(date);
-  checkDate.setHours(0, 0, 0, 0);
-  return checkDate < today;
 };
 
 export const formatSyrianTime = (time: string | Date): string => {
