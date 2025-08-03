@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, Users, CheckCircle2, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { CalendarDays, Clock, FileText, Calendar as CalendarIcon } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
 import { Session, Task, Appointment, Client } from '@/types';
 import { formatSyrianDate, isSameDay } from '@/utils/dateUtils';
@@ -55,68 +55,9 @@ const Index = () => {
     isSameDay(new Date(appointment.appointmentDate), selectedDate)
   );
 
-  // إحصائيات عامة
-  const totalClients = clients.length;
-  const pendingTasks = tasks.filter(task => !task.isCompleted).length;
-  const completedTasks = tasks.filter(task => task.isCompleted).length;
-  const todayAppointments = appointments.filter(appointment => 
-    isSameDay(new Date(appointment.appointmentDate), new Date())
-  ).length;
-
   return (
     <Layout>
       <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-full" dir="rtl">
-        {/* إحصائيات سريعة */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-2xl font-bold text-blue-600">{totalClients}</p>
-                  <p className="text-sm text-muted-foreground">الموكلون</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-orange-50 border-orange-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-8 w-8 text-orange-600" />
-                <div>
-                  <p className="text-2xl font-bold text-orange-600">{pendingTasks}</p>
-                  <p className="text-sm text-muted-foreground">مهام معلقة</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-                <div>
-                  <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
-                  <p className="text-sm text-muted-foreground">مهام منجزة</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-8 w-8 text-purple-600" />
-                <div>
-                  <p className="text-2xl font-bold text-purple-600">{todayAppointments}</p>
-                  <p className="text-sm text-muted-foreground">مواعيد اليوم</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* التقويم والجداول */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* التقويم */}
