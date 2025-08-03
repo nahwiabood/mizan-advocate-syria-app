@@ -1,21 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, DollarSign, TrendingDown, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
 import { Client, OfficeIncome, OfficeExpense } from '@/types';
-import { formatSyrianDate, formatFullSyrianDate } from '@/utils/dateUtils';
+import { formatFullSyrianDate } from '@/utils/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { Layout } from '@/components/Layout';
+import { AccountingTable } from '@/components/AccountingTable';
 
 const OfficeAccounting = () => {
   const [income, setIncome] = useState<OfficeIncome[]>([]);
@@ -94,6 +92,67 @@ const OfficeAccounting = () => {
     }
   };
 
+  const getClientName = (clientId: string): string => {
+    const client = clients.find(c => c.id === clientId);
+    return client ? client.name : 'موكل غير محدد';
+  };
+
+  const handleEditEntry = async (entry: any, type: string) => {
+    try {
+      switch (type) {
+        case 'office_income':
+          await dataStore.updateOfficeIncome(entry.id, entry);
+          break;
+        case 'office_expense':
+          await dataStore.updateOfficeExpense(entry.id, entry);
+          break;
+        case 'client_payment':
+          await dataStore.updateClientPayment(entry.id, entry);
+          break;
+        case 'client_expense':
+          await dataStore.updateClientExpense(entry.id, entry);
+          break;
+        case 'case_payment':
+          await supabase.from('case_payments').update(entry).eq('id', entry.id);
+          break;
+        case 'case_expense':
+          await supabase.from('case_expenses').update(entry).eq('id', entry.id);
+          break;
+      }
+      await loadData();
+    } catch (error) {
+      console.error('Error updating entry:', error);
+    }
+  };
+
+  const handleDeleteEntry = async (id: string, type: string) => {
+    try {
+      switch (type) {
+        case 'office_income':
+          await dataStore.deleteOfficeIncome(id);
+          break;
+        case 'office_expense':
+          await dataStore.deleteOfficeExpense(id);
+          break;
+        case 'client_payment':
+          await dataStore.deleteClientPayment(id);
+          break;
+        case 'client_expense':
+          await dataStore.deleteClientExpense(id);
+          break;
+        case 'case_payment':
+          await supabase.from('case_payments').delete().eq('id', id);
+          break;
+        case 'case_expense':
+          await supabase.from('case_expenses').delete().eq('id', id);
+          break;
+      }
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    }
+  };
+
   const handleAddIncome = async () => {
     if (!incomeForm.description || !incomeForm.amount) return;
 
@@ -148,26 +207,73 @@ const OfficeAccounting = () => {
     });
   };
 
-  // Helper function to safely format dates
-  const safeFormatDate = (date: any): string => {
-    if (!date) return 'غير محدد';
-    try {
-      const dateObj = typeof date === 'string' ? new Date(date) : date;
-      if (isNaN(dateObj.getTime())) return 'تاريخ غير صحيح';
-      return formatSyrianDate(dateObj);
-    } catch (error) {
-      console.error('Error formatting date:', date, error);
-      return 'تاريخ غير صحيح';
-    }
-  };
+  const allEntries = [
+    // إيرادات المكتب
+    ...income.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.incomeDate,
+      type: 'payment' as const,
+      source: 'إيرادات المكتب',
+      entryType: 'office_income'
+    })),
+    // دفعات الموكلين
+    ...clientPayments.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.payment_date,
+      type: 'payment' as const,
+      source: `دفعة من ${getClientName(item.client_id)}`,
+      client_id: item.client_id,
+      entryType: 'client_payment'
+    })),
+    // دفعات القضايا
+    ...casePayments.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.payment_date,
+      type: 'payment' as const,
+      source: `دفعة في قضية ${item.case_id?.slice(0, 8)}...`,
+      case_id: item.case_id,
+      entryType: 'case_payment'
+    })),
+    // مصاريف المكتب
+    ...expenses.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.expenseDate,
+      type: 'expense' as const,
+      source: 'مصاريف المكتب',
+      entryType: 'office_expense'
+    })),
+    // مصاريف الموكلين
+    ...clientExpenses.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.expense_date,
+      type: 'expense' as const,
+      source: `مصروف في حساب ${getClientName(item.client_id)}`,
+      client_id: item.client_id,
+      entryType: 'client_expense'
+    })),
+    // مصاريف القضايا
+    ...caseExpenses.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.expense_date,
+      type: 'expense' as const,
+      source: `مصروف في قضية ${item.case_id?.slice(0, 8)}...`,
+      case_id: item.case_id,
+      entryType: 'case_expense'
+    }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Helper function to get client name by ID
-  const getClientName = (clientId: string): string => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? client.name : 'موكل غير محدد';
-  };
-
-  // Calculate totals including client and case data (payments and expenses only, no fees)
   const officeIncome = income.reduce((sum, item) => sum + item.amount, 0);
   const clientIncomeTotal = clientPayments.reduce((sum, item) => sum + item.amount, 0);
   const caseIncomeTotal = casePayments.reduce((sum, item) => sum + item.amount, 0);
@@ -225,217 +331,39 @@ const OfficeAccounting = () => {
           </Card>
         </div>
 
-        {/* Main Content with Tabs */}
+        {/* Main Content */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-right flex items-center gap-2">
-              <DollarSign className="h-6 w-6 text-blue-600" />
-              محاسبة المكتب
-            </CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-2xl text-right flex items-center gap-2">
+                <DollarSign className="h-6 w-6 text-blue-600" />
+                محاسبة المكتب
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setIsIncomeDialogOpen(true)}
+                  className="gap-2 bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="h-5 w-5" />
+                  إضافة إيراد
+                </Button>
+                <Button 
+                  onClick={() => setIsExpenseDialogOpen(true)}
+                  className="gap-2 bg-red-600 hover:bg-red-700"
+                >
+                  <Plus className="h-5 w-5" />
+                  إضافة مصروف
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="expenses" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-muted rounded-lg p-1">
-                <TabsTrigger 
-                  value="expenses" 
-                  className="text-sm px-4 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  المصاريف
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="income" 
-                  className="text-sm px-4 py-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  الإيرادات
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Expenses Tab */}
-              <TabsContent value="expenses" className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-right flex items-center gap-2">
-                    <TrendingDown className="h-5 w-5 text-red-600" />
-                    المصاريف
-                  </h3>
-                  <Button 
-                    onClick={() => setIsExpenseDialogOpen(true)}
-                    className="gap-2 bg-red-600 hover:bg-red-700"
-                  >
-                    <Plus className="h-5 w-5" />
-                    إضافة مصروف
-                  </Button>
-                </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-right">التاريخ</TableHead>
-                        <TableHead className="text-right">الوصف</TableHead>
-                        <TableHead className="text-right">الموكل/القضية</TableHead>
-                        <TableHead className="text-right">المبلغ</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                     <TableBody>
-                       {/* Office Expenses */}
-                       {expenses.map((item) => (
-                         <TableRow key={`office-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.expenseDate)}</TableCell>
-                           <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">مصاريف المكتب</span>
-                             </div>
-                           </TableCell>
-                           <TableCell className="text-right">-</TableCell>
-                           <TableCell className="text-right text-red-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {/* Client Expenses */}
-                       {clientExpenses.map((item) => (
-                         <TableRow key={`client-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.expense_date)}</TableCell>
-                           <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">مصروف في حساب الموكل</span>
-                             </div>
-                           </TableCell>
-                           <TableCell className="text-right">
-                             {item.client_id ? getClientName(item.client_id) : 'غير محدد'}
-                           </TableCell>
-                           <TableCell className="text-right text-red-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {/* Case Expenses */}
-                       {caseExpenses.map((item) => (
-                         <TableRow key={`case-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.expense_date)}</TableCell>
-                           <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">مصروف في حساب القضية</span>
-                             </div>
-                           </TableCell>
-                           <TableCell className="text-right">
-                             {item.case_id ? `قضية ${item.case_id.slice(0, 8)}...` : 'غير محدد'}
-                           </TableCell>
-                           <TableCell className="text-right text-red-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {(expenses.length === 0 && clientExpenses.length === 0 && caseExpenses.length === 0) && (
-                         <TableRow>
-                           <TableCell colSpan={4} className="text-center text-muted-foreground">
-                             لا توجد مصاريف مسجلة
-                           </TableCell>
-                         </TableRow>
-                       )}
-                     </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-
-              {/* Income Tab */}
-              <TabsContent value="income" className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-right flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                    الإيرادات
-                  </h3>
-                  <Button 
-                    onClick={() => setIsIncomeDialogOpen(true)}
-                    className="gap-2 bg-green-600 hover:bg-green-700"
-                  >
-                    <Plus className="h-5 w-5" />
-                    إضافة إيراد
-                  </Button>
-                </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-right">التاريخ</TableHead>
-                        <TableHead className="text-right">الوصف</TableHead>
-                        <TableHead className="text-right">الموكل/القضية</TableHead>
-                        <TableHead className="text-right">المبلغ</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                     <TableBody>
-                       {/* Office Income */}
-                       {income.map((item) => (
-                         <TableRow key={`office-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.incomeDate)}</TableCell>
-                           <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">إيرادات المكتب</span>
-                             </div>
-                           </TableCell>
-                           <TableCell className="text-right">-</TableCell>
-                           <TableCell className="text-right text-green-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {/* Client Payments */}
-                       {clientPayments.map((item) => (
-                         <TableRow key={`client-payment-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.payment_date)}</TableCell>
-                           <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">دفعة في حساب الموكل</span>
-                             </div>
-                           </TableCell>
-                           <TableCell className="text-right">
-                             {item.client_id ? getClientName(item.client_id) : 'غير محدد'}
-                           </TableCell>
-                           <TableCell className="text-right text-green-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {/* Case Payments */}
-                       {casePayments.map((item) => (
-                         <TableRow key={`case-payment-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.payment_date)}</TableCell>
-                           <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">دفعة في حساب القضية</span>
-                             </div>
-                           </TableCell>
-                           <TableCell className="text-right">
-                             {item.case_id ? `قضية ${item.case_id.slice(0, 8)}...` : 'غير محدد'}
-                           </TableCell>
-                           <TableCell className="text-right text-green-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {(income.length === 0 && clientPayments.length === 0 && casePayments.length === 0) && (
-                         <TableRow>
-                           <TableCell colSpan={4} className="text-center text-muted-foreground">
-                             لا توجد إيرادات مسجلة
-                           </TableCell>
-                         </TableRow>
-                       )}
-                     </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <AccountingTable
+              entries={allEntries}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+              getClientName={getClientName}
+            />
           </CardContent>
         </Card>
 
