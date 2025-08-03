@@ -156,7 +156,7 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* الجلسات - تظهر فقط إذا كانت هناك جلسات للتاريخ المحدد */}
+        {/* الجلسات */}
         {filteredSessions.length > 0 && (
           <Card>
             <CardHeader>
@@ -184,11 +184,17 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <AppointmentsTable 
-              appointments={filteredAppointments} 
-              onAppointmentUpdate={loadData}
-              selectedDate={selectedDate}
-            />
+            {filteredAppointments.length > 0 ? (
+              <AppointmentsTable 
+                appointments={filteredAppointments} 
+                onAppointmentUpdate={loadData}
+                selectedDate={selectedDate}
+              />
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                لا توجد مواعيد في هذا التاريخ
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
