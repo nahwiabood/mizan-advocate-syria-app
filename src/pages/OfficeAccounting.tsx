@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,10 +22,8 @@ const OfficeAccounting = () => {
   const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [clientPayments, setClientPayments] = useState<any[]>([]);
-  const [clientFees, setClientFees] = useState<any[]>([]);
   const [clientExpenses, setClientExpenses] = useState<any[]>([]);
   const [casePayments, setCasePayments] = useState<any[]>([]);
-  const [caseFees, setCaseFees] = useState<any[]>([]);
   const [caseExpenses, setCaseExpenses] = useState<any[]>([]);
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -54,15 +53,6 @@ const OfficeAccounting = () => {
     return data || [];
   };
 
-  const fetchCaseFees = async () => {
-    const { data, error } = await supabase.from('case_fees').select('*');
-    if (error) {
-      console.error('Error fetching case fees:', error);
-      return [];
-    }
-    return data || [];
-  };
-
   const fetchCaseExpenses = async () => {
     const { data, error } = await supabase.from('case_expenses').select('*');
     if (error) {
@@ -79,20 +69,16 @@ const OfficeAccounting = () => {
         expensesData, 
         clientsData, 
         clientPaymentsData,
-        clientFeesData,
         clientExpensesData,
         casePaymentsData,
-        caseFeesData,
         caseExpensesData
       ] = await Promise.all([
         dataStore.getOfficeIncome(),
         dataStore.getOfficeExpenses(),
         dataStore.getClients(),
         dataStore.getClientPayments(),
-        dataStore.getClientFees(),
         dataStore.getClientExpenses(),
         fetchCasePayments(),
-        fetchCaseFees(),
         fetchCaseExpenses()
       ]);
 
@@ -100,10 +86,8 @@ const OfficeAccounting = () => {
       setExpenses(expensesData);
       setClients(clientsData);
       setClientPayments(clientPaymentsData);
-      setClientFees(clientFeesData);
       setClientExpenses(clientExpensesData);
       setCasePayments(casePaymentsData);
-      setCaseFees(caseFeesData);
       setCaseExpenses(caseExpensesData);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -168,19 +152,25 @@ const OfficeAccounting = () => {
   const safeFormatDate = (date: any): string => {
     if (!date) return 'غير محدد';
     try {
-      return formatSyrianDate(date);
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) return 'تاريخ غير صحيح';
+      return formatSyrianDate(dateObj);
     } catch (error) {
       console.error('Error formatting date:', date, error);
       return 'تاريخ غير صحيح';
     }
   };
 
-  // Calculate totals including client and case data
+  // Helper function to get client name by ID
+  const getClientName = (clientId: string): string => {
+    const client = clients.find(c => c.id === clientId);
+    return client ? client.name : 'موكل غير محدد';
+  };
+
+  // Calculate totals including client and case data (payments and expenses only, no fees)
   const officeIncome = income.reduce((sum, item) => sum + item.amount, 0);
-  const clientIncomeTotal = clientPayments.reduce((sum, item) => sum + item.amount, 0) + 
-                           clientFees.reduce((sum, item) => sum + item.amount, 0);
-  const caseIncomeTotal = casePayments.reduce((sum, item) => sum + item.amount, 0) + 
-                         caseFees.reduce((sum, item) => sum + item.amount, 0);
+  const clientIncomeTotal = clientPayments.reduce((sum, item) => sum + item.amount, 0);
+  const caseIncomeTotal = casePayments.reduce((sum, item) => sum + item.amount, 0);
   
   const totalIncome = officeIncome + clientIncomeTotal + caseIncomeTotal;
   
@@ -281,6 +271,7 @@ const OfficeAccounting = () => {
                       <TableRow>
                         <TableHead className="text-right">التاريخ</TableHead>
                         <TableHead className="text-right">الوصف</TableHead>
+                        <TableHead className="text-right">الموكل/القضية</TableHead>
                         <TableHead className="text-right">المبلغ</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -295,6 +286,7 @@ const OfficeAccounting = () => {
                                <span className="text-xs text-muted-foreground">مصاريف المكتب</span>
                              </div>
                            </TableCell>
+                           <TableCell className="text-right">-</TableCell>
                            <TableCell className="text-right text-red-600 font-medium">
                              {item.amount.toLocaleString()} ل.س
                            </TableCell>
@@ -308,8 +300,11 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">مصاريف الموكلين</span>
+                               <span className="text-xs text-muted-foreground">مصروف في حساب الموكل</span>
                              </div>
+                           </TableCell>
+                           <TableCell className="text-right">
+                             {item.client_id ? getClientName(item.client_id) : 'غير محدد'}
                            </TableCell>
                            <TableCell className="text-right text-red-600 font-medium">
                              {item.amount.toLocaleString()} ل.س
@@ -324,8 +319,11 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">مصاريف القضايا</span>
+                               <span className="text-xs text-muted-foreground">مصروف في حساب القضية</span>
                              </div>
+                           </TableCell>
+                           <TableCell className="text-right">
+                             {item.case_id ? `قضية ${item.case_id.slice(0, 8)}...` : 'غير محدد'}
                            </TableCell>
                            <TableCell className="text-right text-red-600 font-medium">
                              {item.amount.toLocaleString()} ل.س
@@ -335,7 +333,7 @@ const OfficeAccounting = () => {
                        
                        {(expenses.length === 0 && clientExpenses.length === 0 && caseExpenses.length === 0) && (
                          <TableRow>
-                           <TableCell colSpan={3} className="text-center text-muted-foreground">
+                           <TableCell colSpan={4} className="text-center text-muted-foreground">
                              لا توجد مصاريف مسجلة
                            </TableCell>
                          </TableRow>
@@ -366,6 +364,7 @@ const OfficeAccounting = () => {
                       <TableRow>
                         <TableHead className="text-right">التاريخ</TableHead>
                         <TableHead className="text-right">الوصف</TableHead>
+                        <TableHead className="text-right">الموكل/القضية</TableHead>
                         <TableHead className="text-right">المبلغ</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -380,6 +379,7 @@ const OfficeAccounting = () => {
                                <span className="text-xs text-muted-foreground">إيرادات المكتب</span>
                              </div>
                            </TableCell>
+                           <TableCell className="text-right">-</TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
                              {item.amount.toLocaleString()} ل.س
                            </TableCell>
@@ -393,24 +393,11 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">دفعات الموكلين</span>
+                               <span className="text-xs text-muted-foreground">دفعة في حساب الموكل</span>
                              </div>
                            </TableCell>
-                           <TableCell className="text-right text-green-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {/* Client Fees */}
-                       {clientFees.map((item) => (
-                         <TableRow key={`client-fee-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.fee_date)}</TableCell>
                            <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">أتعاب الموكلين</span>
-                             </div>
+                             {item.client_id ? getClientName(item.client_id) : 'غير محدد'}
                            </TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
                              {item.amount.toLocaleString()} ل.س
@@ -425,24 +412,11 @@ const OfficeAccounting = () => {
                            <TableCell className="text-right">
                              <div className="flex flex-col">
                                <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">دفعات القضايا</span>
+                               <span className="text-xs text-muted-foreground">دفعة في حساب القضية</span>
                              </div>
                            </TableCell>
-                           <TableCell className="text-right text-green-600 font-medium">
-                             {item.amount.toLocaleString()} ل.س
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                       
-                       {/* Case Fees */}
-                       {caseFees.map((item) => (
-                         <TableRow key={`case-fee-${item.id}`}>
-                           <TableCell className="text-right">{safeFormatDate(item.fee_date)}</TableCell>
                            <TableCell className="text-right">
-                             <div className="flex flex-col">
-                               <span>{item.description}</span>
-                               <span className="text-xs text-muted-foreground">أتعاب القضايا</span>
-                             </div>
+                             {item.case_id ? `قضية ${item.case_id.slice(0, 8)}...` : 'غير محدد'}
                            </TableCell>
                            <TableCell className="text-right text-green-600 font-medium">
                              {item.amount.toLocaleString()} ل.س
@@ -450,9 +424,9 @@ const OfficeAccounting = () => {
                          </TableRow>
                        ))}
                        
-                       {(income.length === 0 && clientPayments.length === 0 && clientFees.length === 0 && casePayments.length === 0 && caseFees.length === 0) && (
+                       {(income.length === 0 && clientPayments.length === 0 && casePayments.length === 0) && (
                          <TableRow>
-                           <TableCell colSpan={3} className="text-center text-muted-foreground">
+                           <TableCell colSpan={4} className="text-center text-muted-foreground">
                              لا توجد إيرادات مسجلة
                            </TableCell>
                          </TableRow>

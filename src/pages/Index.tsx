@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -100,24 +101,16 @@ const Index = () => {
   const filterDataByDate = (date: Date, sessionsData: Session[] = sessions, appointmentsData: Appointment[] = appointments) => {
     const dateStr = date.toISOString().split('T')[0];
     
-    // Filter sessions for the selected date (current session date)
+    // Filter sessions for the selected date (current session date only)
     const currentSessionsForDate = sessionsData.filter(session => 
       session.sessionDate.toISOString().split('T')[0] === dateStr
     );
-    
-    // Filter sessions that are postponed to the selected date
-    const postponedSessionsForDate = sessionsData.filter(session => 
-      session.nextSessionDate && session.nextSessionDate.toISOString().split('T')[0] === dateStr
-    );
-    
-    // Combine current and postponed sessions
-    const allSessionsForDate = [...currentSessionsForDate, ...postponedSessionsForDate];
     
     const appointmentsForDate = appointmentsData.filter(appointment => 
       appointment.appointmentDate.toISOString().split('T')[0] === dateStr
     );
     
-    setFilteredSessions(allSessionsForDate);
+    setFilteredSessions(currentSessionsForDate);
     setFilteredAppointments(appointmentsForDate);
   };
 
@@ -170,28 +163,28 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Sessions directly under calendar */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-right flex items-center gap-2">
-                  <Gavel className="h-6 w-6 text-blue-600" />
-                  الجلسات
-                  {filteredSessions.length > 0 && (
+            {/* Sessions directly under calendar - only show if there are sessions for the selected date */}
+            {filteredSessions.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-right flex items-center gap-2">
+                    <Gavel className="h-6 w-6 text-blue-600" />
+                    الجلسات
                     <Badge variant="secondary" className="mr-2">
                       {formatSyrianDate(selectedDate)}
                     </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SessionsTable 
-                  sessions={filteredSessions.length > 0 ? filteredSessions : sessions.slice(0, 5)} 
-                  selectedDate={selectedDate}
-                  onSessionUpdate={loadData}
-                  showAddButton={false}
-                />
-              </CardContent>
-            </Card>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SessionsTable 
+                    sessions={filteredSessions} 
+                    selectedDate={selectedDate}
+                    onSessionUpdate={loadData}
+                    showAddButton={false}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Tasks Section with Tabs */}
@@ -231,27 +224,27 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Appointments Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-right flex items-center gap-2">
-              <CalendarIcon className="h-6 w-6 text-green-600" />
-              المواعيد
-              {filteredAppointments.length > 0 && (
+        {/* Appointments Section - only show if there are appointments for the selected date */}
+        {filteredAppointments.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-right flex items-center gap-2">
+                <CalendarIcon className="h-6 w-6 text-green-600" />
+                المواعيد
                 <Badge variant="secondary" className="mr-2">
                   {formatSyrianDate(selectedDate)}
                 </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AppointmentsTable 
-              appointments={filteredAppointments.length > 0 ? filteredAppointments : appointments.slice(0, 5)}
-              selectedDate={selectedDate}
-              onAppointmentUpdate={loadData}
-            />
-          </CardContent>
-        </Card>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AppointmentsTable 
+                appointments={filteredAppointments}
+                selectedDate={selectedDate}
+                onAppointmentUpdate={loadData}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Day Details Dialog */}
         <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
