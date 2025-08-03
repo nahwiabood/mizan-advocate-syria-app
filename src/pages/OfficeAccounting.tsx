@@ -213,7 +213,7 @@ const OfficeAccounting = () => {
       id: item.id,
       description: item.description,
       amount: item.amount,
-      date: item.incomeDate,
+      date: item.incomeDate instanceof Date ? item.incomeDate.toISOString() : item.incomeDate,
       type: 'payment' as const,
       source: 'إيرادات المكتب',
       entryType: 'office_income'
@@ -245,7 +245,7 @@ const OfficeAccounting = () => {
       id: item.id,
       description: item.description,
       amount: item.amount,
-      date: item.expenseDate,
+      date: item.expenseDate instanceof Date ? item.expenseDate.toISOString() : item.expenseDate,
       type: 'expense' as const,
       source: 'مصاريف المكتب',
       entryType: 'office_expense'

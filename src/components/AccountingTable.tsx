@@ -21,11 +21,12 @@ interface AccountingEntry {
   id: string;
   description: string;
   amount: number;
-  date: string;
+  date: string | Date;
   type: 'payment' | 'expense';
   source?: string;
   client_id?: string;
   case_id?: string;
+  entryType?: string;
 }
 
 interface AccountingTableProps {
@@ -125,14 +126,14 @@ export const AccountingTable: React.FC<AccountingTableProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setEditingEntry({ ...entry, entryType: entry.type })}
+                      onClick={() => setEditingEntry({ ...entry, entryType: entry.entryType || entry.type })}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setDeleteEntry({ ...entry, entryType: entry.type })}
+                      onClick={() => setDeleteEntry({ ...entry, entryType: entry.entryType || entry.type })}
                       className="text-red-600 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />

@@ -43,8 +43,8 @@ const Index = () => {
 
   // فلترة الجلسات للتاريخ المحدد
   const filteredSessions = sessions.filter(session => {
-    const sessionDate = new Date(session.session_date);
-    const nextSessionDate = session.next_session_date ? new Date(session.next_session_date) : null;
+    const sessionDate = new Date(session.sessionDate);
+    const nextSessionDate = session.nextSessionDate ? new Date(session.nextSessionDate) : null;
     
     return isSameDay(sessionDate, selectedDate) || 
            (nextSessionDate && isSameDay(nextSessionDate, selectedDate));
@@ -52,15 +52,15 @@ const Index = () => {
 
   // فلترة المواعيد للتاريخ المحدد
   const filteredAppointments = appointments.filter(appointment => 
-    isSameDay(new Date(appointment.appointment_date), selectedDate)
+    isSameDay(new Date(appointment.appointmentDate), selectedDate)
   );
 
   // إحصائيات عامة
   const totalClients = clients.length;
-  const pendingTasks = tasks.filter(task => !task.is_completed).length;
-  const completedTasks = tasks.filter(task => task.is_completed).length;
+  const pendingTasks = tasks.filter(task => !task.isCompleted).length;
+  const completedTasks = tasks.filter(task => task.isCompleted).length;
   const todayAppointments = appointments.filter(appointment => 
-    isSameDay(new Date(appointment.appointment_date), new Date())
+    isSameDay(new Date(appointment.appointmentDate), new Date())
   ).length;
 
   return (
@@ -166,7 +166,11 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SessionsTable sessions={filteredSessions} onSessionUpdate={loadData} />
+              <SessionsTable 
+                sessions={filteredSessions} 
+                onSessionUpdate={loadData}
+                selectedDate={selectedDate}
+              />
             </CardContent>
           </Card>
         )}
@@ -181,7 +185,11 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             {filteredAppointments.length > 0 ? (
-              <AppointmentsTable appointments={filteredAppointments} onAppointmentUpdate={loadData} />
+              <AppointmentsTable 
+                appointments={filteredAppointments} 
+                onAppointmentUpdate={loadData}
+                selectedDate={selectedDate}
+              />
             ) : (
               <div className="text-center text-muted-foreground py-8">
                 لا توجد مواعيد في هذا التاريخ
