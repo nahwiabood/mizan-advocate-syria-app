@@ -44,7 +44,7 @@ export const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
         isCompleted: false
       };
 
-      await dataStore.createTask(newTask);
+      await dataStore.addTask(newTask);
       onTaskAdded();
       onClose();
       setFormData({

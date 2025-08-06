@@ -54,8 +54,12 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
     
     try {
       const updatedAppointment = {
-        ...formData,
-        appointmentDate: formData.appointmentDate.toISOString()
+        title: formData.title,
+        appointmentDate: formData.appointmentDate,
+        time: formData.time,
+        location: formData.location,
+        description: formData.description,
+        duration: formData.duration
       };
 
       await dataStore.updateAppointment(appointment.id, updatedAppointment);
