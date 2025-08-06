@@ -29,7 +29,8 @@ export const AddAppointmentDialog: React.FC<AddAppointmentDialogProps> = ({
     description: '',
     appointmentDate: new Date(),
     time: '',
-    location: ''
+    location: '',
+    duration: 60 // Default duration in minutes
   });
 
   const handleSubmit = async () => {
@@ -40,8 +41,9 @@ export const AddAppointmentDialog: React.FC<AddAppointmentDialogProps> = ({
         title: form.title,
         description: form.description,
         appointmentDate: form.appointmentDate,
-        time: form.time || null,
-        location: form.location || null
+        time: form.time || undefined,
+        location: form.location || undefined,
+        duration: form.duration
       });
 
       setForm({
@@ -49,7 +51,8 @@ export const AddAppointmentDialog: React.FC<AddAppointmentDialogProps> = ({
         description: '',
         appointmentDate: new Date(),
         time: '',
-        location: ''
+        location: '',
+        duration: 60
       });
 
       onAppointmentAdded();
@@ -116,6 +119,20 @@ export const AddAppointmentDialog: React.FC<AddAppointmentDialogProps> = ({
               value={form.time}
               onChange={(e) => setForm({ ...form, time: e.target.value })}
               className="text-right"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="appointmentDuration">المدة (بالدقائق)</Label>
+            <Input
+              id="appointmentDuration"
+              type="number"
+              value={form.duration}
+              onChange={(e) => setForm({ ...form, duration: parseInt(e.target.value) || 60 })}
+              placeholder="60"
+              className="text-right"
+              min="15"
+              step="15"
             />
           </div>
 
