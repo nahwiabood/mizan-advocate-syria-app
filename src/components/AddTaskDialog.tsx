@@ -39,7 +39,7 @@ export const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     try {
       const newTask = {
         title: formData.title,
-        dueDate: formData.dueDate?.toISOString(),
+        dueDate: formData.dueDate,
         priority: formData.priority,
         isCompleted: false
       };
