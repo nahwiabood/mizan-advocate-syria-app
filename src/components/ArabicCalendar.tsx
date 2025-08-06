@@ -2,6 +2,8 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CalendarDays } from 'lucide-react';
 import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName, isWeekend, getSyrianHoliday, isSyrianHoliday, isSameDay } from '@/utils/dateUtils';
 import { Session, Appointment } from '@/types';
 
@@ -51,6 +53,10 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     onDateSelect(newDate);
   };
 
+  const goToToday = () => {
+    onDateSelect(new Date());
+  };
+
   const getSessionsForDate = (date: Date) => {
     return sessions.filter(session => {
       const sessionDate = new Date(session.sessionDate);
@@ -96,6 +102,19 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
           >
             →
           </button>
+        </div>
+
+        {/* اليوم Button */}
+        <div className="flex justify-center mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToToday}
+            className="gap-2"
+          >
+            <CalendarDays className="h-4 w-4" />
+            اليوم
+          </Button>
         </div>
 
         {/* Week days header */}
@@ -145,45 +164,19 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
                 <div className="flex flex-col items-center justify-center h-full">
                   <span className="text-xs">{date.getDate()}</span>
                   
-                  {/* Sessions indicator */}
-                  {daySessionsCount > 0 && (
-                    <div className="flex gap-1 mt-1">
-                      <Badge 
-                        variant="secondary" 
-                        className="text-[10px] px-1 py-0 h-4 bg-green-100 text-green-800"
-                      >
-                        {daySessionsCount}ج
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  {/* Appointments indicator */}
-                  {dayAppointmentsCount > 0 && (
-                    <div className="flex gap-1 mt-1">
-                      <Badge 
-                        variant="secondary" 
-                        className="text-[10px] px-1 py-0 h-4 bg-purple-100 text-purple-800"
-                      >
-                        {dayAppointmentsCount}م
-                      </Badge>
-                    </div>
-                  )}
+                  {/* عدد الجلسات والمواعيد */}
+                  <div className="flex gap-1 text-[10px] font-bold">
+                    {daySessionsCount > 0 && (
+                      <span className="text-green-600">{daySessionsCount}</span>
+                    )}
+                    {dayAppointmentsCount > 0 && (
+                      <span className="text-purple-600">{dayAppointmentsCount}</span>
+                    )}
+                  </div>
                 </div>
               </button>
             );
           })}
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-wrap gap-2 mt-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green-100 rounded"></div>
-            <span>ج = جلسات</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-purple-100 rounded"></div>
-            <span>م = مواعيد</span>
-          </div>
         </div>
       </CardContent>
     </Card>

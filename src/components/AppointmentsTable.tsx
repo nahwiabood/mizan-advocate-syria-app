@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, Plus, Clock, MapPin } from 'lucide-react';
+import { Edit2, Trash2, Plus, Clock, MapPin, Calendar } from 'lucide-react';
 import { Appointment } from '@/types';
-import { formatSyrianTime } from '@/utils/dateUtils';
+import { formatSyrianTime, formatSyrianDate } from '@/utils/dateUtils';
 import { dataStore } from '@/store/dataStore';
 import { AddAppointmentDialog } from './AddAppointmentDialog';
+import { EditAppointmentDialog } from './EditAppointmentDialog';
 
 interface AppointmentsTableProps {
   appointments: Appointment[];
@@ -21,6 +21,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
   selectedDate
 }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('هل أنت متأكد من حذف هذا الموعد؟')) {
@@ -31,6 +32,15 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
         console.error('Error deleting appointment:', error);
       }
     }
+  };
+
+  const handleEdit = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+  };
+
+  const handleEditComplete = () => {
+    setEditingAppointment(null);
+    onAppointmentUpdate();
   };
 
   return (
@@ -50,6 +60,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">العنوان</TableHead>
+              <TableHead className="text-right">التاريخ</TableHead>
               <TableHead className="text-right">الوقت</TableHead>
               <TableHead className="text-right">المكان</TableHead>
               <TableHead className="text-right">الوصف</TableHead>
@@ -61,6 +72,12 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
               <TableRow key={appointment.id}>
                 <TableCell className="text-right font-medium">
                   {appointment.title}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center gap-1 justify-end">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{formatSyrianDate(appointment.appointmentDate)}</span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   {appointment.time ? (
@@ -94,6 +111,14 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleEdit(appointment)}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleDelete(appointment.id)}
                       className="text-red-600 hover:text-red-700"
                     >
@@ -105,7 +130,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
             ))}
             {appointments.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   لا توجد مواعيد في هذا التاريخ
                 </TableCell>
               </TableRow>
@@ -119,6 +144,15 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
         onClose={() => setIsAddDialogOpen(false)}
         onAppointmentAdded={onAppointmentUpdate}
       />
+
+      {editingAppointment && (
+        <EditAppointmentDialog
+          isOpen={true}
+          onClose={() => setEditingAppointment(null)}
+          appointment={editingAppointment}
+          onAppointmentUpdated={handleEditComplete}
+        />
+      )}
     </div>
   );
 };

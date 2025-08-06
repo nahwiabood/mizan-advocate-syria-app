@@ -49,7 +49,8 @@ export const AccountingTable: React.FC<AccountingTableProps> = ({
   const filteredEntries = entries.filter(entry =>
     entry.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (entry.source && entry.source.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    entry.amount.toString().includes(searchTerm)
+    entry.amount.toString().includes(searchTerm) ||
+    (entry.client_id && getClientName && getClientName(entry.client_id).toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleEdit = async (updatedEntry: any) => {
@@ -75,6 +76,14 @@ export const AccountingTable: React.FC<AccountingTableProps> = ({
     }
   };
 
+  const getEntrySource = (entry: AccountingEntry): string => {
+    if (entry.client_id && getClientName) {
+      const clientName = getClientName(entry.client_id);
+      return clientName || entry.source || '-';
+    }
+    return entry.source || '-';
+  };
+
   return (
     <>
       <div className="mb-4">
@@ -95,7 +104,7 @@ export const AccountingTable: React.FC<AccountingTableProps> = ({
             <TableRow>
               <TableHead className="text-right">التاريخ</TableHead>
               <TableHead className="text-right">البيان</TableHead>
-              <TableHead className="text-right">المصدر</TableHead>
+              <TableHead className="text-right">الموكل/المصدر</TableHead>
               <TableHead className="text-right">الدفعات</TableHead>
               <TableHead className="text-right">المصاريف</TableHead>
               <TableHead className="text-right">الإجراءات</TableHead>
@@ -106,7 +115,9 @@ export const AccountingTable: React.FC<AccountingTableProps> = ({
               <TableRow key={`${entry.type}-${entry.id}`}>
                 <TableCell className="text-right">{safeFormatDate(entry.date)}</TableCell>
                 <TableCell className="text-right">{entry.description}</TableCell>
-                <TableCell className="text-right">{entry.source || '-'}</TableCell>
+                <TableCell className="text-right font-medium text-blue-600">
+                  {getEntrySource(entry)}
+                </TableCell>
                 <TableCell className="text-right">
                   {entry.type === 'payment' ? (
                     <span className="text-green-600 font-medium">
