@@ -95,6 +95,13 @@ const OfficeAccounting = () => {
         fetchCaseFees()
       ]);
 
+      console.log('Loaded data:', {
+        clients: clientsData.length,
+        cases: casesData.length,
+        clientPayments: clientPaymentsData.length,
+        casePayments: casePaymentsData.length
+      });
+
       setIncome(incomeData);
       setExpenses(expensesData);
       setClients(clientsData);
@@ -110,16 +117,21 @@ const OfficeAccounting = () => {
   };
 
   const getClientName = (clientId: string): string => {
+    if (!clientId) return 'موكل غير محدد';
     const client = clients.find(c => c.id === clientId);
-    return client ? client.name : 'موكل غير محدد';
+    const clientName = client ? client.name : 'موكل غير محدد';
+    console.log(`Getting client name for ID ${clientId}:`, clientName);
+    return clientName;
   };
 
   const getCaseTitle = (caseId: string): string => {
+    if (!caseId) return 'قضية غير محددة';
     const caseData = cases.find(c => c.id === caseId);
     return caseData ? caseData.title : `قضية ${caseId?.slice(0, 8)}...`;
   };
 
   const getClientIdFromCase = (caseId: string): string => {
+    if (!caseId) return '';
     const caseData = cases.find(c => c.id === caseId);
     return caseData ? caseData.clientId : '';
   };
@@ -246,68 +258,92 @@ const OfficeAccounting = () => {
       id: item.id,
       description: item.description,
       amount: item.amount,
-      date: item.incomeDate instanceof Date ? item.incomeDate.toISOString() : item.incomeDate,
+      date: item.incomeDate,
       type: 'payment' as const,
-      source: 'إيرادات المكتب',
+      source: 'إيرادات المكتب العامة',
       entryType: 'office_income'
     })),
     // دفعات الموكلين
-    ...clientPayments.map(item => ({
-      id: item.id,
-      description: item.description,
-      amount: item.amount,
-      date: item.payment_date,
-      type: 'payment' as const,
-      source: `دفعة من ${getClientName(item.client_id)}`,
-      client_id: item.client_id,
-      entryType: 'client_payment'
-    })),
-    // دفعات القضايا (فقط الدفعات المحصلة - ليس اتفاق الأتعاب)
-    ...casePayments.map(item => ({
-      id: item.id,
-      description: item.description,
-      amount: item.amount,
-      date: item.payment_date,
-      type: 'payment' as const,
-      source: `دفعة من ${getClientName(getClientIdFromCase(item.case_id))} - ${getCaseTitle(item.case_id)}`,
-      case_id: item.case_id,
-      client_id: getClientIdFromCase(item.case_id),
-      entryType: 'case_payment'
-    })),
+    ...clientPayments.map(item => {
+      const clientName = getClientName(item.client_id);
+      console.log('Client payment entry:', { item, clientName });
+      return {
+        id: item.id,
+        description: item.description,
+        amount: item.amount,
+        date: item.payment_date,
+        type: 'payment' as const,
+        source: `${clientName}`,
+        client_id: item.client_id,
+        entryType: 'client_payment'
+      };
+    }),
+    // دفعات القضايا
+    ...casePayments.map(item => {
+      const clientId = getClientIdFromCase(item.case_id);
+      const clientName = getClientName(clientId);
+      const caseTitle = getCaseTitle(item.case_id);
+      console.log('Case payment entry:', { item, clientName, caseTitle });
+      return {
+        id: item.id,
+        description: item.description,
+        amount: item.amount,
+        date: item.payment_date,
+        type: 'payment' as const,
+        source: `${clientName} - ${caseTitle}`,
+        case_id: item.case_id,
+        client_id: clientId,
+        entryType: 'case_payment'
+      };
+    }),
     // مصاريف المكتب
     ...expenses.map(item => ({
       id: item.id,
       description: item.description,
       amount: item.amount,
-      date: item.expenseDate instanceof Date ? item.expenseDate.toISOString() : item.expenseDate,
+      date: item.expenseDate,
       type: 'expense' as const,
-      source: 'مصاريف المكتب',
+      source: 'مصاريف المكتب العامة',
       entryType: 'office_expense'
     })),
     // مصاريف الموكلين
-    ...clientExpenses.map(item => ({
-      id: item.id,
-      description: item.description,
-      amount: item.amount,
-      date: item.expense_date,
-      type: 'expense' as const,
-      source: `مصروف في حساب ${getClientName(item.client_id)}`,
-      client_id: item.client_id,
-      entryType: 'client_expense'
-    })),
+    ...clientExpenses.map(item => {
+      const clientName = getClientName(item.client_id);
+      return {
+        id: item.id,
+        description: item.description,
+        amount: item.amount,
+        date: item.expense_date,
+        type: 'expense' as const,
+        source: `${clientName}`,
+        client_id: item.client_id,
+        entryType: 'client_expense'
+      };
+    }),
     // مصاريف القضايا
-    ...caseExpenses.map(item => ({
-      id: item.id,
-      description: item.description,
-      amount: item.amount,
-      date: item.expense_date,
-      type: 'expense' as const,
-      source: `مصروف ${getClientName(getClientIdFromCase(item.case_id))} - ${getCaseTitle(item.case_id)}`,
-      case_id: item.case_id,
-      client_id: getClientIdFromCase(item.case_id),
-      entryType: 'case_expense'
-    }))
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    ...caseExpenses.map(item => {
+      const clientId = getClientIdFromCase(item.case_id);
+      const clientName = getClientName(clientId);
+      const caseTitle = getCaseTitle(item.case_id);
+      return {
+        id: item.id,
+        description: item.description,
+        amount: item.amount,
+        date: item.expense_date,
+        type: 'expense' as const,
+        source: `${clientName} - ${caseTitle}`,
+        case_id: item.case_id,
+        client_id: clientId,
+        entryType: 'case_expense'
+      };
+    })
+  ].sort((a, b) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return dateB - dateA; // ترتيب تنازلي حسب التاريخ
+  });
+
+  console.log('Final accounting entries:', allEntries);
 
   // حساب الإيرادات (بدون اتفاقات الأتعاب غير المحصلة)
   const officeIncome = income.reduce((sum, item) => sum + item.amount, 0);
