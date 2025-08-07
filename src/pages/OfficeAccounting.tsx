@@ -330,12 +330,13 @@ const OfficeAccounting = () => {
       };
     })
   ].sort((a, b) => {
-    const dateA = new Date(a.date).getTime();
-    const dateB = new Date(b.date).getTime();
-    return dateB - dateA; // ترتيب تنازلي حسب التاريخ
+    // ترتيب تنازلي حسب التاريخ (الأحدث أولاً)
+    const dateA = a.date ? new Date(a.date).getTime() : 0;
+    const dateB = b.date ? new Date(b.date).getTime() : 0;
+    return dateB - dateA;
   });
 
-  console.log('Final accounting entries:', allEntries);
+  console.log('Final accounting entries (sorted):', allEntries);
 
   // حساب الإيرادات (بدون اتفاقات الأتعاب غير المحصلة)
   const officeIncome = income.reduce((sum, item) => sum + item.amount, 0);
