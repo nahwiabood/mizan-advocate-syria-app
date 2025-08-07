@@ -99,7 +99,9 @@ const OfficeAccounting = () => {
         clients: clientsData.length,
         cases: casesData.length,
         clientPayments: clientPaymentsData.length,
-        casePayments: casePaymentsData.length
+        casePayments: casePaymentsData.length,
+        clientExpenses: clientExpensesData.length,
+        caseExpenses: caseExpensesData.length
       });
 
       setIncome(incomeData);
@@ -119,15 +121,13 @@ const OfficeAccounting = () => {
   const getClientName = (clientId: string): string => {
     if (!clientId) return 'موكل غير محدد';
     const client = clients.find(c => c.id === clientId);
-    const clientName = client ? client.name : 'موكل غير محدد';
-    console.log(`Getting client name for ID ${clientId}:`, clientName);
-    return clientName;
+    return client ? client.name : 'موكل غير محدد';
   };
 
   const getCaseTitle = (caseId: string): string => {
     if (!caseId) return 'قضية غير محددة';
     const caseData = cases.find(c => c.id === caseId);
-    return caseData ? caseData.title : `قضية ${caseId?.slice(0, 8)}...`;
+    return caseData ? caseData.title : 'قضية غير محددة';
   };
 
   const getClientIdFromCase = (caseId: string): string => {
@@ -264,31 +264,26 @@ const OfficeAccounting = () => {
       entryType: 'office_income'
     })),
     // دفعات الموكلين
-    ...clientPayments.map(item => {
-      const clientName = getClientName(item.client_id);
-      console.log('Client payment entry:', { item, clientName });
-      return {
-        id: item.id,
-        description: item.description,
-        amount: item.amount,
-        date: item.payment_date,
-        type: 'payment' as const,
-        source: `${clientName}`,
-        client_id: item.client_id,
-        entryType: 'client_payment'
-      };
-    }),
+    ...clientPayments.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.payment_date || item.paymentDate,
+      type: 'payment' as const,
+      source: getClientName(item.client_id || item.clientId),
+      client_id: item.client_id || item.clientId,
+      entryType: 'client_payment'
+    })),
     // دفعات القضايا
     ...casePayments.map(item => {
       const clientId = getClientIdFromCase(item.case_id);
       const clientName = getClientName(clientId);
       const caseTitle = getCaseTitle(item.case_id);
-      console.log('Case payment entry:', { item, clientName, caseTitle });
       return {
         id: item.id,
         description: item.description,
         amount: item.amount,
-        date: item.payment_date,
+        date: item.payment_date || item.paymentDate,
         type: 'payment' as const,
         source: `${clientName} - ${caseTitle}`,
         case_id: item.case_id,
@@ -307,19 +302,16 @@ const OfficeAccounting = () => {
       entryType: 'office_expense'
     })),
     // مصاريف الموكلين
-    ...clientExpenses.map(item => {
-      const clientName = getClientName(item.client_id);
-      return {
-        id: item.id,
-        description: item.description,
-        amount: item.amount,
-        date: item.expense_date,
-        type: 'expense' as const,
-        source: `${clientName}`,
-        client_id: item.client_id,
-        entryType: 'client_expense'
-      };
-    }),
+    ...clientExpenses.map(item => ({
+      id: item.id,
+      description: item.description,
+      amount: item.amount,
+      date: item.expense_date || item.expenseDate,
+      type: 'expense' as const,
+      source: getClientName(item.client_id || item.clientId),
+      client_id: item.client_id || item.clientId,
+      entryType: 'client_expense'
+    })),
     // مصاريف القضايا
     ...caseExpenses.map(item => {
       const clientId = getClientIdFromCase(item.case_id);
@@ -329,7 +321,7 @@ const OfficeAccounting = () => {
         id: item.id,
         description: item.description,
         amount: item.amount,
-        date: item.expense_date,
+        date: item.expense_date || item.expenseDate,
         type: 'expense' as const,
         source: `${clientName} - ${caseTitle}`,
         case_id: item.case_id,

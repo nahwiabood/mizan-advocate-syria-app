@@ -23,7 +23,7 @@ interface TasksTableProps {
   tasks: Task[];
   onToggleComplete: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
-  onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  onUpdateTask: (updatedTask: Task) => Promise<void>;
 }
 
 export const TasksTable: React.FC<TasksTableProps> = ({
@@ -66,7 +66,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({
   };
 
   const handleEditTask = async (updatedTask: Task) => {
-    await onUpdateTask(updatedTask.id, updatedTask);
+    await onUpdateTask(updatedTask);
     setEditingTask(null);
   };
 

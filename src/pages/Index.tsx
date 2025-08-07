@@ -66,9 +66,9 @@ const Index = () => {
     }
   };
 
-  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
+  const handleUpdateTask = async (updatedTask: Task) => {
     try {
-      await dataStore.updateTask(taskId, updates);
+      await dataStore.updateTask(updatedTask.id, updatedTask);
       await loadData();
     } catch (error) {
       console.error('Error updating task:', error);
@@ -136,24 +136,30 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* الجلسات */}
-        {filteredSessions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl text-right flex items-center gap-2">
-                <CalendarDays className="h-6 w-6 text-green-600" />
-                الجلسات - {formatSyrianDate(selectedDate)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* الجلسات - يظهر دائماً */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl text-right flex items-center gap-2">
+              <CalendarDays className="h-6 w-6 text-green-600" />
+              الجلسات - {formatSyrianDate(selectedDate)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredSessions.length > 0 ? (
               <SessionsTable 
                 sessions={filteredSessions} 
                 onSessionUpdate={loadData}
                 selectedDate={selectedDate}
               />
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <CalendarDays className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg">لا يوجد جلسات في هذا التاريخ</p>
+                <p className="text-sm mt-2">اختر تاريخاً آخر لعرض الجلسات المتاحة</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* المواعيد - يظهر دائماً */}
         <Card>
