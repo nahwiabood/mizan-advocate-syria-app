@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { dataStore } from '@/store/dataStore';
 import { Appointment } from '@/types';
@@ -61,14 +62,9 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
         duration: formData.duration
       };
 
-      console.log('Updating appointment:', appointment.id, updatedAppointment);
-      const result = await dataStore.updateAppointment(appointment.id, updatedAppointment);
-      console.log('Update result:', result);
-      
-      if (result) {
-        onAppointmentUpdated();
-        onClose();
-      }
+      await dataStore.updateAppointment(appointment.id, updatedAppointment);
+      onAppointmentUpdated();
+      onClose();
     } catch (error) {
       console.error('Error updating appointment:', error);
     }

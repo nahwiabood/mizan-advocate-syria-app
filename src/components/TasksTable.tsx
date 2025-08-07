@@ -66,7 +66,6 @@ export const TasksTable: React.FC<TasksTableProps> = ({
   };
 
   const handleEditTask = async (updatedTask: Task) => {
-    console.log('Saving updated task:', updatedTask);
     await onUpdateTask(updatedTask);
     setEditingTask(null);
   };
@@ -135,7 +134,6 @@ export const TasksTable: React.FC<TasksTableProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setEditingTask(task)}
-            className="text-blue-600 hover:text-blue-700"
           >
             <Edit2 className="h-4 w-4" />
           </Button>

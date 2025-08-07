@@ -1,3 +1,4 @@
+
 export interface Client {
   id: string;
   name: string;
@@ -150,7 +151,4 @@ export interface ClientBalance {
   totalPayments: number;
   totalExpenses: number;
   balance: number;
-  fees?: ClientFee[];
-  payments?: ClientPayment[];
-  expenses?: ClientExpense[];
 }
