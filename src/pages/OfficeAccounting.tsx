@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Plus, DollarSign, TrendingDown, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
-import { Client, OfficeIncome, OfficeExpense } from '@/types';
+import { Client, OfficeIncome, OfficeExpense, Case } from '@/types';
 import { formatFullSyrianDate } from '@/utils/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -19,10 +19,12 @@ const OfficeAccounting = () => {
   const [income, setIncome] = useState<OfficeIncome[]>([]);
   const [expenses, setExpenses] = useState<OfficeExpense[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [cases, setCases] = useState<Case[]>([]);
   const [clientPayments, setClientPayments] = useState<any[]>([]);
   const [clientExpenses, setClientExpenses] = useState<any[]>([]);
   const [casePayments, setCasePayments] = useState<any[]>([]);
   const [caseExpenses, setCaseExpenses] = useState<any[]>([]);
+  const [caseFees, setCaseFees] = useState<any[]>([]);
   const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
 
@@ -60,33 +62,48 @@ const OfficeAccounting = () => {
     return data || [];
   };
 
+  const fetchCaseFees = async () => {
+    const { data, error } = await supabase.from('case_fees').select('*');
+    if (error) {
+      console.error('Error fetching case fees:', error);
+      return [];
+    }
+    return data || [];
+  };
+
   const loadData = async () => {
     try {
       const [
         incomeData, 
         expensesData, 
-        clientsData, 
+        clientsData,
+        casesData,
         clientPaymentsData,
         clientExpensesData,
         casePaymentsData,
-        caseExpensesData
+        caseExpensesData,
+        caseFeesData
       ] = await Promise.all([
         dataStore.getOfficeIncome(),
         dataStore.getOfficeExpenses(),
         dataStore.getClients(),
+        dataStore.getCases(),
         dataStore.getClientPayments(),
         dataStore.getClientExpenses(),
         fetchCasePayments(),
-        fetchCaseExpenses()
+        fetchCaseExpenses(),
+        fetchCaseFees()
       ]);
 
       setIncome(incomeData);
       setExpenses(expensesData);
       setClients(clientsData);
+      setCases(casesData);
       setClientPayments(clientPaymentsData);
       setClientExpenses(clientExpensesData);
       setCasePayments(casePaymentsData);
       setCaseExpenses(caseExpensesData);
+      setCaseFees(caseFeesData);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -95,6 +112,16 @@ const OfficeAccounting = () => {
   const getClientName = (clientId: string): string => {
     const client = clients.find(c => c.id === clientId);
     return client ? client.name : 'موكل غير محدد';
+  };
+
+  const getCaseTitle = (caseId: string): string => {
+    const caseData = cases.find(c => c.id === caseId);
+    return caseData ? caseData.title : `قضية ${caseId?.slice(0, 8)}...`;
+  };
+
+  const getClientIdFromCase = (caseId: string): string => {
+    const caseData = cases.find(c => c.id === caseId);
+    return caseData ? caseData.clientId : '';
   };
 
   const handleEditEntry = async (entry: any, type: string) => {
@@ -117,6 +144,9 @@ const OfficeAccounting = () => {
           break;
         case 'case_expense':
           await supabase.from('case_expenses').update(entry).eq('id', entry.id);
+          break;
+        case 'case_fee':
+          await supabase.from('case_fees').update(entry).eq('id', entry.id);
           break;
       }
       await loadData();
@@ -146,6 +176,9 @@ const OfficeAccounting = () => {
         case 'case_expense':
           await supabase.from('case_expenses').delete().eq('id', id);
           break;
+        case 'case_fee':
+          await supabase.from('case_fees').delete().eq('id', id);
+          break;
       }
       await loadData();
     } catch (error) {
@@ -161,7 +194,7 @@ const OfficeAccounting = () => {
         description: incomeForm.description,
         amount: parseFloat(incomeForm.amount),
         incomeDate: incomeForm.incomeDate,
-        source: 'عام' // Default source
+        source: 'عام'
       });
 
       resetIncomeForm();
@@ -180,7 +213,7 @@ const OfficeAccounting = () => {
         description: expenseForm.description,
         amount: parseFloat(expenseForm.amount),
         expenseDate: expenseForm.expenseDate,
-        category: 'عام' // Default category
+        category: 'عام'
       });
 
       resetExpenseForm();
@@ -229,15 +262,16 @@ const OfficeAccounting = () => {
       client_id: item.client_id,
       entryType: 'client_payment'
     })),
-    // دفعات القضايا
+    // دفعات القضايا (فقط الدفعات المحصلة - ليس اتفاق الأتعاب)
     ...casePayments.map(item => ({
       id: item.id,
       description: item.description,
       amount: item.amount,
       date: item.payment_date,
       type: 'payment' as const,
-      source: `دفعة في قضية ${item.case_id?.slice(0, 8)}...`,
+      source: `دفعة من ${getClientName(getClientIdFromCase(item.case_id))} - ${getCaseTitle(item.case_id)}`,
       case_id: item.case_id,
+      client_id: getClientIdFromCase(item.case_id),
       entryType: 'case_payment'
     })),
     // مصاريف المكتب
@@ -268,12 +302,14 @@ const OfficeAccounting = () => {
       amount: item.amount,
       date: item.expense_date,
       type: 'expense' as const,
-      source: `مصروف في قضية ${item.case_id?.slice(0, 8)}...`,
+      source: `مصروف ${getClientName(getClientIdFromCase(item.case_id))} - ${getCaseTitle(item.case_id)}`,
       case_id: item.case_id,
+      client_id: getClientIdFromCase(item.case_id),
       entryType: 'case_expense'
     }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // حساب الإيرادات (بدون اتفاقات الأتعاب غير المحصلة)
   const officeIncome = income.reduce((sum, item) => sum + item.amount, 0);
   const clientIncomeTotal = clientPayments.reduce((sum, item) => sum + item.amount, 0);
   const caseIncomeTotal = casePayments.reduce((sum, item) => sum + item.amount, 0);
@@ -296,7 +332,7 @@ const OfficeAccounting = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="text-right">
-                  <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
+                  <p className="text-sm text-muted-foreground">إجمالي الإيرادات المحصلة</p>
                   <p className="text-2xl font-bold text-green-600">{totalIncome.toLocaleString()} ل.س</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600" />
