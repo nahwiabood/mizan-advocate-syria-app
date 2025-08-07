@@ -41,6 +41,40 @@ const Index = () => {
     }
   };
 
+  const handleToggleTaskComplete = async (taskId: string) => {
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        const updates: Partial<Task> = {
+          isCompleted: !task.isCompleted,
+          completedAt: !task.isCompleted ? new Date() : undefined
+        };
+        await dataStore.updateTask(taskId, updates);
+        await loadData();
+      }
+    } catch (error) {
+      console.error('Error toggling task completion:', error);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await dataStore.deleteTask(taskId);
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
+    try {
+      await dataStore.updateTask(taskId, updates);
+      await loadData();
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
   // فلترة الجلسات للتاريخ المحدد
   const filteredSessions = sessions.filter(session => {
     const sessionDate = new Date(session.sessionDate);
@@ -92,7 +126,12 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="max-h-96 overflow-y-auto">
-              <TasksTable tasks={tasks} onTaskUpdate={loadData} />
+              <TasksTable 
+                tasks={tasks} 
+                onToggleComplete={handleToggleTaskComplete}
+                onDeleteTask={handleDeleteTask}
+                onUpdateTask={handleUpdateTask}
+              />
             </CardContent>
           </Card>
         </div>
