@@ -37,15 +37,6 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({ sessions, onSessio
     }
   };
 
-  const handleTransfer = async (sessionId: string, nextDate: Date, reason: string) => {
-    try {
-      await dataStore.transferSession(sessionId, nextDate, reason);
-      onSessionUpdate();
-    } catch (error) {
-      console.error('Error transferring session:', error);
-    }
-  };
-
   const handleDelete = async () => {
     if (!deleteSession) return;
 

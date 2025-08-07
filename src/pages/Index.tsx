@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -149,7 +148,6 @@ const Index = () => {
               <SessionsTable 
                 sessions={filteredSessions} 
                 onSessionUpdate={loadData}
-                selectedDate={selectedDate}
               />
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -173,7 +171,6 @@ const Index = () => {
             <AppointmentsTable 
               appointments={filteredAppointments} 
               onAppointmentUpdate={loadData}
-              selectedDate={selectedDate}
             />
           </CardContent>
         </Card>
