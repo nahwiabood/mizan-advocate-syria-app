@@ -274,6 +274,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                   <TableHead className="text-right min-w-[180px]">المحكمة</TableHead>
                   <TableHead className="text-right min-w-[120px]">الموكل</TableHead>
                   <TableHead className="text-right min-w-[120px]">الخصم</TableHead>
+                  <TableHead className="text-right min-w-[150px]">سبب اليوم</TableHead>
                   <TableHead className="text-right min-w-[120px]">القادمة</TableHead>
                   <TableHead className="text-right min-w-[150px]">السبب القادم</TableHead>
                   <TableHead className="text-right min-w-[200px]">الإجراءات</TableHead>
@@ -295,10 +296,13 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                       {session.opponent}
                     </TableCell>
                     <TableCell className="text-right">
+                      {session.postponementReason || '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
                       {session.nextSessionDate ? formatSyrianDate(session.nextSessionDate) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {session.nextPostponementReason || session.postponementReason || '-'}
+                      {session.nextPostponementReason || '-'}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 flex-wrap">

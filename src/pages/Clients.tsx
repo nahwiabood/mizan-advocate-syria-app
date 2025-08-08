@@ -1297,7 +1297,7 @@ const Clients = () => {
                     <Calendar
                       mode="single"
                       selected={sessionForm.firstSessionDate}
-                      onSelect={(date) => setSessionForm({ ...sessionForm, firstSessionDate: date })}
+                      onSelect={(date) => date && setSessionForm({ ...sessionForm, firstSessionDate: date })}
                       initialFocus
                       className="pointer-events-auto"
                     />

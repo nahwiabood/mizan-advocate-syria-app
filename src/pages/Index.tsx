@@ -162,6 +162,7 @@ const Index = () => {
                 sessions={filteredSessions} 
                 onSessionUpdate={loadData}
                 selectedDate={selectedDate}
+                showAddButton={false}
               />
             ) : (
               <div className="text-center py-8 text-muted-foreground">
