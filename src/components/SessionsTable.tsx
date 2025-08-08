@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -284,20 +283,18 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                       {session.nextPostponementReason || session.postponementReason || '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {session.isResolved ? (
                           <span className="text-green-600 font-semibold">حُسمت</span>
                         ) : (
                           <>
-                            {!session.nextSessionDate && (
-                              <Button
-                                variant="outline"
-                                onClick={() => openTransferDialog(session)}
-                                size="sm"
-                              >
-                                الجلسة القادمة
-                              </Button>
-                            )}
+                            <Button
+                              variant="outline"
+                              onClick={() => openTransferDialog(session)}
+                              size="sm"
+                            >
+                              الجلسة القادمة
+                            </Button>
                             <Button
                               variant="outline"
                               onClick={() => handleResolveSession(session)}
