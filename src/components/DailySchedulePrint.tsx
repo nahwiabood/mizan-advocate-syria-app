@@ -67,18 +67,18 @@ export const DailySchedulePrint: React.FC<DailySchedulePrintProps> = ({
             {sessions.map((session, index) => (
               <div key={session.id} className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-bold text-lg">{index + 1}. {session.caseTitle}</h4>
-                  <span className="text-sm text-gray-600">{formatSyrianTime(session.sessionTime)}</span>
+                  <h4 className="font-bold text-lg">{index + 1}. جلسة محكمة</h4>
+                  <span className="text-sm text-gray-600">{formatSyrianDate(session.sessionDate)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><strong>المحكمة:</strong> {session.court}</div>
+                  <div><strong>المحكمة:</strong> {session.courtName}</div>
                   <div><strong>رقم الدعوى:</strong> {session.caseNumber}</div>
-                  <div><strong>نوع الجلسة:</strong> {session.sessionType}</div>
                   <div><strong>الموكل:</strong> {session.clientName}</div>
+                  <div><strong>الخصم:</strong> {session.opponent}</div>
                 </div>
-                {session.notes && (
+                {session.postponementReason && (
                   <div className="mt-2 p-2 bg-white rounded border">
-                    <strong>ملاحظات:</strong> {session.notes}
+                    <strong>سبب التأجيل:</strong> {session.postponementReason}
                   </div>
                 )}
               </div>
@@ -100,15 +100,21 @@ export const DailySchedulePrint: React.FC<DailySchedulePrintProps> = ({
               <div key={appointment.id} className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-lg">{index + 1}. {appointment.title}</h4>
-                  <span className="text-sm text-gray-600">{formatSyrianTime(appointment.appointmentTime)}</span>
+                  <span className="text-sm text-gray-600">
+                    {formatSyrianDate(appointment.appointmentDate)} 
+                    {appointment.time && ` - ${appointment.time}`}
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><strong>النوع:</strong> {appointment.type}</div>
+                  <div><strong>المدة:</strong> {appointment.duration} دقيقة</div>
                   <div><strong>المكان:</strong> {appointment.location || 'غير محدد'}</div>
+                  {appointment.clientName && (
+                    <div><strong>العميل:</strong> {appointment.clientName}</div>
+                  )}
                 </div>
-                {appointment.notes && (
+                {appointment.description && (
                   <div className="mt-2 p-2 bg-white rounded border">
-                    <strong>ملاحظات:</strong> {appointment.notes}
+                    <strong>الوصف:</strong> {appointment.description}
                   </div>
                 )}
               </div>
