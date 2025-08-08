@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,8 +12,8 @@ import EditClientDialog from '@/components/EditClientDialog';
 import AddFeeDialog from '@/components/AddFeeDialog';
 import AddPaymentDialog from '@/components/AddPaymentDialog';
 import AddExpenseDialog from '@/components/AddExpenseDialog';
-import AccountingTable from '@/components/AccountingTable';
-import EditEntryDialog from '@/components/EditEntryDialog';
+import { AccountingTable } from '@/components/AccountingTable';
+import { EditEntryDialog } from '@/components/EditEntryDialog';
 
 interface AccountingEntry {
   id: string;
