@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays } from 'lucide-react';
+import { toast } from 'sonner';
 import { formatSyrianDate, getSyrianMonthName, isDateToday, getFullSyrianDayName, isWeekend, getSyrianHoliday, isSyrianHoliday, isSameDay } from '@/utils/dateUtils';
 import { Session, Appointment } from '@/types';
 
@@ -166,7 +167,12 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             return (
               <button
                 key={index}
-                onClick={() => onDateSelect(date)}
+                onClick={() => {
+                  onDateSelect(date);
+                  if (isHoliday && holiday) {
+                    toast(`عطلة رسمية: ${holiday}`);
+                  }
+                }}
                 className={`h-16 p-2 rounded-xl border-2 text-sm transition-all hover:shadow-md relative ${bgColor} ${textColor} ${borderColor}`}
                 title={holiday || undefined}
               >

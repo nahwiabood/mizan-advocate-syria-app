@@ -115,7 +115,7 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     onSessionUpdate();
   };
 
-  const handleTransferSession = () => {
+  const handleTransferSession = async () => {
     if (!selectedSession || !transferData.nextDate || !transferData.reason) {
       return;
     }
@@ -124,7 +124,25 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       onWeekendWarning(transferData.nextDate);
     }
 
-    dataStore.transferSession(selectedSession.id, transferData.nextDate, transferData.reason);
+    // إنشاء جلسة جديدة بنفس البيانات للتاريخ القادم
+    await dataStore.addSession({
+      stageId: selectedSession.stageId || '',
+      courtName: selectedSession.courtName,
+      caseNumber: selectedSession.caseNumber,
+      sessionDate: transferData.nextDate,
+      clientName: selectedSession.clientName,
+      opponent: selectedSession.opponent || '',
+      postponementReason: '',
+      isTransferred: false,
+    });
+
+    // تحديث الجلسة الحالية مع حفظ سبب التأجيل وربط التاريخ القادم
+    await dataStore.updateSession(selectedSession.id, {
+      postponementReason: transferData.reason,
+      nextSessionDate: transferData.nextDate,
+      nextPostponementReason: transferData.reason,
+      isTransferred: true,
+    });
     
     setTransferData({ nextDate: undefined, reason: '' });
     setIsTransferDialogOpen(false);

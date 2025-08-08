@@ -18,16 +18,26 @@ export const DailySchedulePrint: React.FC<DailySchedulePrintProps> = ({
   tasks,
   onClose
 }) => {
+  const hasPrintedRef = React.useRef(false);
+
   React.useEffect(() => {
-    const handlePrint = () => {
-      window.print();
+    if (hasPrintedRef.current) return;
+    hasPrintedRef.current = true;
+
+    const handleAfterPrint = () => {
       onClose();
     };
 
-    // تأخير الطباعة قليلاً للسماح للمحتوى بالتحميل
-    const timeoutId = setTimeout(handlePrint, 100);
+    window.addEventListener('afterprint', handleAfterPrint, { once: true });
 
-    return () => clearTimeout(timeoutId);
+    const timeoutId = setTimeout(() => {
+      window.print();
+    }, 0);
+
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+      clearTimeout(timeoutId);
+    };
   }, [onClose]);
 
   const pendingTasks = tasks.filter(task => !task.isCompleted);

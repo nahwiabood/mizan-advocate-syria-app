@@ -134,14 +134,6 @@ const Index = () => {
                   <FileText className="h-6 w-6 text-orange-600" />
                   المهام
                 </div>
-                <Button
-                  onClick={() => setShowAddTaskDialog(true)}
-                  size="sm"
-                  className="bg-orange-600 hover:bg-orange-700 flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  مهمة جديدة
-                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="max-h-96 overflow-y-auto">
