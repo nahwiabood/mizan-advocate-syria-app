@@ -73,44 +73,40 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
     );
   };
 
-  const weekDays = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+  const weekDays = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-4">
+    <Card className="w-full bg-white">
+      <CardContent className="p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => navigateMonth('next')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-lg font-bold"
           >
-            ←
+            ‹
           </button>
           
           <div className="text-center">
-            <h2 className="text-lg font-bold">
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">
               {getSyrianMonthName(currentMonth)} {currentYear}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              {getFullSyrianDayName(selectedDate)}
-            </p>
           </div>
           
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-lg font-bold"
           >
-            →
+            ›
           </button>
         </div>
 
         {/* اليوم Button */}
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-6">
           <Button
-            variant="outline"
-            size="sm"
+            variant="default"
             onClick={goToToday}
-            className="gap-2"
+            className="bg-gray-700 hover:bg-gray-800 text-white px-6 py-2 rounded-lg flex items-center gap-2"
           >
             <CalendarDays className="h-4 w-4" />
             اليوم
@@ -118,11 +114,11 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
         </div>
 
         {/* Week days header */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-2 mb-4">
           {weekDays.map((day, index) => (
             <div
               key={index}
-              className="h-8 flex items-center justify-center text-sm font-medium text-muted-foreground"
+              className="h-10 flex items-center justify-center text-sm font-semibold text-gray-600"
             >
               {day}
             </div>
@@ -130,10 +126,10 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-2">
           {calendarDays.map((date, index) => {
             if (!date) {
-              return <div key={index} className="h-12"></div>;
+              return <div key={index} className="h-16"></div>;
             }
 
             const isSelected = isSameDay(date, selectedDate);
@@ -144,39 +140,83 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
             const daySessionsCount = getSessionsForDate(date).length;
             const dayAppointmentsCount = getAppointmentsForDate(date).length;
 
+            let bgColor = '';
+            let textColor = 'text-gray-900';
+            let borderColor = '';
+
+            if (isSelected) {
+              bgColor = 'bg-blue-600';
+              textColor = 'text-white';
+              borderColor = 'border-blue-600';
+            } else if (isToday) {
+              bgColor = 'bg-blue-600';
+              textColor = 'text-white';
+              borderColor = 'border-blue-600';
+            } else if (isHoliday) {
+              bgColor = 'bg-red-500';
+              textColor = 'text-white';
+            } else if (isWeekendDay) {
+              bgColor = 'bg-red-100';
+              textColor = 'text-red-700';
+            } else {
+              bgColor = 'bg-white';
+              borderColor = 'border-gray-200';
+            }
+
             return (
               <button
                 key={index}
                 onClick={() => onDateSelect(date)}
-                className={`h-12 p-1 rounded-md text-sm transition-all hover:bg-gray-100 relative ${
-                  isSelected
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : isToday
-                    ? 'bg-blue-100 text-blue-800 font-bold'
-                    : isHoliday
-                    ? 'bg-red-100 text-red-800'
-                    : isWeekendDay
-                    ? 'text-red-600'
-                    : 'text-gray-900'
-                }`}
+                className={`h-16 p-2 rounded-xl border-2 text-sm transition-all hover:shadow-md relative ${bgColor} ${textColor} ${borderColor}`}
                 title={holiday || undefined}
               >
                 <div className="flex flex-col items-center justify-center h-full">
-                  <span className="text-xs">{date.getDate()}</span>
+                  <span className="text-lg font-bold mb-1">{date.getDate()}</span>
                   
-                  {/* عدد الجلسات والمواعيد */}
-                  <div className="flex gap-1 text-[10px] font-bold">
+                  {/* عداد الجلسات والمواعيد */}
+                  <div className="flex gap-1">
                     {daySessionsCount > 0 && (
-                      <span className="text-green-600">{daySessionsCount}</span>
+                      <div className="w-2 h-2 rounded-full bg-blue-400"></div>
                     )}
                     {dayAppointmentsCount > 0 && (
-                      <span className="text-purple-600">{dayAppointmentsCount}</span>
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
                     )}
                   </div>
                 </div>
               </button>
             );
           })}
+        </div>
+
+        {/* Legend */}
+        <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-red-100"></div>
+            <span>عطلة أسبوعية</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-green-400"></div>
+            <span>مواعيد</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-blue-400"></div>
+            <span>جلسات</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-blue-600"></div>
+            <span>اليوم</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-red-500"></div>
+            <span>عطلة رسمية</span>
+          </div>
+        </div>
+
+        {/* Selected Date Display */}
+        <div className="mt-4 text-center">
+          <Badge variant="outline" className="text-lg px-3 py-1">
+            {getFullSyrianDayName(selectedDate)} {formatSyrianDate(selectedDate)}
+          </Badge>
         </div>
       </CardContent>
     </Card>

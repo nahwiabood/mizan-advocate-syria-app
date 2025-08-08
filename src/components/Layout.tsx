@@ -49,13 +49,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, onPrintSchedule }) => 
             <div className="flex items-center gap-2">
               {onPrintSchedule && location.pathname === '/' && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={onPrintSchedule}
-                  className="p-2"
-                  title="طباعة جدول الأعمال"
+                  className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                  title="طباعة جدول أعمال اليوم"
                 >
                   <Printer className="h-4 w-4" />
+                  <span className="hidden sm:inline">طباعة</span>
                 </Button>
               )}
               <nav className="flex items-center space-x-1">

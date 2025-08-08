@@ -4,10 +4,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Circle, Edit2, Trash2, Calendar, AlertCircle, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CheckCircle2, Circle, Edit2, Trash2, Calendar, AlertCircle, Clock, Plus, Search } from 'lucide-react';
 import { Task } from '@/types';
 import { formatSyrianDate } from '@/utils/dateUtils';
 import { EditTaskDialog } from './EditTaskDialog';
+import { AddTaskDialog } from './AddTaskDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,19 +26,29 @@ interface TasksTableProps {
   onToggleComplete: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onUpdateTask: (updatedTask: Task) => Promise<void>;
+  onTaskAdded?: () => void;
 }
 
 export const TasksTable: React.FC<TasksTableProps> = ({
   tasks,
   onToggleComplete,
   onDeleteTask,
-  onUpdateTask
+  onUpdateTask,
+  onTaskAdded
 }) => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteTask, setDeleteTask] = useState<Task | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const completedTasks = tasks.filter(task => task.isCompleted);
-  const pendingTasks = tasks.filter(task => !task.isCompleted);
+  // تصفية المهام حسب البحث
+  const filteredTasks = tasks.filter(task => 
+    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const completedTasks = filteredTasks.filter(task => task.isCompleted);
+  const pendingTasks = filteredTasks.filter(task => !task.isCompleted);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -74,6 +86,13 @@ export const TasksTable: React.FC<TasksTableProps> = ({
     if (deleteTask) {
       onDeleteTask(deleteTask.id);
       setDeleteTask(null);
+    }
+  };
+
+  const handleAddTask = () => {
+    setShowAddDialog(false);
+    if (onTaskAdded) {
+      onTaskAdded();
     }
   };
 
@@ -152,6 +171,28 @@ export const TasksTable: React.FC<TasksTableProps> = ({
 
   return (
     <>
+      {/* Header with Add Task Button and Search */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="البحث في المهام..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-right pr-10"
+            />
+          </div>
+        </div>
+        <Button
+          onClick={() => setShowAddDialog(true)}
+          className="bg-orange-600 hover:bg-orange-700 flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          مهمة جديدة
+        </Button>
+      </div>
+
       <Tabs defaultValue="pending" className="w-full">
         <TabsList className="grid w-full grid-cols-2" dir="rtl">
           <TabsTrigger value="pending" className="flex items-center gap-2">
@@ -184,7 +225,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({
                 {pendingTasks.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      لا توجد مهام معلقة
+                      {searchQuery ? 'لا توجد مهام معلقة تطابق البحث' : 'لا توجد مهام معلقة'}
                     </TableCell>
                   </TableRow>
                 )}
@@ -213,7 +254,7 @@ export const TasksTable: React.FC<TasksTableProps> = ({
                 {completedTasks.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      لا توجد مهام منجزة
+                      {searchQuery ? 'لا توجد مهام منجزة تطابق البحث' : 'لا توجد مهام منجزة'}
                     </TableCell>
                   </TableRow>
                 )}
@@ -222,6 +263,13 @@ export const TasksTable: React.FC<TasksTableProps> = ({
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Add Task Dialog */}
+      <AddTaskDialog
+        isOpen={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onTaskAdded={handleAddTask}
+      />
 
       {editingTask && (
         <EditTaskDialog

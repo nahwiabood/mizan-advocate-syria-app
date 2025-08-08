@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, Clock, FileText, Calendar as CalendarIcon, Plus, Printer } from 'lucide-react';
 import { dataStore } from '@/store/dataStore';
 import { Session, Task, Appointment, Client } from '@/types';
 import { formatSyrianDate, isSameDay } from '@/utils/dateUtils';
@@ -11,6 +12,8 @@ import { ArabicCalendar } from '@/components/ArabicCalendar';
 import { SessionsTable } from '@/components/SessionsTable';
 import { TasksTable } from '@/components/TasksTable';
 import { AppointmentsTable } from '@/components/AppointmentsTable';
+import { AddTaskDialog } from '@/components/AddTaskDialog';
+import { DailySchedulePrint } from '@/components/DailySchedulePrint';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -18,6 +21,8 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -75,6 +80,15 @@ const Index = () => {
     }
   };
 
+  const handleAddTask = () => {
+    setShowAddTaskDialog(false);
+    loadData();
+  };
+
+  const handlePrintSchedule = () => {
+    setShowPrintDialog(true);
+  };
+
   // فلترة الجلسات للتاريخ المحدد
   const filteredSessions = sessions.filter(session => {
     const sessionDate = new Date(session.sessionDate);
@@ -90,7 +104,7 @@ const Index = () => {
   );
 
   return (
-    <Layout>
+    <Layout onPrintSchedule={handlePrintSchedule}>
       <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6 max-w-full" dir="rtl">
         {/* التقويم والمهام */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -109,20 +123,25 @@ const Index = () => {
                 sessions={sessions}
                 appointments={appointments}
               />
-              <div className="mt-4 text-center">
-                <Badge variant="outline" className="text-lg px-3 py-1">
-                  {formatSyrianDate(selectedDate)}
-                </Badge>
-              </div>
             </CardContent>
           </Card>
 
           {/* المهام */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl text-right flex items-center gap-2">
-                <FileText className="h-6 w-6 text-orange-600" />
-                المهام
+              <CardTitle className="text-xl text-right flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-6 w-6 text-orange-600" />
+                  المهام
+                </div>
+                <Button
+                  onClick={() => setShowAddTaskDialog(true)}
+                  size="sm"
+                  className="bg-orange-600 hover:bg-orange-700 flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  مهمة جديدة
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="max-h-96 overflow-y-auto">
@@ -131,6 +150,7 @@ const Index = () => {
                 onToggleComplete={handleToggleTaskComplete}
                 onDeleteTask={handleDeleteTask}
                 onUpdateTask={handleUpdateTask}
+                onTaskAdded={loadData}
               />
             </CardContent>
           </Card>
@@ -178,6 +198,26 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Task Dialog */}
+      <AddTaskDialog
+        isOpen={showAddTaskDialog}
+        onClose={() => setShowAddTaskDialog(false)}
+        onTaskAdded={handleAddTask}
+      />
+
+      {/* Print Dialog */}
+      {showPrintDialog && (
+        <div className="fixed inset-0 z-50">
+          <DailySchedulePrint
+            date={selectedDate}
+            sessions={filteredSessions}
+            appointments={filteredAppointments}
+            tasks={tasks}
+            onClose={() => setShowPrintDialog(false)}
+          />
+        </div>
+      )}
     </Layout>
   );
 };
