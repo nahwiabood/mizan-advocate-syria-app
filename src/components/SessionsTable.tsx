@@ -124,25 +124,34 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       onWeekendWarning(transferData.nextDate);
     }
 
-    // إنشاء جلسة جديدة بنفس البيانات للتاريخ القادم
-    await dataStore.addSession({
-      stageId: selectedSession.stageId || '',
-      courtName: selectedSession.courtName,
-      caseNumber: selectedSession.caseNumber,
-      sessionDate: transferData.nextDate,
-      clientName: selectedSession.clientName,
-      opponent: selectedSession.opponent || '',
-      postponementReason: '',
-      isTransferred: false,
-    });
+    try {
+      // إنشاء نسخة من الجلسة الحالية للتاريخ القادم
+      // نحتاج إلى إنشاء Date object جديد لتجنب مشاكل المنطقة الزمنية
+      const nextDate = new Date(transferData.nextDate);
+      nextDate.setHours(12, 0, 0, 0); // تعيين الوقت إلى منتصف النهار لتجنب مشاكل المنطقة الزمنية
 
-    // تحديث الجلسة الحالية مع حفظ سبب التأجيل وربط التاريخ القادم
-    await dataStore.updateSession(selectedSession.id, {
-      postponementReason: transferData.reason,
-      nextSessionDate: transferData.nextDate,
-      nextPostponementReason: transferData.reason,
-      isTransferred: true,
-    });
+      await dataStore.addSession({
+        stageId: selectedSession.stageId || '',
+        courtName: selectedSession.courtName,
+        caseNumber: selectedSession.caseNumber,
+        sessionDate: nextDate,
+        clientName: selectedSession.clientName,
+        opponent: selectedSession.opponent || '',
+        postponementReason: transferData.reason, // سبب التأجيل يصبح سبب اليوم في الجلسة الجديدة
+        isTransferred: false,
+        isResolved: false,
+      });
+
+      // تحديث الجلسة الحالية بمعلومات الترحيل
+      await dataStore.updateSession(selectedSession.id, {
+        nextSessionDate: nextDate,
+        nextPostponementReason: transferData.reason,
+        isTransferred: true,
+      });
+      
+    } catch (error) {
+      console.error('Error transferring session:', error);
+    }
     
     setTransferData({ nextDate: undefined, reason: '' });
     setIsTransferDialogOpen(false);
@@ -518,7 +527,14 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                     <Calendar
                       mode="single"
                       selected={transferData.nextDate}
-                      onSelect={(date) => setTransferData({ ...transferData, nextDate: date })}
+                      onSelect={(date) => {
+                        if (date) {
+                          // تأكد من أن التاريخ المحدد هو التاريخ الصحيح
+                          const selectedDate = new Date(date);
+                          selectedDate.setHours(12, 0, 0, 0);
+                          setTransferData({ ...transferData, nextDate: selectedDate });
+                        }
+                      }}
                       initialFocus
                       className="pointer-events-auto"
                     />
