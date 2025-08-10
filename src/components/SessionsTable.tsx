@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -125,24 +126,24 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
     }
 
     try {
-      // إنشاء نسخة من الجلسة الحالية للتاريخ القادم
-      // نحتاج إلى إنشاء Date object جديد لتجنب مشاكل المنطقة الزمنية
+      // إنشاء تاريخ جديد مع تعيين الوقت لمنتصف النهار
       const nextDate = new Date(transferData.nextDate);
-      nextDate.setHours(12, 0, 0, 0); // تعيين الوقت إلى منتصف النهار لتجنب مشاكل المنطقة الزمنية
+      nextDate.setHours(12, 0, 0, 0);
 
+      // إنشاء جلسة جديدة بالبيانات الأساسية فقط
       await dataStore.addSession({
-        stageId: selectedSession.stageId || '',
+        stageId: '', // جلسة جديدة بدون stage id
         courtName: selectedSession.courtName,
         caseNumber: selectedSession.caseNumber,
         sessionDate: nextDate,
         clientName: selectedSession.clientName,
         opponent: selectedSession.opponent || '',
-        postponementReason: transferData.reason, // سبب التأجيل يصبح سبب اليوم في الجلسة الجديدة
+        postponementReason: transferData.reason, // سبب التأجيل الجديد
         isTransferred: false,
         isResolved: false,
       });
 
-      // تحديث الجلسة الحالية بمعلومات الترحيل
+      // تحديث الجلسة الحالية فقط بمعلومات الترحيل
       await dataStore.updateSession(selectedSession.id, {
         nextSessionDate: nextDate,
         nextPostponementReason: transferData.reason,
