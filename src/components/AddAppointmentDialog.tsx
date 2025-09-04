@@ -37,14 +37,10 @@ export const AddAppointmentDialog: React.FC<AddAppointmentDialogProps> = ({
     if (!form.title || !form.appointmentDate) return;
 
     try {
-      // إنشاء تاريخ جديد مع تعيين الوقت لمنتصف النهار لتجنب مشاكل المنطقة الزمنية
-      const appointmentDate = new Date(form.appointmentDate);
-      appointmentDate.setHours(12, 0, 0, 0);
-
       await dataStore.addAppointment({
         title: form.title,
         description: form.description,
-        appointmentDate: appointmentDate,
+        appointmentDate: form.appointmentDate,
         time: form.time || undefined,
         location: form.location || undefined,
         duration: form.duration

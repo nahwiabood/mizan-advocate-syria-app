@@ -37,16 +37,9 @@ export const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     }
 
     try {
-      // إنشاء تاريخ جديد مع تعيين الوقت لمنتصف النهار لتجنب مشاكل المنطقة الزمنية
-      let dueDate = null;
-      if (formData.dueDate) {
-        dueDate = new Date(formData.dueDate);
-        dueDate.setHours(12, 0, 0, 0);
-      }
-
       const newTask = {
         title: formData.title,
-        dueDate: dueDate,
+        dueDate: formData.dueDate,
         priority: formData.priority,
         isCompleted: false
       };
