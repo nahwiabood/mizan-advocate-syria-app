@@ -80,13 +80,20 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
   const handleEditSession = () => {
     if (!selectedSession) return;
     
+    // إنشاء تاريخ جديد مع تعيين الوقت لمنتصف النهار لتجنب مشاكل المنطقة الزمنية
+    let sessionDate = selectedSession.sessionDate;
+    if (newSession.sessionDate) {
+      sessionDate = new Date(newSession.sessionDate);
+      sessionDate.setHours(12, 0, 0, 0);
+    }
+    
     dataStore.updateSession(selectedSession.id, {
       courtName: newSession.courtName || selectedSession.courtName,
       caseNumber: newSession.caseNumber || selectedSession.caseNumber,
       clientName: newSession.clientName || selectedSession.clientName,
       opponent: newSession.opponent || selectedSession.opponent,
       postponementReason: newSession.postponementReason || selectedSession.postponementReason,
-      sessionDate: newSession.sessionDate || selectedSession.sessionDate,
+      sessionDate: sessionDate,
     });
     
     setIsEditDialogOpen(false);
@@ -428,12 +435,20 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={newSession.sessionDate}
-                      onSelect={(date) => setNewSession({ ...newSession, sessionDate: date })}
-                      initialFocus
-                      className="pointer-events-auto"
+                     <Calendar
+                       mode="single"
+                       selected={newSession.sessionDate}
+                       onSelect={(date) => {
+                         if (date) {
+                           const selectedDate = new Date(date);
+                           selectedDate.setHours(12, 0, 0, 0);
+                           setNewSession({ ...newSession, sessionDate: selectedDate });
+                         } else {
+                           setNewSession({ ...newSession, sessionDate: undefined });
+                         }
+                       }}
+                       initialFocus
+                       className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
