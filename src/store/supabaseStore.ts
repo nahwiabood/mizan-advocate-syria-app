@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Client, Case, CaseStage, Session, Task, Appointment, ClientFee, ClientPayment, ClientExpense, OfficeIncome, OfficeExpense, ClientBalance } from '@/types';
+import { formatDateForDB } from '@/utils/dateUtils';
 
 class SupabaseStore {
   // Sessions
@@ -41,15 +42,15 @@ class SupabaseStore {
         stage_id: session.stageId,
         court_name: session.courtName,
         case_number: session.caseNumber,
-        session_date: session.sessionDate.toISOString().split('T')[0],
+        session_date: formatDateForDB(session.sessionDate),
         client_name: session.clientName,
         opponent: session.opponent,
         postponement_reason: session.postponementReason,
-        next_session_date: session.nextSessionDate?.toISOString().split('T')[0],
+        next_session_date: session.nextSessionDate ? formatDateForDB(session.nextSessionDate) : null,
         next_postponement_reason: session.nextPostponementReason,
         is_transferred: session.isTransferred,
         is_resolved: session.isResolved,
-        resolution_date: session.resolutionDate?.toISOString().split('T')[0]
+        resolution_date: session.resolutionDate ? formatDateForDB(session.resolutionDate) : null
       })
       .select()
       .single();
@@ -84,15 +85,15 @@ class SupabaseStore {
     if (updates.stageId !== undefined) updateData.stage_id = updates.stageId;
     if (updates.courtName !== undefined) updateData.court_name = updates.courtName;
     if (updates.caseNumber !== undefined) updateData.case_number = updates.caseNumber;
-    if (updates.sessionDate !== undefined) updateData.session_date = updates.sessionDate.toISOString().split('T')[0];
+    if (updates.sessionDate !== undefined) updateData.session_date = formatDateForDB(updates.sessionDate);
     if (updates.clientName !== undefined) updateData.client_name = updates.clientName;
     if (updates.opponent !== undefined) updateData.opponent = updates.opponent;
     if (updates.postponementReason !== undefined) updateData.postponement_reason = updates.postponementReason;
-    if (updates.nextSessionDate !== undefined) updateData.next_session_date = updates.nextSessionDate?.toISOString().split('T')[0];
+    if (updates.nextSessionDate !== undefined) updateData.next_session_date = updates.nextSessionDate ? formatDateForDB(updates.nextSessionDate) : null;
     if (updates.nextPostponementReason !== undefined) updateData.next_postponement_reason = updates.nextPostponementReason;
     if (updates.isTransferred !== undefined) updateData.is_transferred = updates.isTransferred;
     if (updates.isResolved !== undefined) updateData.is_resolved = updates.isResolved;
-    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate?.toISOString().split('T')[0];
+    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate ? formatDateForDB(updates.resolutionDate) : null;
 
     const { data, error } = await supabase
       .from('sessions')
@@ -181,7 +182,7 @@ class SupabaseStore {
         title: task.title,
         description: task.description,
         priority: task.priority,
-        due_date: task.dueDate?.toISOString().split('T')[0],
+        due_date: task.dueDate ? formatDateForDB(task.dueDate) : null,
         is_completed: task.isCompleted,
         completed_at: task.completedAt?.toISOString()
       })
@@ -212,7 +213,7 @@ class SupabaseStore {
     if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.priority !== undefined) updateData.priority = updates.priority;
-    if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate?.toISOString().split('T')[0];
+    if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate ? formatDateForDB(updates.dueDate) : null;
     if (updates.isCompleted !== undefined) updateData.is_completed = updates.isCompleted;
     if (updates.completedAt !== undefined) updateData.completed_at = updates.completedAt?.toISOString();
 
@@ -282,7 +283,7 @@ class SupabaseStore {
       .insert({
         title: appointment.title,
         description: appointment.description,
-        appointment_date: appointment.appointmentDate.toISOString().split('T')[0],
+        appointment_date: formatDateForDB(appointment.appointmentDate),
         time: appointment.time,
         location: appointment.location
       })
@@ -313,7 +314,7 @@ class SupabaseStore {
     
     if (updates.title !== undefined) updateData.title = updates.title;
     if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.appointmentDate !== undefined) updateData.appointment_date = updates.appointmentDate.toISOString().split('T')[0];
+    if (updates.appointmentDate !== undefined) updateData.appointment_date = formatDateForDB(updates.appointmentDate);
     if (updates.time !== undefined) updateData.time = updates.time;
     if (updates.location !== undefined) updateData.location = updates.location;
 
@@ -590,9 +591,9 @@ class SupabaseStore {
         stage_name: stage.stageName,
         court_name: stage.courtName,
         case_number_ref: stage.caseNumber,
-        first_session_date: stage.firstSessionDate?.toISOString().split('T')[0],
+        first_session_date: stage.firstSessionDate ? formatDateForDB(stage.firstSessionDate) : null,
         is_resolved: stage.isResolved || false,
-        resolution_date: stage.resolutionDate?.toISOString().split('T')[0],
+        resolution_date: stage.resolutionDate ? formatDateForDB(stage.resolutionDate) : null,
         resolution_details: stage.notes
       })
       .select()
@@ -626,9 +627,9 @@ class SupabaseStore {
     if (updates.stageName !== undefined) updateData.stage_name = updates.stageName;
     if (updates.courtName !== undefined) updateData.court_name = updates.courtName;
     if (updates.caseNumber !== undefined) updateData.case_number_ref = updates.caseNumber;
-    if (updates.firstSessionDate !== undefined) updateData.first_session_date = updates.firstSessionDate?.toISOString().split('T')[0];
+    if (updates.firstSessionDate !== undefined) updateData.first_session_date = updates.firstSessionDate ? formatDateForDB(updates.firstSessionDate) : null;
     if (updates.isResolved !== undefined) updateData.is_resolved = updates.isResolved;
-    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate?.toISOString().split('T')[0];
+    if (updates.resolutionDate !== undefined) updateData.resolution_date = updates.resolutionDate ? formatDateForDB(updates.resolutionDate) : null;
     if (updates.notes !== undefined) updateData.resolution_details = updates.notes;
 
     const { data, error } = await supabase
@@ -702,7 +703,7 @@ class SupabaseStore {
         client_id: fee.clientId,
         description: fee.description,
         amount: fee.amount,
-        fee_date: fee.feeDate.toISOString().split('T')[0]
+        fee_date: formatDateForDB(fee.feeDate)
       })
       .select()
       .single();
@@ -728,7 +729,7 @@ class SupabaseStore {
     
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.feeDate !== undefined) updateData.fee_date = updates.feeDate.toISOString().split('T')[0];
+    if (updates.feeDate !== undefined) updateData.fee_date = formatDateForDB(updates.feeDate);
 
     const { data, error } = await supabase
       .from('client_fees')
@@ -795,7 +796,7 @@ class SupabaseStore {
         client_id: payment.clientId,
         description: payment.description,
         amount: payment.amount,
-        payment_date: payment.paymentDate.toISOString().split('T')[0]
+        payment_date: formatDateForDB(payment.paymentDate)
       })
       .select()
       .single();
@@ -821,7 +822,7 @@ class SupabaseStore {
     
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.paymentDate !== undefined) updateData.payment_date = updates.paymentDate.toISOString().split('T')[0];
+    if (updates.paymentDate !== undefined) updateData.payment_date = formatDateForDB(updates.paymentDate);
 
     const { data, error } = await supabase
       .from('client_payments')
@@ -888,7 +889,7 @@ class SupabaseStore {
         client_id: expense.clientId,
         description: expense.description,
         amount: expense.amount,
-        expense_date: expense.expenseDate.toISOString().split('T')[0]
+        expense_date: formatDateForDB(expense.expenseDate)
       })
       .select()
       .single();
@@ -914,7 +915,7 @@ class SupabaseStore {
     
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.expenseDate !== undefined) updateData.expense_date = updates.expenseDate.toISOString().split('T')[0];
+    if (updates.expenseDate !== undefined) updateData.expense_date = formatDateForDB(updates.expenseDate);
 
     const { data, error } = await supabase
       .from('client_expenses')
@@ -977,7 +978,7 @@ class SupabaseStore {
       .insert({
         description: income.description,
         amount: income.amount,
-        income_date: income.incomeDate.toISOString().split('T')[0]
+        income_date: formatDateForDB(income.incomeDate)
       })
       .select()
       .single();
@@ -1003,7 +1004,7 @@ class SupabaseStore {
     
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.incomeDate !== undefined) updateData.income_date = updates.incomeDate.toISOString().split('T')[0];
+    if (updates.incomeDate !== undefined) updateData.income_date = formatDateForDB(updates.incomeDate);
 
     const { data, error } = await supabase
       .from('office_income')
@@ -1066,7 +1067,7 @@ class SupabaseStore {
       .insert({
         description: expense.description,
         amount: expense.amount,
-        expense_date: expense.expenseDate.toISOString().split('T')[0]
+        expense_date: formatDateForDB(expense.expenseDate)
       })
       .select()
       .single();
@@ -1092,7 +1093,7 @@ class SupabaseStore {
     
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.amount !== undefined) updateData.amount = updates.amount;
-    if (updates.expenseDate !== undefined) updateData.expense_date = updates.expenseDate.toISOString().split('T')[0];
+    if (updates.expenseDate !== undefined) updateData.expense_date = formatDateForDB(updates.expenseDate);
 
     const { data, error } = await supabase
       .from('office_expenses')
