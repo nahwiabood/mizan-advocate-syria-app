@@ -61,10 +61,7 @@ export const ArabicCalendar: React.FC<ArabicCalendarProps> = ({
   const getSessionsForDate = (date: Date) => {
     return sessions.filter(session => {
       const sessionDate = new Date(session.sessionDate);
-      const nextSessionDate = session.nextSessionDate ? new Date(session.nextSessionDate) : null;
-      
-      return isSameDay(sessionDate, date) || 
-             (nextSessionDate && isSameDay(nextSessionDate, date));
+      return isSameDay(sessionDate, date);
     });
   };
 

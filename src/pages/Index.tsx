@@ -92,10 +92,7 @@ const Index = () => {
   // فلترة الجلسات للتاريخ المحدد
   const filteredSessions = sessions.filter(session => {
     const sessionDate = new Date(session.sessionDate);
-    const nextSessionDate = session.nextSessionDate ? new Date(session.nextSessionDate) : null;
-    
-    return isSameDay(sessionDate, selectedDate) || 
-           (nextSessionDate && isSameDay(nextSessionDate, selectedDate));
+    return isSameDay(sessionDate, selectedDate);
   });
 
   // فلترة المواعيد للتاريخ المحدد
