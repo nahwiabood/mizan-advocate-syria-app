@@ -130,13 +130,26 @@ export const SessionsTable: React.FC<SessionsTableProps> = ({
       const nextDate = new Date(transferData.nextDate);
       nextDate.setHours(12, 0, 0, 0);
 
-      // ترحيل الجلسة الحالية إلى التاريخ الجديد
+      // تحديث الجلسة الحالية بمعلومات الترحيل (بدون نقلها)
       await dataStore.updateSession(selectedSession.id, {
-        sessionDate: nextDate, // تحديث تاريخ الجلسة إلى التاريخ الجديد
-        postponementReason: transferData.reason, // سبب الترحيل
-        nextSessionDate: undefined, // مسح تاريخ الجلسة القادمة
-        nextPostponementReason: undefined, // مسح سبب التأجيل القادم
-        isTransferred: true,
+        nextSessionDate: nextDate, // التاريخ القادم
+        nextPostponementReason: transferData.reason, // سبب التأجيل
+        isTransferred: true, // تم ترحيلها
+      });
+
+      // إنشاء جلسة جديدة في التاريخ القادم
+      await dataStore.addSession({
+        stageId: selectedSession.stageId || '', // نفس المرحلة
+        courtName: selectedSession.courtName,
+        caseNumber: selectedSession.caseNumber,
+        sessionDate: nextDate, // التاريخ الجديد
+        clientName: selectedSession.clientName,
+        opponent: selectedSession.opponent || '',
+        postponementReason: transferData.reason, // سبب التأجيل يصبح سبب اليوم الجديد
+        isTransferred: false, // جلسة جديدة غير مرحلة
+        isResolved: false, // غير محلولة
+        nextSessionDate: null, // لا يوجد تاريخ قادم بعد
+        nextPostponementReason: null, // لا يوجد سبب تأجيل قادم
       });
       
     } catch (error) {
